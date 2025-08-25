@@ -43,6 +43,11 @@ const SimpleDemoInterface: React.FC = () => {
   const [error, setError] = useState<string>('');
   const [analysisComplete, setAnalysisComplete] = useState<boolean>(false);
 
+  // Clear vegetation indices from agents on component mount
+  React.useEffect(() => {
+    localStorage.removeItem('vegetationAnalysis');
+  }, []);
+
   // Map-related state
   const mapRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<L.Map | null>(null);
@@ -142,7 +147,7 @@ const SimpleDemoInterface: React.FC = () => {
         ndmi: 0.234 + (Math.random() - 0.5) * 0.12  // Random variation around 0.234
       };
 
-      // Store results in localStorage
+      // Store analysis results temporarily (not for agents yet)
       const analysisResults = {
         coordinates: {
           lat: targetPoint.lat,
@@ -155,7 +160,7 @@ const SimpleDemoInterface: React.FC = () => {
         timestamp: Date.now()
       };
 
-      localStorage.setItem('vegetationAnalysis', JSON.stringify(analysisResults));
+      localStorage.setItem('mapAnalysis', JSON.stringify(analysisResults));
       setAnalysisComplete(true);
 
       setAnalysisProgress('Analysis complete!');
@@ -233,11 +238,14 @@ const SimpleDemoInterface: React.FC = () => {
 
       // Simple response based on whether vegetation analysis has been done
       let responseText = '';
-      const analysisData = localStorage.getItem('vegetationAnalysis');
+      const analysisData = localStorage.getItem('mapAnalysis');
       const parsedData = analysisData ? JSON.parse(analysisData) : null;
 
       if (parsedData && parsedData.isAnalyzed) {
         const { vegetationIndices, coordinates } = parsedData;
+
+        // NOW move the indices to agents (only after query submission)
+        localStorage.setItem('vegetationAnalysis', JSON.stringify(parsedData));
         responseText = `**Agricultural Analysis Complete**
 
 Based on satellite analysis at coordinates ${coordinates?.lat.toFixed(5)}°N, ${coordinates?.lng.toFixed(5)}°E:
@@ -263,10 +271,30 @@ The analysis will provide NDVI, EVI, SAVI, and NDMI values that will appear in t
       }
 
       const response = {
-        response: responseText,
-        agents_involved: (parsedData && parsedData.isAnalyzed) ? ['Crop Selection Agent', 'Irrigation Controller'] : ['Query Processing Agent'],
-        confidence: 0.9,
-        processing_time: 1.0
+        routing_analysis: {
+          agent: (parsedData && parsedData.isAnalyzed) ? 'Crop Selection Agent' : 'Query Processing Agent',
+          confidence: 0.92,
+          reasoning: (parsedData && parsedData.isAnalyzed) ?
+            'Query involves vegetation analysis and crop health assessment' :
+            'General agricultural query requiring basic processing',
+          language_detected: 'English'
+        },
+        satellite_data: {
+          ndvi: parsedData?.vegetationIndices?.ndvi || 0.45,
+          soil_moisture: parsedData?.vegetationIndices?.ndmi || 0.35,
+          temperature: 28 + Math.random() * 8, // 28-36°C
+          humidity: 65 + Math.random() * 20, // 65-85%
+          environmental_score: parsedData ? 85 : 65,
+          risk_level: parsedData ? 'low' : 'medium'
+        },
+        response_text: responseText,
+        technical_metrics: {
+          processing_time_ms: 1200 + Math.random() * 800, // 1200-2000ms
+          confidence_level: 0.89,
+          satellite_data_integrated: parsedData ? true : false,
+          risk_assessment: parsedData ? 'Low risk based on vegetation health' : 'Medium risk - analysis recommended',
+          agent: (parsedData && parsedData.isAnalyzed) ? 'Crop Selection Agent' : 'Query Processing Agent'
+        }
       };
 
       setDemoResponse(response);
@@ -442,7 +470,7 @@ The analysis will provide NDVI, EVI, SAVI, and NDMI values that will appear in t
                   color: '#2e7d32',
                   textAlign: 'center'
                 }}>
-                  ✅ Analysis Complete! Check Agents → Metrics for vegetation indices
+                  ✅ Analysis Complete! Submit a query below to see vegetation indices in Agents
                 </div>
               )}
             </div>

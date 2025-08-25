@@ -639,7 +639,8 @@ function DashboardPage() {
                       border: "1px solid #ddd",
                       borderRadius: "6px",
                       fontSize: "0.9rem",
-                      background: "white"
+                      background: "white",
+                      color: "#333"
                     }}>
                       <option value="sentinel2">Sentinel-2 (10m)</option>
                       <option value="landsat8">Landsat 8 (30m)</option>
@@ -658,7 +659,8 @@ function DashboardPage() {
                       border: "1px solid #ddd",
                       borderRadius: "6px",
                       fontSize: "0.9rem",
-                      background: "white"
+                      background: "white",
+                      color: "#333"
                     }}>
                       <option value="5">&lt; 5% (Excellent)</option>
                       <option value="10">&lt; 10% (Very Good)</option>
@@ -678,14 +680,16 @@ function DashboardPage() {
                       border: "1px solid #ddd",
                       borderRadius: "6px",
                       fontSize: "0.9rem",
-                      background: "white"
+                      background: "white",
+                      color: "#333"
                     }} />
                     <input type="date" style={{
                       padding: "10px",
                       border: "1px solid #ddd",
                       borderRadius: "6px",
                       fontSize: "0.9rem",
-                      background: "white"
+                      background: "white",
+                      color: "#333"
                     }} />
                   </div>
                 </div>
@@ -710,7 +714,8 @@ function DashboardPage() {
                       border: "1px solid #ddd",
                       borderRadius: "6px",
                       fontSize: "0.9rem",
-                      background: "white"
+                      background: "white",
+                      color: "#333"
                     }}>
                       <option value="10m">10m (High Detail)</option>
                       <option value="20m">20m (Standard)</option>
@@ -728,7 +733,8 @@ function DashboardPage() {
                       border: "1px solid #ddd",
                       borderRadius: "6px",
                       fontSize: "0.9rem",
-                      background: "white"
+                      background: "white",
+                      color: "#333"
                     }}>
                       <option value="field">Single Field</option>
                       <option value="farm">Entire Farm</option>
@@ -747,12 +753,13 @@ function DashboardPage() {
                       border: "1px solid #ddd",
                       borderRadius: "6px",
                       padding: "8px",
-                      fontSize: "0.8rem"
+                      fontSize: "0.8rem",
+                      color: "#333"
                     }}>
-                      <div style={{ marginBottom: "3px" }}>✅ NDVI (Crop Health)</div>
-                      <div style={{ marginBottom: "3px" }}>✅ EVI (Enhanced Vegetation)</div>
-                      <div style={{ marginBottom: "3px" }}>✅ SAVI (Soil-Adjusted)</div>
-                      <div>✅ NDMI (Moisture Index)</div>
+                      <div style={{ marginBottom: "3px", color: "#333" }}>✅ NDVI (Crop Health)</div>
+                      <div style={{ marginBottom: "3px", color: "#333" }}>✅ EVI (Enhanced Vegetation)</div>
+                      <div style={{ marginBottom: "3px", color: "#333" }}>✅ SAVI (Soil-Adjusted)</div>
+                      <div style={{ color: "#333" }}>✅ NDMI (Moisture Index)</div>
                     </div>
                   </div>
 
@@ -766,7 +773,8 @@ function DashboardPage() {
                       border: "1px solid #ddd",
                       borderRadius: "6px",
                       fontSize: "0.9rem",
-                      background: "white"
+                      background: "white",
+                      color: "#333"
                     }}>
                       <option value="high">High (Real-time)</option>
                       <option value="normal">Normal (5-10 min)</option>
