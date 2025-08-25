@@ -1,0 +1,30 @@
+{
+    "region_name": "Punjab",
+    "agriculture_data": {
+        "major_crops": ["Wheat", "Rice", "Maize", "Cotton"],
+        "growing_seasons": {
+            "kharif": {
+                "start_month": 6,
+                "end_month": 10
+            },
+            "rabi": {
+                "start_month": 10,
+                "end_month": 3
+            }
+        },
+        "irrigation_systems": ["Canal", "Tube Well", "Sprinkler", "Drip"],
+        "soil_types": ["Alluvial", "Arid", "Sandy"],
+        "avg_rainfall": 649,
+        "avg_temperature": {
+            "summer": 32,
+            "winter": 15
+        },
+        "agricultural_zones": ["Majha", "Doaba", "Malwa"]
+    },
+    "market_centers": ["Ludhiana", "Amritsar", "Jalandhar", "Patiala"],
+    "government_schemes": [
+        "PM-KISAN",
+        "Punjab Crop Residue Management Scheme",
+        "Soil Health Card Scheme"
+    ]
+}

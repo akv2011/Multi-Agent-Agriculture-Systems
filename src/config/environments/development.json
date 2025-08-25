@@ -1,0 +1,11 @@
+{
+    "API_HOST": "localhost",
+    "API_PORT": 8000,
+    "API_PREFIX": "/api",
+    "WS_HOST": "localhost",
+    "WS_PORT": 8001,
+    "WS_PATH": "/ws",
+    "LOG_LEVEL": "DEBUG",
+    "REDIS_HOST": "localhost",
+    "DB_ENGINE": "sqlite"
+}

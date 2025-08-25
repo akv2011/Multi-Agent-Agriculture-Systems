@@ -23,6 +23,7 @@ export interface Workflow {
   endTime?: string;
   totalDuration?: number;
   progress: number; // 0 to 1
+  isIncreasing?: boolean; // Flag to indicate if progress is increasing
   metadata?: {
     [key: string]: any;
   };
@@ -143,6 +144,11 @@ const WorkflowVisualizer: React.FC<WorkflowVisualizerProps> = ({
           </div>
           <div className="progress-text">
             {completedSteps}/{totalSteps} steps ({Math.round(progressPercentage)}%)
+            {workflow.isIncreasing && workflow.status === 'running' && (
+              <span className="increasing-label" style={{ marginLeft: '8px', color: '#2db782', fontSize: '0.8em', fontWeight: 'bold' }}>
+                ↑ Increasing
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -160,7 +166,12 @@ const WorkflowVisualizer: React.FC<WorkflowVisualizerProps> = ({
           </div>
           <div className="detail-item">
             <span className="detail-label">Progress:</span>
-            <span className="detail-value">{Math.round(workflow.progress * 100)}%</span>
+            <span className="detail-value">
+              {Math.round(workflow.progress * 100)}%
+              {workflow.isIncreasing && workflow.status === 'running' && (
+                <span style={{ marginLeft: '5px', color: '#2db782', fontWeight: 'bold' }}>↑</span>
+              )}
+            </span>
           </div>
         </div>
       )}

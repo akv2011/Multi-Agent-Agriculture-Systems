@@ -13,6 +13,9 @@ from fastapi.staticfiles import StaticFiles
 import uvicorn
 import logging
 
+# Environment variable setup - ensure this runs before imports
+os.environ.setdefault("APP_ENV", os.environ.get("APP_ENV", "development"))
+
 # Add src to path for imports
 sys.path.insert(0, os.path.dirname(__file__))
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
@@ -21,9 +24,15 @@ from src.orchestration.supervisor import SupervisorNode
 from src.core.redis_config import RedisConnectionManager
 from src.api.models import SystemStatusResponse
 
-# Logging setup
+# Import configuration
+from src.config import get_config, Environment
+
+# Get configuration
+config = get_config()
+
+# Logging setup based on configuration
 logging.basicConfig(
-    level=logging.INFO,
+    level=getattr(logging, config.get("LOG_LEVEL", "INFO")),
     format='%(asctime)s %(name)s %(levelname)s %(message)s'
 )
 logger = logging.getLogger(__name__)
@@ -32,11 +41,20 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    logger.info("Starting AgentWeaver server...")
+    config = get_config()
+    logger.info(f"Starting AgentWeaver server in {config.settings.APP_ENV.value} environment...")
+    logger.info(f"Using region: {config.get_region_name()}")
     
-    # Initialize Redis connection
-    app.state.redis_manager = RedisConnectionManager()
-    logger.info("Redis manager is ready")
+    # Initialize Redis connection with config
+    redis_host = config.get("REDIS_HOST")
+    redis_port = config.get("REDIS_PORT")
+    redis_db = config.get("REDIS_DB")
+    app.state.redis_manager = RedisConnectionManager(
+        host=redis_host,
+        port=redis_port,
+        db=redis_db
+    )
+    logger.info(f"Redis manager connected to {redis_host}:{redis_port}")
     
     # Initialize supervisor
     app.state.supervisor = SupervisorNode()
@@ -45,12 +63,15 @@ async def lifespan(app: FastAPI):
     # Initialize WebSocket manager
     from src.services.websocket_manager import WebSocketManager
     from src.services.websocket_integration import integration_service
+    
+    # Configure WebSocket with environment settings
+    ws_url = config.get_ws_url()
     app.state.ws_manager = WebSocketManager()
     
     # Connect integration service to WebSocket manager
     integration_service.set_websocket_manager(app.state.ws_manager)
     
-    logger.info("WebSocket system is ready")
+    logger.info(f"WebSocket system ready at {ws_url}")
     logger.info("AgentWeaver server is fully operational")
     
     yield
@@ -76,23 +97,22 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
-# CORS for frontend
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins for now
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Set up CORS using configuration
+from src.config.frontend import setup_cors
+setup_cors(app)
 
 
 @app.get("/", tags=["Root"])
 async def root():
+    config = get_config()
     return {
         "message": "AgentWeaver API is running",
-        "version": "1.0.0",
+        "version": config.legacy_settings.APP_VERSION,
+        "environment": config.settings.APP_ENV.value,
+        "region": config.get_region_name(),
         "docs": "/docs",
-        "health": "/health"
+        "health": "/health",
+        "config": "/api/config"
     }
 
 
@@ -135,12 +155,14 @@ async def health_check():
 from src.api.routers import agents, workflows, websocket
 from src.api.routers.agriculture import router as agriculture_router
 from src.api.satellite_api import router as satellite_router
+from src.api.config_routes import router as config_router
 
 app.include_router(agents.router)
 app.include_router(workflows.router)
 app.include_router(websocket.router)
 app.include_router(agriculture_router)
 app.include_router(satellite_router)
+app.include_router(config_router)
 
 @app.get("/api/info", tags=["Info"])
 async def api_info():
@@ -255,11 +277,14 @@ async def _run_demo_workflow_async(workflow_id: str):
 
 
 if __name__ == "__main__":
-    # Run server
+    # Get configuration
+    config = get_config()
+    
+    # Run server with configuration
     uvicorn.run(
         "main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True,
-        log_level="info"
+        host=config.get("API_HOST", "0.0.0.0"),
+        port=config.get("API_PORT", 8000),
+        reload=config.is_development_mode(),
+        log_level=config.get("LOG_LEVEL", "INFO").lower()
     )

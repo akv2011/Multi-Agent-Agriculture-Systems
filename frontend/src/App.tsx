@@ -4,6 +4,7 @@ import AgentList from './components/AgentList'
 import WorkflowVisualizer from './components/WorkflowVisualizer'
 import WebSocketDebug from './components/WebSocketDebug'
 import ChatBot from './components/ChatBot'
+import { RegionSelector } from './components/common/RegionSelector'
 import type { Agent } from './components/AgentList'
 import type { Workflow } from './components/WorkflowVisualizer'
 import { useWebSocket, useAgentUpdates, useWorkflowUpdates } from './hooks/useWebSocket'
@@ -442,6 +443,19 @@ function App() {
 
           <div className="workflow-container">
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              {/* Region Selector Card */}
+              <div className="dashboard-card">
+                <div className="dashboard-card-header">
+                  <h3 className="dashboard-card-title">Region Configuration</h3>
+                  <div className="card-actions">
+                    <span style={{ cursor: 'pointer', fontSize: '0.9rem', opacity: '0.7' }} title="Region Settings">⚙️</span>
+                  </div>
+                </div>
+                <div className="dashboard-card-body">
+                  <RegionSelector />
+                </div>
+              </div>
+              
               {/* Workflow Execution Card */}
               <div className="dashboard-card">
                 <div className="dashboard-card-header">

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './AgentsPage.css';
 import './Dashboard.css';
+import { faker } from '@faker-js/faker';
 
 interface AgentMetrics {
   tasksCompleted: number;
@@ -32,160 +33,281 @@ interface AgentData {
   logs?: AgentLogs[];
   connections?: string[];
   dependencies?: string[];
+  startedAt?: string;
+  steps?: {
+    total: number;
+    completed: number;
+  };
+  priority?: 'High' | 'Medium' | 'Low';
 }
+
+// Mock data generators
+const generateRandomTime = () => {
+  const options = [
+    '1 minute ago',
+    '2 minutes ago',
+    '5 minutes ago',
+    '10 minutes ago',
+    '15 minutes ago',
+    '30 minutes ago',
+    '1 hour ago',
+    '2 hours ago',
+    '3 hours ago',
+    '5 hours ago',
+    '1 day ago'
+  ];
+  
+  return faker.helpers.arrayElement(options);
+};
+
+const generateAgentStatus = () => {
+  const statuses: ('active' | 'inactive' | 'maintenance' | 'error')[] = ['active', 'inactive', 'maintenance', 'error'];
+  const weights = [0.65, 0.15, 0.15, 0.05]; // 65% active, 15% inactive, 15% maintenance, 5% error
+  
+  // Weighted random selection
+  const rand = Math.random();
+  let sum = 0;
+  for (let i = 0; i < weights.length; i++) {
+    sum += weights[i];
+    if (rand < sum) {
+      return statuses[i];
+    }
+  }
+  
+  return statuses[0]; // Default to active
+};
+
+const generatePriority = () => {
+  const priorities: ('High' | 'Medium' | 'Low')[] = ['High', 'Medium', 'Low'];
+  const weights = [0.3, 0.5, 0.2]; // 30% High, 50% Medium, 20% Low
+  
+  const rand = Math.random();
+  let sum = 0;
+  for (let i = 0; i < weights.length; i++) {
+    sum += weights[i];
+    if (rand < sum) {
+      return priorities[i];
+    }
+  }
+  
+  return priorities[1]; // Default to Medium
+};
+
+const generateAgentType = () => {
+  return faker.helpers.arrayElement(['finance', 'irrigation', 'monitoring', 'planning', 'logistics']);
+};
+
+// Define namesByType outside both functions so it's accessible to both
+const namesByType: Record<string, string[]> = {
+  finance: ['Market Timing Agent', 'Price Prediction Agent', 'Financial Planning Agent', 'Budget Optimization Agent'],
+  irrigation: ['Irrigation Controller', 'Water Management System', 'Moisture Optimization Agent', 'Irrigation Scheduler'],
+  monitoring: ['Pest Detection Agent', 'Field Monitoring System', 'Crop Health Monitor', 'Disease Detection Agent'],
+  planning: ['Harvest Prediction Agent', 'Crop Planning Assistant', 'Rotation Scheduler', 'Yield Forecaster'],
+  logistics: ['Input Materials Agent', 'Supply Chain Manager', 'Resource Allocation Agent', 'Inventory Controller']
+};
+
+const generateAgentName = (type: string): string => {
+  return faker.helpers.arrayElement(namesByType[type] || [`${type.charAt(0).toUpperCase() + type.slice(1)} Agent`]);
+};
+
+const generateAgentDescription = (type: string, name: string): string => {
+  const descriptionsByType: Record<string, string[]> = {
+    finance: [
+      'Analyzes market trends and suggests optimal timing for crop sales',
+      'Predicts market prices to maximize profit margins',
+      'Plans financial operations and optimizes cash flow',
+      'Optimizes budget allocation based on current market conditions'
+    ],
+    irrigation: [
+      'Monitors soil moisture levels and controls irrigation systems',
+      'Manages water distribution across multiple field zones',
+      'Optimizes water usage based on weather and crop needs',
+      'Schedules irrigation cycles to maximize efficiency'
+    ],
+    monitoring: [
+      'Analyzes satellite and drone imagery to identify pest outbreaks',
+      'Monitors field conditions to detect anomalies',
+      'Tracks crop health indicators across all fields',
+      'Identifies early signs of disease or pest issues'
+    ],
+    planning: [
+      'Predicts optimal harvest times based on weather and crop data',
+      'Assists in planning crop rotations and schedules',
+      'Forecasts expected yields based on current conditions',
+      'Schedules farm operations for maximum efficiency'
+    ],
+    logistics: [
+      'Manages and orders farm input materials based on needs and pricing',
+      'Optimizes the supply chain for farm operations',
+      'Allocates resources across different farm activities',
+      'Controls inventory levels of critical farming supplies'
+    ]
+  };
+  
+  // Find the index of the name in the type's array to match description
+  const nameArray = namesByType[type] || [];
+  const index = nameArray.indexOf(name);
+  
+  if (index !== -1 && descriptionsByType[type] && index < descriptionsByType[type].length) {
+    return descriptionsByType[type][index];
+  }
+  
+  return faker.helpers.arrayElement(descriptionsByType[type] || ['Manages agricultural operations and provides insights']);
+};
+
+const generatePerformance = (status: string): number => {
+  // Performance ranges based on status
+  if (status === 'active') {
+    return faker.number.int({ min: 85, max: 100 });
+  } else if (status === 'inactive') {
+    return faker.number.int({ min: 70, max: 85 });
+  } else if (status === 'maintenance') {
+    return faker.number.int({ min: 65, max: 80 });
+  } else { // error
+    return faker.number.int({ min: 40, max: 70 });
+  }
+};
+
+const generateMockAgents = (count: number = 5): AgentData[] => {
+  const agents: AgentData[] = [];
+  
+  for (let i = 0; i < count; i++) {
+    const type = generateAgentType();
+    const name = generateAgentName(type);
+    const status = generateAgentStatus();
+    const performance = generatePerformance(status);
+    
+    agents.push({
+      id: i + 1,
+      name,
+      status,
+      type,
+      description: generateAgentDescription(type, name),
+      lastActive: generateRandomTime(),
+      performance,
+      startedAt: faker.date.recent({ days: 1 }).toISOString(),
+      steps: {
+        total: faker.number.int({ min: 5, max: 10 }),
+        completed: faker.number.int({ min: 0, max: 5 })
+      },
+      priority: generatePriority(),
+      metrics: {
+        tasksCompleted: faker.number.int({ min: 50, max: 300 }),
+        averageExecutionTime: parseFloat(faker.number.float({ min: 1.2, max: 5.8 }).toFixed(1)),
+        successRate: parseFloat(faker.number.float({ min: 0.8, max: 0.99 }).toFixed(2)),
+        uptime: parseFloat(faker.number.float({ min: 90, max: 99.9 }).toFixed(1)),
+        errorRate: parseFloat(faker.number.float({ min: 0.01, max: 0.2 }).toFixed(2)),
+        requestsHandled: faker.number.int({ min: 50, max: 500 })
+      },
+      cpu: status !== 'inactive' ? faker.number.int({ min: 5, max: 40 }) : 0,
+      memory: status !== 'inactive' ? faker.number.int({ min: 50, max: 400 }) : 15,
+      version: `${faker.number.int({ min: 1, max: 3 })}.${faker.number.int({ min: 0, max: 9 })}.${faker.number.int({ min: 0, max: 9 })}`,
+      logs: [
+        { 
+          timestamp: faker.date.recent({ days: 1 }).toISOString(), 
+          message: 'System health check completed', 
+          level: 'info' 
+        },
+        { 
+          timestamp: faker.date.recent({ days: 1 }).toISOString(), 
+          message: status === 'error' ? 'Connection error with data source' : 'Data processing completed', 
+          level: status === 'error' ? 'error' : 'success' 
+        }
+      ],
+      connections: ['Data Source API', 'Central Management System', 'Notification Service'],
+      dependencies: ['Core Framework 2.0', 'Data Processing Library 1.8', 'Analytics Engine 3.2']
+    });
+  }
+  
+  // Ensure we have specific agent types included for demonstration
+  const requiredTypes = ['finance', 'irrigation', 'monitoring', 'planning', 'logistics'];
+  const existingTypes = new Set(agents.map(a => a.type));
+  
+  // Add any missing required agent types
+  requiredTypes.forEach(type => {
+    if (!existingTypes.has(type) && agents.length < count + 5) {
+      const name = generateAgentName(type);
+      const status = generateAgentStatus();
+      const performance = generatePerformance(status);
+      
+      agents.push({
+        id: agents.length + 1,
+        name,
+        status,
+        type,
+        description: generateAgentDescription(type, name),
+        lastActive: generateRandomTime(),
+        performance,
+        startedAt: faker.date.recent({ days: 1 }).toISOString(),
+        steps: {
+          total: faker.number.int({ min: 5, max: 10 }),
+          completed: faker.number.int({ min: 0, max: 5 })
+        },
+        priority: generatePriority(),
+        metrics: {
+          tasksCompleted: faker.number.int({ min: 50, max: 300 }),
+          averageExecutionTime: parseFloat(faker.number.float({ min: 1.2, max: 5.8 }).toFixed(1)),
+          successRate: parseFloat(faker.number.float({ min: 0.8, max: 0.99 }).toFixed(2)),
+          uptime: parseFloat(faker.number.float({ min: 90, max: 99.9 }).toFixed(1)),
+          errorRate: parseFloat(faker.number.float({ min: 0.01, max: 0.2 }).toFixed(2)),
+          requestsHandled: faker.number.int({ min: 50, max: 500 })
+        },
+        cpu: status !== 'inactive' ? faker.number.int({ min: 5, max: 40 }) : 0,
+        memory: status !== 'inactive' ? faker.number.int({ min: 50, max: 400 }) : 15,
+        version: `${faker.number.int({ min: 1, max: 3 })}.${faker.number.int({ min: 0, max: 9 })}.${faker.number.int({ min: 0, max: 9 })}`,
+        logs: [
+          { 
+            timestamp: faker.date.recent({ days: 1 }).toISOString(), 
+            message: 'System health check completed', 
+            level: 'info' 
+          },
+          { 
+            timestamp: faker.date.recent({ days: 1 }).toISOString(), 
+            message: status === 'error' ? 'Connection error with data source' : 'Data processing completed', 
+            level: status === 'error' ? 'error' : 'success' 
+          }
+        ],
+        connections: ['Data Source API', 'Central Management System', 'Notification Service'],
+        dependencies: ['Core Framework 2.0', 'Data Processing Library 1.8', 'Analytics Engine 3.2']
+      });
+    }
+  });
+  
+  return agents;
+};
 
 const AgentsPage: React.FC = () => {
   const [selectedAgent, setSelectedAgent] = useState<AgentData | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'metrics' | 'logs' | 'connections'>('overview');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [agents, setAgents] = useState<AgentData[]>(() => generateMockAgents(5));
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   
-  // Sample agents data - in a real application, this would come from an API
-  const agents: AgentData[] = [
-    {
-      id: 1,
-      name: 'Market Timing Agent',
-      status: 'active',
-      description: 'Analyzes market trends and suggests optimal timing for crop sales',
-      type: 'finance',
-      lastActive: '2 minutes ago',
-      performance: 92,
-      metrics: {
-        tasksCompleted: 156,
-        averageExecutionTime: 2.3,
-        successRate: 0.98,
-        requestsHandled: 230,
-        errorRate: 0.02,
-        uptime: 99.8
-      },
-      cpu: 18,
-      memory: 245,
-      version: '1.3.2',
-      logs: [
-        { timestamp: '2025-08-15T14:32:15', message: 'Market analysis completed successfully', level: 'info' },
-        { timestamp: '2025-08-15T14:30:00', message: 'Fetched latest market data from external API', level: 'info' },
-        { timestamp: '2025-08-15T14:28:45', message: 'Scheduled task: Market analysis initiated', level: 'info' },
-        { timestamp: '2025-08-15T13:15:22', message: 'Connection restored to pricing service', level: 'success' },
-        { timestamp: '2025-08-15T13:12:10', message: 'Warning: Slow response from pricing service', level: 'warning' }
-      ],
-      connections: ['Weather Service', 'Market Data API', 'Price Prediction Model', 'Notification System'],
-      dependencies: ['TensorFlow 2.9.0', 'Market Analysis Library 3.2.1', 'Data Processing Pipeline 1.4']
-    },
-    {
-      id: 2,
-      name: 'Irrigation Controller',
-      status: 'active',
-      description: 'Monitors soil moisture levels and controls irrigation systems',
-      type: 'irrigation',
-      lastActive: '5 minutes ago',
-      performance: 87,
-      metrics: {
-        tasksCompleted: 302,
-        averageExecutionTime: 1.5,
-        successRate: 0.94,
-        requestsHandled: 512,
-        errorRate: 0.06,
-        uptime: 98.2
-      },
-      cpu: 12,
-      memory: 128,
-      version: '2.1.0',
-      logs: [
-        { timestamp: '2025-08-15T14:22:35', message: 'Irrigation cycle completed for Field A12', level: 'info' },
-        { timestamp: '2025-08-15T14:20:12', message: 'Initiated irrigation in response to low moisture levels', level: 'info' },
-        { timestamp: '2025-08-15T14:15:08', message: 'Soil moisture below threshold (23.5%) in Field A12', level: 'warning' },
-        { timestamp: '2025-08-15T13:45:22', message: 'System health check: Operational', level: 'success' }
-      ],
-      connections: ['Weather Station', 'Soil Moisture Sensors', 'Valve Control System', 'Central Water Management'],
-      dependencies: ['IoT Control Framework 2.0', 'Sensor Integration API 1.8.5', 'Irrigation Scheduler 3.1']
-    },
-    {
-      id: 3,
-      name: 'Pest Detection Agent',
-      status: 'inactive',
-      description: 'Analyzes satellite and drone imagery to identify pest outbreaks',
-      type: 'monitoring',
-      lastActive: '3 hours ago',
-      performance: 78,
-      metrics: {
-        tasksCompleted: 89,
-        averageExecutionTime: 5.7,
-        successRate: 0.85,
-        requestsHandled: 98,
-        errorRate: 0.15,
-        uptime: 92.5
-      },
-      cpu: 0,
-      memory: 15,
-      version: '1.2.4',
-      logs: [
-        { timestamp: '2025-08-15T11:42:15', message: 'Agent stopped: Scheduled maintenance', level: 'info' },
-        { timestamp: '2025-08-15T11:40:33', message: 'Backing up detection model parameters', level: 'info' },
-        { timestamp: '2025-08-15T11:32:08', message: 'Warning: Image processing taking longer than expected', level: 'warning' },
-        { timestamp: '2025-08-15T10:15:22', message: 'Satellite imagery reception delayed', level: 'warning' },
-        { timestamp: '2025-08-15T09:05:10', message: 'Daily system check: Performance degradation detected', level: 'warning' }
-      ],
-      connections: ['Satellite Imagery Provider', 'Drone Fleet Control', 'Image Processing Pipeline', 'Alert System'],
-      dependencies: ['TensorFlow 2.8.0', 'OpenCV 4.5.5', 'Imagery Analysis Toolkit 2.3.4']
-    },
-    {
-      id: 4,
-      name: 'Harvest Prediction Agent',
-      status: 'active',
-      description: 'Predicts optimal harvest times based on weather and crop data',
-      type: 'planning',
-      lastActive: '1 hour ago',
-      performance: 94,
-      metrics: {
-        tasksCompleted: 208,
-        averageExecutionTime: 3.2,
-        successRate: 0.96,
-        requestsHandled: 312,
-        errorRate: 0.04,
-        uptime: 99.5
-      },
-      cpu: 22,
-      memory: 356,
-      version: '2.2.1',
-      logs: [
-        { timestamp: '2025-08-15T13:20:15', message: 'Updated harvest schedule for Fields B3-B8', level: 'info' },
-        { timestamp: '2025-08-15T13:18:00', message: 'Applied weather forecast adjustments to prediction model', level: 'info' },
-        { timestamp: '2025-08-15T13:15:45', message: 'Received updated weather forecast data', level: 'info' },
-        { timestamp: '2025-08-15T12:10:22', message: 'Crop maturity estimates updated successfully', level: 'success' }
-      ],
-      connections: ['Weather Forecast Service', 'Crop Database', 'Field Sensor Network', 'Logistics Planning System'],
-      dependencies: ['Agricultural ML Framework 3.0', 'Predictive Analytics Suite 2.5.1', 'Time Series Analysis 4.2']
-    },
-    {
-      id: 5,
-      name: 'Input Materials Agent',
-      status: 'maintenance',
-      description: 'Manages and orders farm input materials based on needs and pricing',
-      type: 'logistics',
-      lastActive: '1 day ago',
-      performance: 81,
-      metrics: {
-        tasksCompleted: 162,
-        averageExecutionTime: 2.8,
-        successRate: 0.89,
-        requestsHandled: 210,
-        errorRate: 0.11,
-        uptime: 94.2
-      },
-      cpu: 5,
-      memory: 72,
-      version: '1.8.3',
-      logs: [
-        { timestamp: '2025-08-14T10:42:15', message: 'Maintenance mode activated: Database optimization', level: 'info' },
-        { timestamp: '2025-08-14T10:40:33', message: 'Backing up transaction history', level: 'info' },
-        { timestamp: '2025-08-14T10:35:18', message: 'Warning: Supply chain data inconsistency detected', level: 'warning' },
-        { timestamp: '2025-08-14T09:25:45', message: 'Error: Failed to connect to supplier API endpoint', level: 'error' },
-        { timestamp: '2025-08-14T08:15:22', message: 'Scheduled maintenance announced for 10:30 AM', level: 'info' }
-      ],
-      connections: ['Inventory System', 'Supplier Network API', 'Procurement Database', 'Cost Analysis Engine'],
-      dependencies: ['Supply Chain Manager 2.4', 'Inventory Control System 3.1.5', 'Financial Analytics 1.9']
-    }
-  ];
-
+  // Setup auto-refresh interval (every 5 seconds)
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      // Generate new mock agents and update time
+      setAgents(prevAgents => {
+        const newAgents = generateMockAgents(5);
+        
+        // If there's a selected agent, update it
+        if (selectedAgent) {
+          const updatedSelectedAgent = newAgents.find(agent => agent.id === selectedAgent.id);
+          if (updatedSelectedAgent) {
+            setSelectedAgent(updatedSelectedAgent);
+          }
+        }
+        
+        return newAgents;
+      });
+      
+      setLastUpdated(new Date());
+    }, 5000); // 5 seconds interval
+    
+    // Cleanup on component unmount
+    return () => clearInterval(intervalId);
+  }, [selectedAgent]);
+  
   // Filter options for the agents
   const filterOptions = ['All', 'Active', 'Inactive', 'Maintenance'];
   const typeOptions = ['All Types', 'Finance', 'Irrigation', 'Monitoring', 'Planning', 'Logistics'];
@@ -286,7 +408,7 @@ const AgentsPage: React.FC = () => {
             <div className="performance-bars">
               {agents.map(agent => (
                 <div key={`perf-${agent.id}`} className="performance-bar-container">
-                  <div className="bar-label">{agent.name.split(' ')[0]}</div>
+                  <div className="bar-label" title={agent.name}>{agent.name.split(' ')[0]}</div>
                   <div className="performance-bar-wrapper">
                     <div 
                       className={`performance-bar ${
@@ -304,7 +426,7 @@ const AgentsPage: React.FC = () => {
         </div>
         
         <div className="dashboard-card-footer">
-          <span>Last updated: {new Date().toLocaleTimeString()}</span>
+          <span>Last updated: {lastUpdated.toLocaleTimeString()}</span>
           <div className="card-actions-footer">
             <button className="action-button">View All Metrics</button>
             <button className="action-button">Export Data</button>
@@ -398,16 +520,32 @@ const AgentsPage: React.FC = () => {
                   </svg>
                   <span>Performance: {agent.performance}%</span>
                 </div>
+                {agent.steps && (
+                  <div className="detail-item">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="detail-icon">
+                      <path d="M6 3a1 1 0 00-1 1v2.586l-.707-.707a1 1 0 10-1.414 1.414l3 3a.997.997 0 001.414 0l3-3a1 1 0 10-1.414-1.414L8 6.586V4a1 1 0 00-1-1H6zM14 3a1 1 0 011 1v2.586l.707-.707a1 1 0 111.414 1.414l-3 3a.997.997 0 01-1.414 0l-3-3a1 1 0 111.414-1.414L12 6.586V4a1 1 0 011-1h1z" />
+                      <path d="M6 12a1 1 0 00-1 1v2.586l-.707-.707a1 1 0 10-1.414 1.414l3 3a.997.997 0 001.414 0l3-3a1 1 0 10-1.414-1.414L8 15.586V13a1 1 0 00-1-1H6zM14 12a1 1 0 011 1v2.586l.707-.707a1 1 0 111.414 1.414l-3 3a.997.997 0 01-1.414 0l-3-3a1 1 0 111.414-1.414L12 15.586V13a1 1 0 011-1h1z" />
+                    </svg>
+                    <span>Steps: {agent.steps.completed}/{agent.steps.total}</span>
+                  </div>
+                )}
               </div>
 
               <div className="agent-footer">
                 <button className="btn-secondary" onClick={(e) => e.stopPropagation()}>Configure</button>
-                <button 
-                  className={`btn-toggle ${agent.status === 'active' ? 'active' : ''}`}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {agent.status === 'active' ? 'Active' : 'Inactive'}
-                </button>
+                <div className="agent-meta">
+                  {agent.priority && (
+                    <span className={`priority-badge ${agent.priority.toLowerCase()}`}>
+                      {agent.priority}
+                    </span>
+                  )}
+                  <button 
+                    className={`btn-toggle ${agent.status === 'active' ? 'active' : ''}`}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {agent.status === 'active' ? 'Active' : agent.status.charAt(0).toUpperCase() + agent.status.slice(1)}
+                  </button>
+                </div>
               </div>
             </div>
           ))}

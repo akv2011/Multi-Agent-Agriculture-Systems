@@ -2,7 +2,7 @@
  * API Service for Multi-Agent Agriculture Systems Demo
  */
 
-const API_BASE_URL = 'http://localhost:8000';
+import apiClient from './apiClient.ts';
 
 export interface DemoQueryRequest {
   query_text: string;
@@ -61,59 +61,27 @@ export interface DemoSession {
 
 class DemoApiService {
   async fetchCapabilities(): Promise<DemoCapabilities> {
-    const response = await fetch(`${API_BASE_URL}/demo/capabilities`);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    return response.json();
+    return apiClient.get<DemoCapabilities>('/demo/capabilities');
   }
 
   async fetchSession(): Promise<DemoSession> {
-    const response = await fetch(`${API_BASE_URL}/demo/session`);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    return response.json();
+    return apiClient.get<DemoSession>('/demo/session');
   }
 
   async submitQuery(request: DemoQueryRequest): Promise<DemoQueryResponse> {
-    const response = await fetch(`${API_BASE_URL}/demo/query`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(request),
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    return response.json();
+    return apiClient.post<DemoQueryResponse>('/demo/query', request);
   }
 
   async getSampleQueries() {
-    const response = await fetch(`${API_BASE_URL}/demo/sample-queries`);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    return response.json();
+    return apiClient.get('/demo/sample-queries');
   }
 
   async getAvailableLocations() {
-    const response = await fetch(`${API_BASE_URL}/demo/satellite-data`);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    return response.json();
+    return apiClient.get('/demo/satellite-data');
   }
 
   async healthCheck() {
-    const response = await fetch(`${API_BASE_URL}/demo/health`);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    return response.json();
+    return apiClient.get('/demo/health');
   }
 }
 

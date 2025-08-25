@@ -23,7 +23,7 @@ const ChatBot: React.FC = () => {
   const [inputValue, setInputValue] = useState('');
   const messagesEndRef = useRef<null | HTMLDivElement>(null);
   
-  // Use our WebSocket hook
+  // Use our WebSocket hook - with memoized callbacks
   const { 
     messages: wsMessages, 
     isTyping, 
@@ -89,32 +89,16 @@ const ChatBot: React.FC = () => {
     
     if (!inputValue.trim()) return;
     
-    // Send message via WebSocket
+    // Send message via WebSocket - the service handles both real and mock responses
     sendWsMessage(inputValue);
     setInputValue('');
-    
-    // If not connected to WebSocket, fall back to local processing
-    if (connectionStatus !== WebSocketConnectionStatus.CONNECTED) {
-      processUserInput(inputValue);
-    }
   };
   
   // Local fallback when WebSocket is not connected
+  // We're no longer using this local processing as we've implemented the mock handler in the service
   const processUserInput = (text: string) => {
-    // This is only used as a fallback when the WebSocket is not connected
-    // The new messages will automatically appear from the useChatBot hook
-    
-    // If we're disconnected from WebSocket, simulate responses locally
-    if (connectionStatus !== WebSocketConnectionStatus.CONNECTED) {
-      setTimeout(() => {
-        // Add simulated bot response
-        const response = getBotResponse(text);
-        const options = getOptionsForResponse(text);
-        
-        // These simulated responses will only be shown locally - not sent to backend
-        console.log("Simulated local response:", response);
-      }, 1500);
-    }
+    // This is only a placeholder - all processing is now handled in ChatBotWebSocketService
+    console.log("Local processing not needed - handled by ChatBotWebSocketService");
   };
   
   const getOptionsForResponse = (userInput: string): QuickOption[] | undefined => {
@@ -152,13 +136,8 @@ const ChatBot: React.FC = () => {
   };
   
   const handleQuickOption = (action: string) => {
-    // Send quick option via WebSocket
+    // Send quick option via WebSocket - the service handles both real and mock responses
     sendWsMessage(action);
-    
-    // Fallback to local processing if disconnected
-    if (connectionStatus !== WebSocketConnectionStatus.CONNECTED) {
-      processUserInput(action);
-    }
   };
   
   const getBotResponse = (userInput: string): string => {

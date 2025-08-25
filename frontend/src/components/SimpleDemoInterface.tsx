@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './SimpleDemoInterface.css';
+import apiClient from '../services/apiClient';
 
 interface DemoResponse {
   routing_analysis: {
@@ -81,22 +82,10 @@ const SimpleDemoInterface: React.FC = () => {
     setDemoResponse(null);
 
     try {
-      const response = await fetch('http://localhost:8001/demo/query', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          query_text: currentQuery,
-          location: 'punjab_ludhiana',
-        }),
+      const data = await apiClient.post<DemoResponse>('/demo/query', {
+        query_text: currentQuery,
+        location: 'punjab_ludhiana',
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
       setDemoResponse(data);
     } catch (err) {
       setError('Failed to process query: ' + (err as Error).message);

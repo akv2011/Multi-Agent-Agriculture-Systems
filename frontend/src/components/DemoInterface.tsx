@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './DemoInterface.css';
+import apiClient from '../services/apiClient';
 
 interface DemoQuery {
   query: string;
@@ -61,9 +62,6 @@ const DemoInterface: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
 
-  // API base URL
-  const API_BASE = 'http://localhost:8000';
-
   useEffect(() => {
     fetchCapabilities();
     fetchSampleQueries();
@@ -71,8 +69,7 @@ const DemoInterface: React.FC = () => {
 
   const fetchCapabilities = async () => {
     try {
-      const response = await fetch(`${API_BASE}/demo/capabilities`);
-      const data = await response.json();
+      const data = await apiClient.get('/demo/capabilities');
       setCapabilities(data);
     } catch (err) {
       setError('Failed to fetch capabilities');
@@ -82,8 +79,7 @@ const DemoInterface: React.FC = () => {
 
   const fetchSampleQueries = async () => {
     try {
-      const response = await fetch(`${API_BASE}/demo/session`);
-      const data = await response.json();
+      const data = await apiClient.get('/demo/session');
       setSampleQueries(data.sample_queries || []);
     } catch (err) {
       setError('Failed to fetch sample queries');
@@ -102,23 +98,12 @@ const DemoInterface: React.FC = () => {
     setDemoResponse(null);
 
     try {
-      const response = await fetch(`${API_BASE}/demo/query`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          query_text: currentQuery,
-          language: selectedLanguage || undefined,
-          location: selectedLocation,
-        }),
+      const data = await apiClient.post<DemoResponse>('/demo/query', {
+        query_text: currentQuery,
+        language: selectedLanguage || undefined,
+        location: selectedLocation,
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data: DemoResponse = await response.json();
+      
       setDemoResponse(data);
     } catch (err) {
       setError('Failed to process query: ' + (err as Error).message);

@@ -138,6 +138,9 @@
 .workflows-content {
   display: flex;
   gap: 1.5rem;
+  height: calc(100vh - 250px); /* Set a fixed height for the content area */
+  min-height: 600px; /* Increased minimum height */
+  overflow: visible; /* Allow overflow to be visible */
 }
 
 /* Workflow list */
@@ -146,6 +149,10 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
   gap: 1.25rem;
+  overflow-y: auto; /* Enable vertical scrolling */
+  padding-right: 0.5rem; /* Add some padding for the scrollbar */
+  max-height: 100%; /* Use full height of parent */
+  scrollbar-width: thin; /* Firefox */
 }
 
 /* Workflow card */
@@ -365,8 +372,11 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
   border: 1px solid var(--border-color, #E5E7EB);
+  height: 100%; /* Use full height */
+  overflow-y: auto; /* Enable vertical scrolling if needed */
+  position: relative; /* For proper rendering */
+  flex-shrink: 0; /* Prevent panel from shrinking */
 }
 
 .panel-header {
@@ -375,6 +385,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-shrink: 0; /* Prevent from shrinking */
 }
 
 .panel-title {
@@ -422,15 +433,17 @@
 .workflow-visualization {
   padding: 1.25rem;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  flex-shrink: 0; /* Prevent from shrinking */
 }
 
 /* Execution Steps */
 .execution-steps {
   padding: 1.25rem;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  max-height: 400px;
+  max-height: 350px; /* Adjusted height to fit better in the panel */
   overflow-y: auto;
   background-color: white;
+  flex: 1; /* Allow this section to grow */
 }
 
 .execution-steps h3 {
@@ -607,6 +620,7 @@
 .workflow-actions-panel {
   padding: 1.25rem;
   border-top: 1px solid rgba(0, 0, 0, 0.06);
+  flex-shrink: 0; /* Prevent from shrinking */
 }
 
 .action-buttons {
@@ -661,10 +675,32 @@
 @media (max-width: 1200px) {
   .workflows-content {
     flex-direction: column;
+    height: auto;
+    min-height: auto;
+  }
+  
+  .workflows-list {
+    max-height: 500px; /* Fixed height on smaller screens */
+    margin-bottom: 1.5rem;
   }
   
   .workflow-detail-panel {
     width: 100%;
+    height: auto;
+    min-height: 600px;
+    max-height: 800px; /* Limit height on smaller screens */
+  }
+}
+
+/* Additional responsive adjustments for even smaller screens */
+@media (max-width: 640px) {
+  .workflows-content {
+    padding: 0;
+    gap: 1rem;
+  }
+  
+  .workflow-detail-panel {
+    min-height: 500px;
   }
 }
 
@@ -683,4 +719,165 @@
   .filter-options {
     justify-content: space-between;
   }
+}
+
+/* Custom scrollbar styles */
+.workflows-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.workflows-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 8px;
+}
+
+.workflows-list::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 8px;
+}
+
+.workflows-list::-webkit-scrollbar-thumb:hover {
+  background: #aaa;
+}
+
+/* Modal styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: white;
+  border-radius: 0.75rem;
+  width: 90%;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  animation: modal-appear 0.3s ease-out forwards;
+}
+
+@keyframes modal-appear {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #6B7280;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-close:hover {
+  background-color: #f3f4f6;
+  color: #111827;
+}
+
+.modal-body {
+  padding: 1.25rem;
+}
+
+/* Workflow details modal styles */
+.workflow-details-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.details-section {
+  background-color: #f9fafb;
+  padding: 1.25rem;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+}
+
+.details-section h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.details-section p {
+  margin: 0.5rem 0;
+  font-size: 0.95rem;
+}
+
+.error-message {
+  color: #EF4444;
+  font-size: 0.9rem;
+  padding: 0.5rem;
+  background-color: rgba(239, 68, 68, 0.1);
+  border-radius: 0.25rem;
+  margin: 0.5rem 0;
+}
+
+/* Export modal styles */
+.export-modal p {
+  margin: 0 0 1rem;
+  font-size: 1rem;
+}
+
+.export-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.export-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.export-option:hover {
+  background-color: rgba(59, 130, 246, 0.05);
+  border-color: rgba(59, 130, 246, 0.3);
+  transform: translateY(-2px);
+}
+
+.option-icon {
+  width: 2rem;
+  height: 2rem;
+  color: #3B82F6;
 }

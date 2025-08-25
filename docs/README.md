@@ -12,6 +12,7 @@
 - **[Satellite System Overview](SATELLITE_SYSTEM_SUMMARY.md)** - Satellite data integration details
 - **[Gemini AI Integration](GEMINI_INTEGRATION_SUMMARY.md)** - Multilingual processing system
 - **[Core Agents Summary](CORE_AGENTS_COMPLETION_SUMMARY.md)** - Agent capabilities and status
+- **[Environment Configuration](ENVIRONMENT_CONFIGURATION.md)** - Environment-based settings
 
 ### **Latest Updates**
 - **[Market Timing Integration](MARKET_TIMING_SATELLITE_INTEGRATION_SUMMARY.md)** - Recent satellite enhancements
