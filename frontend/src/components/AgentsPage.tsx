@@ -17,6 +17,18 @@ interface AgentLogs {
   level: 'info' | 'warning' | 'error' | 'success';
 }
 
+interface VegetationIndices {
+  ndvi?: number;
+  evi?: number;
+  savi?: number;
+  ndmi?: number;
+  mndwi?: number;
+  vari?: number;
+  tcari?: number;
+  nbr?: number;
+  cmr?: number;
+}
+
 interface AgentData {
   id: number;
   name: string;
@@ -32,17 +44,101 @@ interface AgentData {
   logs?: AgentLogs[];
   connections?: string[];
   dependencies?: string[];
+  vegetationIndices?: VegetationIndices;
 }
 
 const AgentsPage: React.FC = () => {
   const [selectedAgent, setSelectedAgent] = useState<AgentData | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'metrics' | 'logs' | 'connections'>('overview');
   const [searchQuery, setSearchQuery] = useState<string>('');
+
+  // Function to get vegetation indices for a specific agent based on analysis results
+  const getVegetationIndicesForAgent = (agentName: string): VegetationIndices | undefined => {
+    const analysisData = localStorage.getItem('vegetationAnalysis');
+    if (!analysisData) return undefined;
+
+    const parsedData = JSON.parse(analysisData);
+    if (!parsedData.isAnalyzed || !parsedData.vegetationIndices) {
+      return undefined;
+    }
+
+    // Return specific indices based on agent type
+    if (agentName === 'Crop Selection Agent') {
+      return {
+        ndvi: parsedData.vegetationIndices.ndvi,
+        evi: parsedData.vegetationIndices.evi,
+        savi: parsedData.vegetationIndices.savi
+      };
+    } else if (agentName === 'Irrigation Controller') {
+      return {
+        ndmi: parsedData.vegetationIndices.ndmi,
+        mndwi: parsedData.vegetationIndices.mndwi || 0.18
+      };
+    } else if (agentName === 'Market Timing Agent') {
+      return {
+        ndvi: parsedData.vegetationIndices.ndvi,
+        evi: parsedData.vegetationIndices.evi
+      };
+    } else if (agentName === 'Pest Detection Agent') {
+      return {
+        vari: parsedData.vegetationIndices.vari || 0.15,
+        tcari: parsedData.vegetationIndices.tcari || 1.2
+      };
+    } else if (agentName === 'Harvest Prediction Agent') {
+      return {
+        ndvi: parsedData.vegetationIndices.ndvi,
+        nbr: parsedData.vegetationIndices.nbr || 0.12,
+        cmr: parsedData.vegetationIndices.cmr || 2.1
+      };
+    } else if (agentName === 'Input Materials Agent') {
+      return {
+        ndvi: parsedData.vegetationIndices.ndvi,
+        vari: parsedData.vegetationIndices.vari || 0.08,
+        tcari: parsedData.vegetationIndices.tcari || 1.6
+      };
+    } else if (agentName === 'Finance Policy Agent') {
+      return {
+        ndvi: parsedData.vegetationIndices.ndvi,
+        ndmi: parsedData.vegetationIndices.ndmi
+      };
+    }
+
+    return undefined;
+  };
   
   // Sample agents data - in a real application, this would come from an API
   const agents: AgentData[] = [
     {
       id: 1,
+      name: 'Crop Selection Agent',
+      status: 'active',
+      description: 'Analyzes vegetation indices and recommends optimal crop varieties',
+      type: 'planning',
+      lastActive: '1 minute ago',
+      performance: 95,
+      metrics: {
+        tasksCompleted: 234,
+        averageExecutionTime: 1.8,
+        successRate: 0.97,
+        requestsHandled: 345,
+        errorRate: 0.03,
+        uptime: 99.2
+      },
+      cpu: 15,
+      memory: 189,
+      version: '2.1.3',
+      // vegetationIndices will be populated after query submission
+      logs: [
+        { timestamp: '2025-08-15T14:35:20', message: 'NDVI analysis completed for Field C7', level: 'info' },
+        { timestamp: '2025-08-15T14:33:15', message: 'Crop health assessment: Excellent vegetation density', level: 'success' },
+        { timestamp: '2025-08-15T14:30:45', message: 'Updated vegetation indices from satellite data', level: 'info' },
+        { timestamp: '2025-08-15T14:28:30', message: 'Recommended wheat variety for optimal NDVI conditions', level: 'success' }
+      ],
+      connections: ['Satellite Data API', 'Weather Service', 'Soil Database', 'Crop Variety Database'],
+      dependencies: ['Vegetation Analysis Library 3.1.2', 'Satellite Processing SDK 2.8', 'Agricultural ML Framework 4.0']
+    },
+    {
+      id: 2,
       name: 'Market Timing Agent',
       status: 'active',
       description: 'Analyzes market trends and suggests optimal timing for crop sales',
@@ -60,6 +156,10 @@ const AgentsPage: React.FC = () => {
       cpu: 18,
       memory: 245,
       version: '1.3.2',
+      vegetationIndices: {
+        ndvi: 0.72,
+        evi: 0.58
+      },
       logs: [
         { timestamp: '2025-08-15T14:32:15', message: 'Market analysis completed successfully', level: 'info' },
         { timestamp: '2025-08-15T14:30:00', message: 'Fetched latest market data from external API', level: 'info' },
@@ -89,10 +189,15 @@ const AgentsPage: React.FC = () => {
       cpu: 12,
       memory: 128,
       version: '2.1.0',
+      vegetationIndices: {
+        ndmi: 0.234,
+        mndwi: 0.18
+      },
       logs: [
         { timestamp: '2025-08-15T14:22:35', message: 'Irrigation cycle completed for Field A12', level: 'info' },
         { timestamp: '2025-08-15T14:20:12', message: 'Initiated irrigation in response to low moisture levels', level: 'info' },
         { timestamp: '2025-08-15T14:15:08', message: 'Soil moisture below threshold (23.5%) in Field A12', level: 'warning' },
+        { timestamp: '2025-08-15T14:25:30', message: 'NDMI moisture index updated: 0.234 (moderate stress)', level: 'warning' },
         { timestamp: '2025-08-15T13:45:22', message: 'System health check: Operational', level: 'success' }
       ],
       connections: ['Weather Station', 'Soil Moisture Sensors', 'Valve Control System', 'Central Water Management'],
@@ -117,6 +222,10 @@ const AgentsPage: React.FC = () => {
       cpu: 0,
       memory: 15,
       version: '1.2.4',
+      vegetationIndices: {
+        vari: 0.15,
+        tcari: 1.2
+      },
       logs: [
         { timestamp: '2025-08-15T11:42:15', message: 'Agent stopped: Scheduled maintenance', level: 'info' },
         { timestamp: '2025-08-15T11:40:33', message: 'Backing up detection model parameters', level: 'info' },
@@ -146,6 +255,11 @@ const AgentsPage: React.FC = () => {
       cpu: 22,
       memory: 356,
       version: '2.2.1',
+      vegetationIndices: {
+        ndvi: 0.65,
+        nbr: 0.12,
+        cmr: 2.1
+      },
       logs: [
         { timestamp: '2025-08-15T13:20:15', message: 'Updated harvest schedule for Fields B3-B8', level: 'info' },
         { timestamp: '2025-08-15T13:18:00', message: 'Applied weather forecast adjustments to prediction model', level: 'info' },
@@ -174,6 +288,11 @@ const AgentsPage: React.FC = () => {
       cpu: 5,
       memory: 72,
       version: '1.8.3',
+      vegetationIndices: {
+        ndvi: 0.42,
+        vari: 0.08,
+        tcari: 1.6
+      },
       logs: [
         { timestamp: '2025-08-14T10:42:15', message: 'Maintenance mode activated: Database optimization', level: 'info' },
         { timestamp: '2025-08-14T10:40:33', message: 'Backing up transaction history', level: 'info' },
@@ -183,6 +302,38 @@ const AgentsPage: React.FC = () => {
       ],
       connections: ['Inventory System', 'Supplier Network API', 'Procurement Database', 'Cost Analysis Engine'],
       dependencies: ['Supply Chain Manager 2.4', 'Inventory Control System 3.1.5', 'Financial Analytics 1.9']
+    },
+    {
+      id: 6,
+      name: 'Finance Policy Agent',
+      status: 'active',
+      description: 'Manages financial policies, loan eligibility, and risk assessment',
+      type: 'finance',
+      lastActive: '30 minutes ago',
+      performance: 89,
+      metrics: {
+        tasksCompleted: 134,
+        averageExecutionTime: 3.5,
+        successRate: 0.93,
+        requestsHandled: 187,
+        errorRate: 0.07,
+        uptime: 97.8
+      },
+      cpu: 14,
+      memory: 198,
+      version: '2.0.5',
+      vegetationIndices: {
+        ndvi: 0.68,
+        ndmi: 0.25
+      },
+      logs: [
+        { timestamp: '2025-08-15T14:05:20', message: 'Risk assessment completed for loan application #LA-2024-0892', level: 'info' },
+        { timestamp: '2025-08-15T14:02:15', message: 'NDVI score above minimum threshold: 0.68 (>0.3)', level: 'success' },
+        { timestamp: '2025-08-15T13:58:30', message: 'Environmental risk score calculated: 0.45', level: 'info' },
+        { timestamp: '2025-08-15T13:55:10', message: 'Loan eligibility approved based on satellite data', level: 'success' }
+      ],
+      connections: ['Credit Bureau API', 'Satellite Data Service', 'Risk Assessment Engine', 'Banking Integration'],
+      dependencies: ['Financial Risk Framework 3.2', 'Credit Scoring ML 2.1', 'Environmental Analytics 1.8']
     }
   ];
 
@@ -556,7 +707,205 @@ const AgentsPage: React.FC = () => {
                       <div className="metric-value">{selectedAgent.metrics.requestsHandled || 0}</div>
                     </div>
                   </div>
-                  
+
+                  {/* Vegetation Indices Section */}
+                  {(() => {
+                    const dynamicVegetationIndices = getVegetationIndicesForAgent(selectedAgent.name);
+                    return dynamicVegetationIndices && (
+                    <div className="vegetation-indices-section" style={{ marginTop: '30px' }}>
+                      <h3>🌱 Vegetation Indices</h3>
+                      <div className="vegetation-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginTop: '15px' }}>
+                        {dynamicVegetationIndices.ndvi && (
+                          <div className="vegetation-card" style={{
+                            background: 'linear-gradient(135deg, #e8f5e8, #f0f8f0)',
+                            padding: '15px',
+                            borderRadius: '10px',
+                            border: '2px solid #4caf50',
+                            textAlign: 'center'
+                          }}>
+                            <div style={{ fontWeight: '600', color: '#2e7d32', marginBottom: '8px' }}>
+                              NDVI (Crop Health)
+                            </div>
+                            <div style={{ fontSize: '1.8rem', fontWeight: '700', color: '#1b5e20' }}>
+                              {dynamicVegetationIndices.ndvi!.toFixed(3)}
+                            </div>
+                            <div style={{ fontSize: '0.8rem', color: '#388e3c', marginTop: '5px' }}>
+                              {dynamicVegetationIndices.ndvi! >= 0.6 ? 'Excellent' :
+                               dynamicVegetationIndices.ndvi! >= 0.4 ? 'Good' :
+                               dynamicVegetationIndices.ndvi! >= 0.2 ? 'Fair' : 'Poor'}
+                            </div>
+                          </div>
+                        )}
+
+                        {dynamicVegetationIndices.evi && (
+                          <div className="vegetation-card" style={{
+                            background: 'linear-gradient(135deg, #e8f5e8, #f0f8f0)',
+                            padding: '15px',
+                            borderRadius: '10px',
+                            border: '2px solid #4caf50',
+                            textAlign: 'center'
+                          }}>
+                            <div style={{ fontWeight: '600', color: '#2e7d32', marginBottom: '8px' }}>
+                              EVI (Enhanced Vegetation)
+                            </div>
+                            <div style={{ fontSize: '1.8rem', fontWeight: '700', color: '#1b5e20' }}>
+                              {dynamicVegetationIndices.evi!.toFixed(3)}
+                            </div>
+                            <div style={{ fontSize: '0.8rem', color: '#388e3c', marginTop: '5px' }}>
+                              Enhanced Index
+                            </div>
+                          </div>
+                        )}
+
+                        {dynamicVegetationIndices.savi && (
+                          <div className="vegetation-card" style={{
+                            background: 'linear-gradient(135deg, #e8f5e8, #f0f8f0)',
+                            padding: '15px',
+                            borderRadius: '10px',
+                            border: '2px solid #4caf50',
+                            textAlign: 'center'
+                          }}>
+                            <div style={{ fontWeight: '600', color: '#2e7d32', marginBottom: '8px' }}>
+                              SAVI (Soil-Adjusted)
+                            </div>
+                            <div style={{ fontSize: '1.8rem', fontWeight: '700', color: '#1b5e20' }}>
+                              {dynamicVegetationIndices.savi!.toFixed(3)}
+                            </div>
+                            <div style={{ fontSize: '0.8rem', color: '#388e3c', marginTop: '5px' }}>
+                              Soil Compensated
+                            </div>
+                          </div>
+                        )}
+
+                        {dynamicVegetationIndices.ndmi && (
+                          <div className="vegetation-card" style={{
+                            background: 'linear-gradient(135deg, #e3f2fd, #f0f8ff)',
+                            padding: '15px',
+                            borderRadius: '10px',
+                            border: '2px solid #2196f3',
+                            textAlign: 'center'
+                          }}>
+                            <div style={{ fontWeight: '600', color: '#1565c0', marginBottom: '8px' }}>
+                              NDMI (Moisture Index)
+                            </div>
+                            <div style={{ fontSize: '1.8rem', fontWeight: '700', color: '#0d47a1' }}>
+                              {dynamicVegetationIndices.ndmi!.toFixed(3)}
+                            </div>
+                            <div style={{ fontSize: '0.8rem', color: '#1976d2', marginTop: '5px' }}>
+                              {dynamicVegetationIndices.ndmi! >= 0.2 ? 'Good Moisture' :
+                               dynamicVegetationIndices.ndmi! >= 0 ? 'Moderate' : 'Stress'}
+                            </div>
+                          </div>
+                        )}
+
+                        {dynamicVegetationIndices.mndwi && (
+                          <div className="vegetation-card" style={{
+                            background: 'linear-gradient(135deg, #e3f2fd, #f0f8ff)',
+                            padding: '15px',
+                            borderRadius: '10px',
+                            border: '2px solid #2196f3',
+                            textAlign: 'center'
+                          }}>
+                            <div style={{ fontWeight: '600', color: '#1565c0', marginBottom: '8px' }}>
+                              MNDWI (Water Index)
+                            </div>
+                            <div style={{ fontSize: '1.8rem', fontWeight: '700', color: '#0d47a1' }}>
+                              {dynamicVegetationIndices.mndwi!.toFixed(3)}
+                            </div>
+                            <div style={{ fontSize: '0.8rem', color: '#1976d2', marginTop: '5px' }}>
+                              {dynamicVegetationIndices.mndwi! >= 0.2 ? 'High Moisture' :
+                               dynamicVegetationIndices.mndwi! >= 0 ? 'Moderate' : 'Low Moisture'}
+                            </div>
+                          </div>
+                        )}
+
+                        {dynamicVegetationIndices.vari && (
+                          <div className="vegetation-card" style={{
+                            background: 'linear-gradient(135deg, #fff3e0, #ffeaa7)',
+                            padding: '15px',
+                            borderRadius: '10px',
+                            border: '2px solid #ff9800',
+                            textAlign: 'center'
+                          }}>
+                            <div style={{ fontWeight: '600', color: '#e65100', marginBottom: '8px' }}>
+                              VARI (Visible Atmospherically Resistant Index)
+                            </div>
+                            <div style={{ fontSize: '1.8rem', fontWeight: '700', color: '#bf360c' }}>
+                              {dynamicVegetationIndices.vari!.toFixed(3)}
+                            </div>
+                            <div style={{ fontSize: '0.8rem', color: '#d84315', marginTop: '5px' }}>
+                              {dynamicVegetationIndices.vari! >= 0.2 ? 'Healthy' :
+                               dynamicVegetationIndices.vari! >= 0 ? 'Mild Stress' : 'Moderate Stress'}
+                            </div>
+                          </div>
+                        )}
+
+                        {dynamicVegetationIndices.tcari && (
+                          <div className="vegetation-card" style={{
+                            background: 'linear-gradient(135deg, #fff3e0, #ffeaa7)',
+                            padding: '15px',
+                            borderRadius: '10px',
+                            border: '2px solid #ff9800',
+                            textAlign: 'center'
+                          }}>
+                            <div style={{ fontWeight: '600', color: '#e65100', marginBottom: '8px' }}>
+                              TCARI (Chlorophyll Absorption)
+                            </div>
+                            <div style={{ fontSize: '1.8rem', fontWeight: '700', color: '#bf360c' }}>
+                              {dynamicVegetationIndices.tcari!.toFixed(3)}
+                            </div>
+                            <div style={{ fontSize: '0.8rem', color: '#d84315', marginTop: '5px' }}>
+                              {dynamicVegetationIndices.tcari! <= 0.5 ? 'Healthy Chlorophyll' :
+                               dynamicVegetationIndices.tcari! <= 1.0 ? 'Moderate' : 'Deficient'}
+                            </div>
+                          </div>
+                        )}
+
+                        {dynamicVegetationIndices.nbr && (
+                          <div className="vegetation-card" style={{
+                            background: 'linear-gradient(135deg, #f3e5f5, #e1bee7)',
+                            padding: '15px',
+                            borderRadius: '10px',
+                            border: '2px solid #9c27b0',
+                            textAlign: 'center'
+                          }}>
+                            <div style={{ fontWeight: '600', color: '#6a1b9a', marginBottom: '8px' }}>
+                              NBR (Normalized Burn Ratio)
+                            </div>
+                            <div style={{ fontSize: '1.8rem', fontWeight: '700', color: '#4a148c' }}>
+                              {dynamicVegetationIndices.nbr!.toFixed(3)}
+                            </div>
+                            <div style={{ fontSize: '0.8rem', color: '#7b1fa2', marginTop: '5px' }}>
+                              {dynamicVegetationIndices.nbr! >= 0.1 ? 'Healthy' : 'Monitor'}
+                            </div>
+                          </div>
+                        )}
+
+                        {dynamicVegetationIndices.cmr && (
+                          <div className="vegetation-card" style={{
+                            background: 'linear-gradient(135deg, #f3e5f5, #e1bee7)',
+                            padding: '15px',
+                            borderRadius: '10px',
+                            border: '2px solid #9c27b0',
+                            textAlign: 'center'
+                          }}>
+                            <div style={{ fontWeight: '600', color: '#6a1b9a', marginBottom: '8px' }}>
+                              CMR (Crop Maturity Ratio)
+                            </div>
+                            <div style={{ fontSize: '1.8rem', fontWeight: '700', color: '#4a148c' }}>
+                              {dynamicVegetationIndices.cmr!.toFixed(3)}
+                            </div>
+                            <div style={{ fontSize: '0.8rem', color: '#7b1fa2', marginTop: '5px' }}>
+                              {dynamicVegetationIndices.cmr! >= 2.0 && dynamicVegetationIndices.cmr! <= 3.0 ? 'Optimal' :
+                               dynamicVegetationIndices.cmr! < 2.0 ? 'Underripe' : 'Overripe'}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                  })()}
+
                   <div className="metrics-chart">
                     <h3>Performance Over Time</h3>
                     <div className="chart-placeholder">

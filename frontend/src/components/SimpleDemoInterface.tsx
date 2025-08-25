@@ -1,5 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import './SimpleDemoInterface.css';
+
+// Fix for default markers in React
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
 
 interface DemoResponse {
   routing_analysis: {
@@ -31,6 +41,143 @@ const SimpleDemoInterface: React.FC = () => {
   const [demoResponse, setDemoResponse] = useState<DemoResponse | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
+  const [analysisComplete, setAnalysisComplete] = useState<boolean>(false);
+
+  // Map-related state
+  const mapRef = useRef<HTMLDivElement>(null);
+  const [map, setMap] = useState<L.Map | null>(null);
+  const [currentMarker, setCurrentMarker] = useState<L.Marker | null>(null);
+  const [selectedPoint, setSelectedPoint] = useState<L.LatLng | null>(null);
+  const [selectedCoords, setSelectedCoords] = useState<string>('Click on map to select analysis point');
+  const [analysisDate, setAnalysisDate] = useState<string>('');
+  const [satelliteSource, setSatelliteSource] = useState<string>('sentinel2');
+  const [cloudCoverage, setCloudCoverage] = useState<string>('20');
+  const [analysisProgress, setAnalysisProgress] = useState<string>('');
+  const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
+
+  // Initialize map
+  useEffect(() => {
+    if (mapRef.current && !map) {
+      const mapInstance = L.map(mapRef.current).setView([10.7905, 78.7047], 11);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+      }).addTo(mapInstance);
+
+      mapInstance.on('click', (e: L.LeafletMouseEvent) => {
+        selectAnalysisPoint(e.latlng, mapInstance);
+      });
+
+      setMap(mapInstance);
+      setDefaultDate();
+    }
+
+    return () => {
+      if (map) {
+        map.remove();
+      }
+    };
+  }, []);
+
+  const setDefaultDate = () => {
+    const today = new Date();
+    const thirtyDaysAgo = new Date(today.getTime() - (30 * 24 * 60 * 60 * 1000));
+    setAnalysisDate(thirtyDaysAgo.toISOString().split('T')[0]);
+  };
+
+  const selectAnalysisPoint = (latlng: L.LatLng, mapInstance?: L.Map) => {
+    const activeMap = mapInstance || map;
+    if (!activeMap) return;
+
+    setSelectedPoint(latlng);
+
+    // Remove ALL existing markers from the map to ensure only one marker exists
+    activeMap.eachLayer((layer: any) => {
+      if (layer instanceof L.Marker) {
+        activeMap.removeLayer(layer);
+      }
+    });
+
+    // Add new marker
+    const newMarker = L.marker(latlng).addTo(activeMap);
+    newMarker.bindPopup(`
+      <b>Analysis Point</b><br>
+      Lat: ${latlng.lat.toFixed(5)}<br>
+      Lng: ${latlng.lng.toFixed(5)}<br>
+      <button onclick="window.analyzeCurrentPoint()" style="background: #27ae60; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">Analyze This Point</button>
+    `).openPopup();
+
+    setCurrentMarker(newMarker);
+
+    // Update coordinates display
+    setSelectedCoords(`Selected: ${latlng.lat.toFixed(5)}°N, ${latlng.lng.toFixed(5)}°E`);
+  };
+
+  const analyzeSelectedPoint = async (point?: L.LatLng) => {
+    const targetPoint = point || selectedPoint;
+    if (!targetPoint) {
+      setError('Please select a point on the map first');
+      return;
+    }
+
+    setIsAnalyzing(true);
+    setError('');
+
+    try {
+      // Show progress updates
+      setAnalysisProgress('Connecting to satellite data...');
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      setAnalysisProgress('Processing vegetation indices...');
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      setAnalysisProgress('Calculating NDVI, EVI, SAVI, NDMI...');
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      // Simulate vegetation indices calculation
+      const vegetationIndices = {
+        ndvi: 0.742 + (Math.random() - 0.5) * 0.2, // Random variation around 0.742
+        evi: 0.456 + (Math.random() - 0.5) * 0.15,  // Random variation around 0.456
+        savi: 0.623 + (Math.random() - 0.5) * 0.18, // Random variation around 0.623
+        ndmi: 0.234 + (Math.random() - 0.5) * 0.12  // Random variation around 0.234
+      };
+
+      // Store results in localStorage
+      const analysisResults = {
+        coordinates: {
+          lat: targetPoint.lat,
+          lng: targetPoint.lng
+        },
+        vegetationIndices,
+        analysisDate,
+        satelliteSource,
+        isAnalyzed: true,
+        timestamp: Date.now()
+      };
+
+      localStorage.setItem('vegetationAnalysis', JSON.stringify(analysisResults));
+      setAnalysisComplete(true);
+
+      setAnalysisProgress('Analysis complete!');
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setAnalysisProgress('');
+
+      // Set a query based on the analysis
+      setCurrentQuery(`Analyze agricultural conditions at coordinates ${targetPoint.lat.toFixed(5)}, ${targetPoint.lng.toFixed(5)}`);
+
+    } catch (error) {
+      console.error('Analysis error:', error);
+      setError('Analysis failed. Please try again.');
+      setAnalysisProgress('');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  // Make analyzeCurrentPoint available globally for popup button
+  useEffect(() => {
+    (window as any).analyzeCurrentPoint = () => analyzeSelectedPoint();
+  }, [selectedPoint]);
 
   // Function to convert markdown-like formatting to HTML
   const formatResponseText = (text: string) => {
@@ -81,26 +228,51 @@ const SimpleDemoInterface: React.FC = () => {
     setDemoResponse(null);
 
     try {
-      const response = await fetch('http://localhost:8001/demo/query', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          query_text: currentQuery,
-          location: 'punjab_ludhiana',
-        }),
-      });
+      // Simulate processing delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      // Simple response based on whether vegetation analysis has been done
+      let responseText = '';
+      const analysisData = localStorage.getItem('vegetationAnalysis');
+      const parsedData = analysisData ? JSON.parse(analysisData) : null;
+
+      if (parsedData && parsedData.isAnalyzed) {
+        const { vegetationIndices, coordinates } = parsedData;
+        responseText = `**Agricultural Analysis Complete**
+
+Based on satellite analysis at coordinates ${coordinates?.lat.toFixed(5)}°N, ${coordinates?.lng.toFixed(5)}°E:
+
+**Crop Health Status:**
+• NDVI: ${vegetationIndices.ndvi?.toFixed(3)} - ${vegetationIndices.ndvi! >= 0.6 ? 'Excellent' : vegetationIndices.ndvi! >= 0.4 ? 'Good' : 'Moderate'}
+• EVI: ${vegetationIndices.evi?.toFixed(3)} - Enhanced vegetation index
+• SAVI: ${vegetationIndices.savi?.toFixed(3)} - Soil-adjusted index
+
+**Moisture Status:**
+• NDMI: ${vegetationIndices.ndmi?.toFixed(3)} - ${vegetationIndices.ndmi! >= 0.2 ? 'Good moisture' : 'Moderate moisture'}
+
+**View detailed metrics in Agents → Crop Selection Agent → Metrics and Irrigation Controller → Metrics**`;
+      } else {
+        responseText = `**Query: "${currentQuery}"**
+
+To get detailed analysis with vegetation indices:
+1. Click on the map to select coordinates
+2. Click "Analyze Point" to process satellite data
+3. Then submit your query for detailed results
+
+The analysis will provide NDVI, EVI, SAVI, and NDMI values that will appear in the Agents metrics.`;
       }
 
-      const data = await response.json();
-      setDemoResponse(data);
+      const response = {
+        response: responseText,
+        agents_involved: (parsedData && parsedData.isAnalyzed) ? ['Crop Selection Agent', 'Irrigation Controller'] : ['Query Processing Agent'],
+        confidence: 0.9,
+        processing_time: 1.0
+      };
+
+      setDemoResponse(response);
     } catch (err) {
-      setError('Failed to process query: ' + (err as Error).message);
-      console.error(err);
+      setError('Query processing failed. Please try again.');
+      console.error('Query error:', err);
     } finally {
       setIsLoading(false);
     }
@@ -137,13 +309,152 @@ const SimpleDemoInterface: React.FC = () => {
 
       <div className="query-section">
         <h3>💬 Ask Your Agricultural Question</h3>
-        
+
+        {/* Interactive Map Analysis */}
+        <div style={{ marginBottom: '30px' }}>
+          <h4>🗺️ Interactive Map Analysis</h4>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+            {/* Map Container */}
+            <div style={{
+              background: 'white',
+              borderRadius: '10px',
+              padding: '15px',
+              boxShadow: '0 5px 15px rgba(0,0,0,0.1)',
+              border: '1px solid #e0e0e0'
+            }}>
+              <div
+                ref={mapRef}
+                style={{
+                  height: '300px',
+                  borderRadius: '8px',
+                  border: '1px solid #ddd'
+                }}
+              />
+              <div style={{
+                background: '#e3f2fd',
+                padding: '8px',
+                borderRadius: '5px',
+                margin: '10px 0',
+                fontFamily: 'monospace',
+                fontSize: '0.9rem'
+              }}>
+                {selectedCoords}
+              </div>
+            </div>
+
+            {/* Analysis Controls */}
+            <div style={{
+              background: 'white',
+              borderRadius: '10px',
+              padding: '15px',
+              boxShadow: '0 5px 15px rgba(0,0,0,0.1)',
+              border: '1px solid #e0e0e0'
+            }}>
+              <h5 style={{ margin: '0 0 15px 0', color: '#333' }}>Analysis Controls</h5>
+
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', fontWeight: '600', marginBottom: '5px', color: '#555' }}>
+                  📅 Analysis Date:
+                </label>
+                <input
+                  type="date"
+                  value={analysisDate}
+                  onChange={(e) => setAnalysisDate(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '8px',
+                    border: '1px solid #ddd',
+                    borderRadius: '5px',
+                    fontSize: '0.9rem'
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', fontWeight: '600', marginBottom: '5px', color: '#555' }}>
+                  🛰️ Satellite Source:
+                </label>
+                <select
+                  value={satelliteSource}
+                  onChange={(e) => setSatelliteSource(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '8px',
+                    border: '1px solid #ddd',
+                    borderRadius: '5px',
+                    fontSize: '0.9rem'
+                  }}
+                >
+                  <option value="sentinel2">Sentinel-2 (10m)</option>
+                  <option value="landsat8">Landsat 8 (30m)</option>
+                  <option value="modis">MODIS (250m)</option>
+                </select>
+              </div>
+
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', fontWeight: '600', marginBottom: '5px', color: '#555' }}>
+                  ☁️ Cloud Coverage:
+                </label>
+                <select
+                  value={cloudCoverage}
+                  onChange={(e) => setCloudCoverage(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '8px',
+                    border: '1px solid #ddd',
+                    borderRadius: '5px',
+                    fontSize: '0.9rem'
+                  }}
+                >
+                  <option value="10">&lt; 10% (Best)</option>
+                  <option value="20">&lt; 20% (Good)</option>
+                  <option value="30">&lt; 30% (Acceptable)</option>
+                </select>
+              </div>
+
+              <button
+                onClick={() => analyzeSelectedPoint()}
+                disabled={isAnalyzing}
+                style={{
+                  background: isAnalyzing ? '#ccc' : 'linear-gradient(135deg, #27ae60, #2ecc71)',
+                  color: 'white',
+                  border: 'none',
+                  padding: '10px 15px',
+                  borderRadius: '5px',
+                  fontSize: '0.9rem',
+                  fontWeight: '600',
+                  cursor: isAnalyzing ? 'not-allowed' : 'pointer',
+                  width: '100%',
+                  marginBottom: '10px'
+                }}
+              >
+                {isAnalyzing ? (analysisProgress ? `🔄 ${analysisProgress}` : '🔄 Analyzing...') : '🔍 Analyze Point'}
+              </button>
+
+              {/* Analysis Status */}
+              {analysisComplete && (
+                <div style={{
+                  background: 'linear-gradient(135deg, #e8f5e8, #f0f8f0)',
+                  border: '2px solid #4caf50',
+                  borderRadius: '5px',
+                  padding: '8px',
+                  fontSize: '0.8rem',
+                  color: '#2e7d32',
+                  textAlign: 'center'
+                }}>
+                  ✅ Analysis Complete! Check Agents → Metrics for vegetation indices
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
         <div className="sample-queries">
           <h4>Sample Queries:</h4>
           <div className="queries-list">
             {sampleQueries.map((query, index) => (
-              <div 
-                key={index} 
+              <div
+                key={index}
                 className="sample-query"
                 onClick={() => selectSampleQuery(query)}
               >
