@@ -2,8 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './SimpleDemoInterface.css';
+import DashboardUpdateService from '../services/dashboardUpdateService';
 
 // Fix for default markers in React
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
@@ -64,10 +66,20 @@ const SimpleDemoInterface: React.FC = () => {
   const [error, setError] = useState<string>('');
   const [analysisComplete, setAnalysisComplete] = useState<boolean>(false);
 
+  // Get dashboard service instance
+  const dashboardService = DashboardUpdateService.getInstance();
+
   // Clear vegetation indices from agents on component mount
   React.useEffect(() => {
     localStorage.removeItem('vegetationAnalysis');
-  }, []);
+    
+    // Start simulating real-time updates for demo
+    const interval = setInterval(() => {
+      dashboardService.simulateRealtimeUpdate();
+    }, 5000);
+    
+    return () => clearInterval(interval);
+  }, [dashboardService]);
 
   // Map-related state
   const mapRef = useRef<HTMLDivElement>(null);
@@ -90,9 +102,7 @@ const SimpleDemoInterface: React.FC = () => {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   // -------------------------------------------------------
 
-  // Initialize map
-  // Adjust map init effect dependencies by isolating initializer
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // Initialize map - moved after selectAnalysisPoint definition  
   useEffect(() => {
     if (mapRef.current && !map) {
       const mapInstance = L.map(mapRef.current).setView([10.7905, 78.7047], 11);
@@ -101,6 +111,8 @@ const SimpleDemoInterface: React.FC = () => {
       setMap(mapInstance);
       setDefaultDate();
     }
+    // selectAnalysisPoint is defined below, using it is safe after first render
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map]);
 
   const setDefaultDate = () => {
@@ -109,7 +121,7 @@ const SimpleDemoInterface: React.FC = () => {
     setAnalysisDate(thirtyDaysAgo.toISOString().split('T')[0]);
   };
 
-  const selectAnalysisPoint = async (latlng: L.LatLng, mapInstance?: L.Map) => {
+  const selectAnalysisPoint = React.useCallback(async (latlng: L.LatLng, mapInstance?: L.Map) => {
     const activeMap = mapInstance || map;
     if (!activeMap) return;
 
@@ -147,7 +159,7 @@ const SimpleDemoInterface: React.FC = () => {
 
     // Update display to show address instead of just coordinates
     setSelectedCoords(`Selected: ${address}`);
-  };
+  }, [map]);
 
   const analyzeSelectedPoint = React.useCallback(async (point?: L.LatLng) => {
     const targetPoint = point || selectedPoint;
@@ -297,46 +309,74 @@ const SimpleDemoInterface: React.FC = () => {
     return { agentId, confidence: Math.min(1, score), reasons, usedImage: hasImage };
   };
 
-  // Attempt agent execution with fallback
+  // Enhanced agent execution with new API
   const runAgentForQuery = async (cls: QueryClassification, query: string): Promise<AgentExecutionResult> => {
-    if (cls.agentId === 'general') {
-      return { agentId: 'general', success: true, data: { message: 'General advisory response generated locally.' } };
-    }
     const payload = {
-      agentId: cls.agentId,
-      query,
-      image: uploadedImage,
-      vegetationAnalysis: (() => { try { return JSON.parse(localStorage.getItem('mapAnalysis') || 'null'); } catch { return null; } })()
+      query_text: query,
+      image_base64: uploadedImage,
+      location: selectedPoint ? {
+        lat: selectedPoint.lat,
+        lng: selectedPoint.lng,
+        address: selectedAddress
+      } : null,
+      vegetation_analysis: (() => { 
+        try { 
+          return JSON.parse(localStorage.getItem('mapAnalysis') || 'null'); 
+        } catch { 
+          return null; 
+        } 
+      })()
     };
 
-    // Primary attempt – backend agent
     try {
-      const resp = await fetch('/api/agents/run', {
+      const resp = await fetch('/api/query/process', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-      if (!resp.ok) throw new Error('Non-200 response');
-      const data: JsonObject = await resp.json();
-      return { agentId: cls.agentId, success: true, data };
-    } catch (err) {
-      console.warn('Primary agent run failed, attempting grounding search fallback:', err);
-      // Fallback 1: Google Grounding Search proxy
-      try {
-        const g = await fetch(`/api/grounding?query=${encodeURIComponent(query)}`);
-        if (!g.ok) throw new Error('Grounding search non-200');
-        const gData: JsonObject = await g.json();
-        return { agentId: cls.agentId, success: true, data: gData, fallbackUsed: true, fallbackSource: 'grounding_search' };
-      } catch (gErr) {
-        console.warn('Grounding search failed, using local mock.', gErr);
-        // Local mock fallback
-        const mock = { source: 'local_mock', note: 'Both agent and grounding failed; providing heuristic suggestion.', query, tips: generateLocalFallbackTips(cls.agentId) };
-        return { agentId: cls.agentId, success: true, data: mock, fallbackUsed: true, fallbackSource: 'local_mock' };
+      
+      if (!resp.ok) {
+        throw new Error(`API returned ${resp.status}: ${resp.statusText}`);
       }
+      
+      const data = await resp.json();
+      
+      return { 
+        agentId: data.classification.agent_id,
+        success: data.status === 'success' || data.status === 'partial_success',
+        // Prefer the inner agent domain result (data.agent_result.result) if present
+        data: (data.agent_result && data.agent_result.result) ? data.agent_result.result : data.agent_result,
+        fallbackUsed: data.fallback_used,
+        fallbackSource: data.fallback_source,
+        errorMessage: data.agent_result?.error
+      };
+      
+    } catch (err) {
+      console.error('Query processing failed:', err);
+      
+      // Ultimate fallback - local mock response
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      
+      const mock = { 
+        type: cls.agentId === 'general' ? 'general_advisory' : cls.agentId,
+        source: 'local_mock', 
+        note: 'API unavailable; providing heuristic suggestion.', 
+        query, 
+        tips: generateLocalFallbackTips(cls.agentId) 
+      };
+      
+      return { 
+        agentId: cls.agentId, 
+        success: true, 
+        data: mock, 
+        fallbackUsed: true, 
+        fallbackSource: 'local_mock',
+        errorMessage: `API Error: ${errorMessage}`
+      };
     }
   };
 
-  const generateLocalFallbackTips = (agent: AgentId): string[] => {
+  const generateLocalFallbackTips = (agent: AgentId | 'general'): string[] => {
     switch (agent) {
       case 'disease_identification':
         return ['Capture clear close-up images of affected leaves', 'Check for uniform vs. patchy symptoms', 'Consider recent weather favoring fungal growth'];
@@ -358,6 +398,7 @@ const SimpleDemoInterface: React.FC = () => {
       return;
     }
 
+    const startTime = Date.now();
     setIsLoading(true);
     setAnalysisComplete(false);
     setError('');
@@ -369,16 +410,42 @@ const SimpleDemoInterface: React.FC = () => {
       const cls = classifyQuery(currentQuery, !!uploadedImage);
       setClassification(cls);
 
+      // Start workflow tracking
+      const workflowId = `query_${Date.now()}`;
+      dashboardService.startWorkflow(workflowId);
+      
+      // Update agent status to busy
+      dashboardService.updateAgentStatus(cls.agentId, 'busy');
+
       // Simulate prior satellite analysis portion (retain existing behavior)
       await new Promise(r => setTimeout(r, 400));
 
       const agentExec = await runAgentForQuery(cls, currentQuery);
       setAgentResult(agentExec);
 
+      const processingTime = Date.now() - startTime;
+      
+      // Update dashboard metrics
+      dashboardService.updateQueryMetrics(
+        cls.agentId,
+        processingTime,
+        agentExec.success,
+        agentExec.fallbackSource || undefined
+      );
+      
+      // Update agent status back to idle (or error if failed)
+      dashboardService.updateAgentStatus(
+        cls.agentId, 
+        agentExec.success ? 'idle' : 'error'
+      );
+      
+      // Complete workflow
+      dashboardService.completeWorkflow(workflowId);
+
       // Build a DemoResponse wrapper (re-using existing UI sections) – lightweight mapping
-      const responseText = agentExec.success ? (
-        agentExec.fallbackUsed ? `Fallback (${agentExec.fallbackSource}) used.\n\n${JSON.stringify(agentExec.data, null, 2)}` : `Agent Execution Successful:\n\n${JSON.stringify(agentExec.data, null, 2)}`
-      ) : 'Agent execution failed.';
+      const responseText = agentExec.success
+        ? renderReadableAgentResult(agentExec)
+        : 'Agent execution failed.';
 
       const response: DemoResponse = {
         routing_analysis: {
@@ -397,7 +464,7 @@ const SimpleDemoInterface: React.FC = () => {
         },
         response_text: responseText,
         technical_metrics: {
-          processing_time_ms: 800 + Math.random() * 400,
+          processing_time_ms: processingTime,
           confidence_level: cls.confidence,
           satellite_data_integrated: !!localStorage.getItem('mapAnalysis'),
           risk_assessment: 'Heuristic',
@@ -405,9 +472,16 @@ const SimpleDemoInterface: React.FC = () => {
         }
       };
       setDemoResponse(response);
+      
     } catch (err) {
+      const processingTime = Date.now() - startTime;
+      
       setError('Query processing failed. Please try again.');
       console.error('Query error:', err);
+      
+      // Update metrics for failed query
+      dashboardService.updateQueryMetrics('unknown', processingTime, false);
+      
     } finally {
       setIsLoading(false);
     }
@@ -472,6 +546,86 @@ const SimpleDemoInterface: React.FC = () => {
       console.error('Reverse geocoding error:', error);
       // Fallback to coordinates if geocoding fails
       return `${lat.toFixed(5)}°N, ${lng.toFixed(5)}°E`;
+    }
+  };
+
+  // Helper to convert structured agent result into user-friendly markdown-like text
+  const renderReadableAgentResult = (exec: AgentExecutionResult): string => {
+    if (!exec || !exec.data) return 'No data returned.';
+    // Support both direct domain object or wrapped structure
+    // Define lightweight interfaces to avoid any
+    interface IrrigationItem { day: string; time: string; duration: string; amount: string }
+    interface DiseaseItem { name: string; probability: number; treatment: string }
+    interface CropItem { name: string; suitability: number; season: string; yield_potential: string }
+    interface PriceItem { crop: string; current_price: string; trend: string; change: string }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let d: any = exec.data;
+    if (d && d.result && d.result.type) d = d.result; // unwrap if still wrapped
+
+    const fallbackPrefix = exec.fallbackUsed ? `⚠️ Fallback (${exec.fallbackSource}) used.\n\n` : '';
+
+    try {
+      switch (d.type) {
+        case 'irrigation_scheduling':
+          return fallbackPrefix + [
+            '💧 Irrigation Schedule Recommendation',
+            '',
+            ...((d.schedule || []) as IrrigationItem[]).map((s: IrrigationItem) => `• ${s.day}: ${s.time} – ${s.duration} (${s.amount})`),
+            '',
+            d.water_requirement ? `Weekly Requirement: ${d.water_requirement}` : null,
+            d.efficiency_tips ? 'Efficiency Tips:\n' + d.efficiency_tips.map((t: string) => `  - ${t}`).join('\n') : null,
+            d.location_considered ? 'Location factors considered ✅' : 'Location not provided'
+          ].filter(Boolean).join('\n');
+        case 'disease_identification':
+          return fallbackPrefix + [
+            '🦠 Disease Identification Summary',
+            '',
+            ...(d.detected_diseases || []).map((dis: DiseaseItem) => `• ${dis.name} (prob ${(dis.probability*100).toFixed(1)}%) – Treatment: ${dis.treatment}`),
+            '',
+            d.recommendations ? 'General Recommendations:\n' + d.recommendations.map((r: string) => `  - ${r}`).join('\n') : null,
+            d.image_analyzed ? 'Image analyzed ✅' : 'No image provided'
+          ].filter(Boolean).join('\n');
+        case 'crop_recommendation':
+          return fallbackPrefix + [
+            '🌱 Crop Recommendation',
+            '',
+            ...(d.recommended_crops || []).map((c: CropItem) => `• ${c.name}: suitability ${(c.suitability*100).toFixed(0)}%, season ${c.season}, yield ${c.yield_potential}`),
+            '',
+            d.soil_factors ? `Soil Factors: pH ${d.soil_factors.ph_level}, Rainfall ${d.soil_factors.rainfall}, Temp ${d.soil_factors.temperature}` : null,
+            d.location_considered ? 'Location data considered ✅' : null,
+            d.satellite_data_used ? 'Satellite vegetation indices used ✅' : null
+          ].filter(Boolean).join('\n');
+        case 'market_analysis':
+          return fallbackPrefix + [
+            '📈 Market Analysis',
+            '',
+            ...(d.current_prices || []).map((p: PriceItem) => `• ${p.crop}: ${p.current_price} (${p.trend}, ${p.change})`),
+            '',
+            d.market_outlook ? `Outlook: ${d.market_outlook}` : null,
+            d.selling_recommendations ? 'Recommendations:\n' + d.selling_recommendations.map((r: string) => `  - ${r}`).join('\n') : null
+          ].filter(Boolean).join('\n');
+        case 'general_advisory':
+          return fallbackPrefix + [
+            '🌾 General Advisory',
+            '',
+            d.response || '',
+            d.tips ? 'Tips:\n' + d.tips.map((t: string) => `  - ${t}`).join('\n') : null
+          ].filter(Boolean).join('\n');
+        default: {
+          // Provide graceful text fallback instead of raw JSON
+          const keys = Object.keys(d || {});
+          if (keys.length && !d.type) {
+            return fallbackPrefix + [
+              '📌 Result Summary',
+              '',
+              ...keys.slice(0, 8).map(k => `• ${k}: ${typeof d[k] === 'object' ? JSON.stringify(d[k]) : String(d[k])}`)
+            ].join('\n');
+          }
+          try { return fallbackPrefix + JSON.stringify(d, null, 2); } catch { return 'Unformatted response.'; }
+        }
+      }
+    } catch {
+      try { return fallbackPrefix + JSON.stringify(d, null, 2); } catch { return 'Unable to render result.'; }
     }
   };
 
