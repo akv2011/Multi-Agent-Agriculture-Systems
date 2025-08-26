@@ -37,7 +37,10 @@ const StatisticsPage: React.FC = () => {
   const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>('monthly');
   const [selectedMetric, setSelectedMetric] = useState<MetricType>('all');
   const [currentData, setCurrentData] = useState<StatisticData[]>([]);
-  const [chartData, setChartData] = useState<ChartData>({ labels: [], datasets: [] });
+  const [chartData, setChartData] = useState<ChartData>({ 
+    labels: [], 
+    datasets: [{ label: '', data: [], color: '#22C55E' }] 
+  });
   const [updateTime, setUpdateTime] = useState(new Date());
   
   // Base values for realistic variations
@@ -361,25 +364,25 @@ const StatisticsPage: React.FC = () => {
               <div className="chart-container">
                 <div className="chart-placeholder">
                   <div className="chart-grid">
-                    {chartData.labels.map((_, index) => (
+                    {(chartData.labels || []).map((_, index) => (
                       <div key={index} className="chart-grid-line"></div>
                     ))}
                   </div>
                   <div className="chart-bars">
-                    {chartData.datasets[0].data.map((value, index) => (
+                    {chartData.datasets[0]?.data?.map((value, index) => (
                       <div 
                         key={index} 
                         className="chart-bar"
                         style={{ 
-                          height: `${(value / Math.max(...chartData.datasets[0].data)) * 100}%`,
+                          height: `${(value / Math.max(...(chartData.datasets[0]?.data || [1]))) * 100}%`,
                           backgroundColor: '#22C55E'
                         }}
                       ></div>
-                    ))}
+                    )) || []}
                   </div>
                 </div>
                 <div className="chart-labels">
-                  {chartData.labels.map((label, index) => (
+                  {(chartData.labels || []).map((label, index) => (
                     <span key={index} className="chart-label">{label}</span>
                   ))}
                 </div>

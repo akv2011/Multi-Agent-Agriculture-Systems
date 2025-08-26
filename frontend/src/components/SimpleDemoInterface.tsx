@@ -66,6 +66,8 @@ const SimpleDemoInterface: React.FC = () => {
   const [currentMarker, setCurrentMarker] = useState<L.Marker | null>(null);
   const [selectedPoint, setSelectedPoint] = useState<L.LatLng | null>(null);
   const [selectedCoords, setSelectedCoords] = useState<string>('Click on map to select analysis point');
+  const [selectedAddress, setSelectedAddress] = useState<string>('');
+  const [isLoadingAddress, setIsLoadingAddress] = useState<boolean>(false);
   const [analysisDate, setAnalysisDate] = useState<string>('');
   const [satelliteSource, setSatelliteSource] = useState<string>('sentinel2');
   const [cloudCoverage, setCloudCoverage] = useState<string>('20');
@@ -102,7 +104,7 @@ const SimpleDemoInterface: React.FC = () => {
     setAnalysisDate(thirtyDaysAgo.toISOString().split('T')[0]);
   };
 
-  const selectAnalysisPoint = (latlng: L.LatLng, mapInstance?: L.Map) => {
+  const selectAnalysisPoint = async (latlng: L.LatLng, mapInstance?: L.Map) => {
     const activeMap = mapInstance || map;
     if (!activeMap) return;
 
@@ -115,19 +117,85 @@ const SimpleDemoInterface: React.FC = () => {
       }
     });
 
+    // Update coordinates display immediately
+    setSelectedCoords(`Selected: ${latlng.lat.toFixed(5)}°N, ${latlng.lng.toFixed(5)}°E`);
+    setSelectedAddress('Loading address...');
+
     // Add new marker
     const newMarker = L.marker(latlng).addTo(activeMap);
+    
+    // Get address asynchronously
+    const address = await reverseGeocode(latlng.lat, latlng.lng);
+    setSelectedAddress(address);
+    
+    // Update popup with address information
     newMarker.bindPopup(`
       <b>Analysis Point</b><br>
       Lat: ${latlng.lat.toFixed(5)}<br>
       Lng: ${latlng.lng.toFixed(5)}<br>
+      <strong>Address:</strong><br>
+      <div style="max-width: 200px; word-wrap: break-word; font-size: 0.9em; color: #555;">${address}</div><br>
       <button onclick="window.analyzeCurrentPoint()" style="background: #27ae60; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">Analyze This Point</button>
     `).openPopup();
 
     setCurrentMarker(newMarker);
+  };
 
-    // Update coordinates display
-    setSelectedCoords(`Selected: ${latlng.lat.toFixed(5)}°N, ${latlng.lng.toFixed(5)}°E`);
+  // Function to perform reverse geocoding using OpenStreetMap Nominatim
+  const reverseGeocode = async (lat: number, lng: number): Promise<string> => {
+    try {
+      setIsLoadingAddress(true);
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=16&addressdetails=1`,
+        {
+          headers: {
+            'User-Agent': 'AgriSens-Agriculture-System'
+          }
+        }
+      );
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch address');
+      }
+      
+      const data = await response.json();
+      
+      if (data && data.display_name) {
+        // Format the address to show the most relevant parts
+        const address = data.address;
+        let formattedAddress = data.display_name;
+        
+        // Try to create a more concise address
+        if (address) {
+          const parts = [];
+          if (address.village || address.town || address.city) {
+            parts.push(address.village || address.town || address.city);
+          }
+          if (address.state_district || address.county) {
+            parts.push(address.state_district || address.county);
+          }
+          if (address.state) {
+            parts.push(address.state);
+          }
+          if (address.country) {
+            parts.push(address.country);
+          }
+          
+          if (parts.length > 0) {
+            formattedAddress = parts.join(', ');
+          }
+        }
+        
+        return formattedAddress;
+      } else {
+        return 'Address not found';
+      }
+    } catch (error) {
+      console.error('Reverse geocoding failed:', error);
+      return 'Unable to fetch address';
+    } finally {
+      setIsLoadingAddress(false);
+    }
   };
 
   const analyzeSelectedPoint = async (point?: L.LatLng) => {
@@ -165,6 +233,7 @@ const SimpleDemoInterface: React.FC = () => {
           lat: targetPoint.lat,
           lng: targetPoint.lng
         },
+        address: selectedAddress || 'Address not available',
         vegetationIndices,
         analysisDate,
         satelliteSource,
@@ -179,8 +248,11 @@ const SimpleDemoInterface: React.FC = () => {
       await new Promise(resolve => setTimeout(resolve, 500));
       setAnalysisProgress('');
 
-      // Set a query based on the analysis
-      setCurrentQuery(`Analyze agricultural conditions at coordinates ${targetPoint.lat.toFixed(5)}, ${targetPoint.lng.toFixed(5)}`);
+      // Set a query based on the analysis including address if available
+      const addressText = selectedAddress && selectedAddress !== 'Address not available' 
+        ? ` (${selectedAddress})` 
+        : '';
+      setCurrentQuery(`Analyze agricultural conditions at coordinates ${targetPoint.lat.toFixed(5)}, ${targetPoint.lng.toFixed(5)}${addressText}`);
 
     } catch (error) {
       console.error('Analysis error:', error);
@@ -234,75 +306,136 @@ const SimpleDemoInterface: React.FC = () => {
     }
   ];
 
-  // Fetch AI Response using Gemini API directly
+  // Fetch AI Response using backend API first, then Gemini as fallback
   const fetchAIResponse = async (query: string): Promise<DemoResponse | null> => {
     try {
       setIsLoadingAIResponse(true);
       setAiResponseError('');
 
-      // Check if Gemini API key is available, try to get from environment first
-      const apiKey = geminiApiKey || import.meta.env.VITE_GEMINI_API_KEY;
-
-      if (!apiKey) {
-        throw new Error('Gemini API key is required. Please set VITE_GEMINI_API_KEY in your .env file or configure it in the UI.');
-      }
-
       // Get vegetation data if available
       const analysisData = localStorage.getItem('mapAnalysis');
       const parsedData = analysisData ? JSON.parse(analysisData) : null;
 
-      // Set API key for gemini service
-      geminiService.setApiKey(apiKey);
+      // First, try to get response from our backend API
+      try {
+        const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+        const backendResponse = await fetch(`${apiBaseUrl}/demo/query`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            query_text: query.trim(),
+            vegetation_data: parsedData?.isAnalyzed ? parsedData.vegetationIndices : null,
+            coordinates: parsedData?.coordinates || null,
+            analysis_context: {
+              satellite_source: satelliteSource || 'sentinel2',
+              cloud_coverage: cloudCoverage || '10',
+              analysis_date: parsedData?.analysisDate || null,
+              address: parsedData?.address || null
+            }
+          })
+        });
 
-      // Create a comprehensive analysis request
-      const analysisRequest = {
-        query: query.trim(),
-        vegetationData: parsedData?.isAnalyzed ? parsedData.vegetationIndices : null,
-        coordinates: parsedData?.coordinates || null,
-        context: `Agricultural query analysis for Indian farming context. ${
-          parsedData?.isAnalyzed ? 'Vegetation analysis data is available.' : 'No vegetation data available.'
-        } Satellite source: ${satelliteSource || 'sentinel2'}, Cloud coverage: ${cloudCoverage || '10'}%`
-      };
+        if (backendResponse.ok) {
+          const backendData = await backendResponse.json();
+          
+          // Convert backend response to our DemoResponse format
+          const response: DemoResponse = {
+            routing_analysis: {
+              agent: backendData.routing_analysis?.agent || 'backend_agent',
+              confidence: backendData.routing_analysis?.confidence || 0.85,
+              reasoning: backendData.routing_analysis?.reasoning || 'Response from Multi-Agent Agriculture Backend',
+              language_detected: backendData.routing_analysis?.language_detected || 'english'
+            },
+            satellite_data: {
+              ndvi: backendData.satellite_data?.ndvi || 0.65,
+              soil_moisture: backendData.satellite_data?.soil_moisture || 0.45,
+              temperature: backendData.satellite_data?.temperature || 28,
+              humidity: backendData.satellite_data?.humidity || 65,
+              environmental_score: backendData.satellite_data?.environmental_score || 70,
+              risk_level: backendData.satellite_data?.risk_level || 'medium'
+            },
+            response_text: backendData.response_text || 'No response available',
+            technical_metrics: {
+              processing_time_ms: backendData.technical_metrics?.processing_time_ms || 1000,
+              confidence_level: backendData.technical_metrics?.confidence_level || 0.85,
+              satellite_data_integrated: backendData.technical_metrics?.satellite_data_integrated || false,
+              risk_assessment: backendData.technical_metrics?.risk_assessment || 'Backend analysis',
+              agent: backendData.technical_metrics?.agent || 'multi_agent_backend'
+            }
+          };
 
-      // Get structured analysis from Gemini
-      const geminiAnalysisResult = await geminiService.analyzeQuery(analysisRequest);
-
-      // Also get enhanced response text
-      const enhancedText = await geminiService.enhanceAIResponse(
-        query,
-        `Agricultural query: ${query}`,
-        parsedData?.isAnalyzed ? parsedData.vegetationIndices : null,
-        parsedData?.coordinates || null
-      );
-
-      // Convert Gemini response to our DemoResponse format
-      const response: DemoResponse = {
-        routing_analysis: {
-          agent: geminiAnalysisResult.agentType || 'general_advisory',
-          confidence: geminiAnalysisResult.confidence || 0.85,
-          reasoning: geminiAnalysisResult.analysis.substring(0, 200) + '...',
-          language_detected: /[\u0900-\u097F]/.test(query) ? 'Hindi' : 'English'
-        },
-        satellite_data: {
-          ndvi: parsedData?.vegetationIndices?.ndvi || 0.65,
-          soil_moisture: parsedData?.vegetationIndices?.ndmi || 0.45,
-          temperature: 28 + Math.random() * 8, // 28-36°C
-          humidity: 65 + Math.random() * 20, // 65-85%
-          environmental_score: parsedData?.isAnalyzed ? 85 : 70,
-          risk_level: geminiAnalysisResult.priority === 'high' ? 'high' :
-                     geminiAnalysisResult.priority === 'low' ? 'low' : 'medium'
-        },
-        response_text: enhancedText,
-        technical_metrics: {
-          processing_time_ms: Math.floor(Math.random() * 2000) + 1000,
-          confidence_level: geminiAnalysisResult.confidence || 0.85,
-          satellite_data_integrated: parsedData?.isAnalyzed || false,
-          risk_assessment: `${geminiAnalysisResult.priority} priority based on AI analysis`,
-          agent: geminiAnalysisResult.agentType || 'gemini_ai_agent'
+          console.log('✅ Backend API response received:', response);
+          return response;
+        } else {
+          console.warn('Backend API failed with status:', backendResponse.status);
+          throw new Error(`Backend API failed: ${backendResponse.status}`);
         }
-      };
+      } catch (backendError) {
+        console.warn('Backend API failed, falling back to Gemini:', backendError);
+        
+        // Fallback to Gemini if backend fails
+        const apiKey = geminiApiKey || import.meta.env.VITE_GEMINI_API_KEY;
 
-      return response;
+        if (!apiKey) {
+          throw new Error('Both backend API and Gemini API are unavailable. Please configure at least one service.');
+        }
+
+        // Set API key for gemini service
+        geminiService.setApiKey(apiKey);
+
+        // Create a comprehensive analysis request for Gemini
+        const analysisRequest = {
+          query: query.trim(),
+          vegetationData: parsedData?.isAnalyzed ? parsedData.vegetationIndices : null,
+          coordinates: parsedData?.coordinates || null,
+          context: `Agricultural query analysis for Indian farming context. ${
+            parsedData?.isAnalyzed ? 'Vegetation analysis data is available.' : 'No vegetation data available.'
+          } Satellite source: ${satelliteSource || 'sentinel2'}, Cloud coverage: ${cloudCoverage || '10'}%`
+        };
+
+        // Get structured analysis from Gemini
+        const geminiAnalysisResult = await geminiService.analyzeQuery(analysisRequest);
+
+        // Also get enhanced response text
+        const enhancedText = await geminiService.enhanceAIResponse(
+          query,
+          `Agricultural query: ${query}`,
+          parsedData?.isAnalyzed ? parsedData.vegetationIndices : null,
+          parsedData?.coordinates || null
+        );
+
+        // Convert Gemini response to our DemoResponse format
+        const response: DemoResponse = {
+          routing_analysis: {
+            agent: geminiAnalysisResult.agentType || 'gemini_fallback',
+            confidence: geminiAnalysisResult.confidence || 0.85,
+            reasoning: 'Response from Gemini AI (backend unavailable)',
+            language_detected: /[\u0900-\u097F]/.test(query) ? 'Hindi' : 'English'
+          },
+          satellite_data: {
+            ndvi: parsedData?.vegetationIndices?.ndvi || 0.65,
+            soil_moisture: parsedData?.vegetationIndices?.ndmi || 0.45,
+            temperature: 28 + Math.random() * 8, // 28-36°C
+            humidity: 65 + Math.random() * 20, // 65-85%
+            environmental_score: parsedData?.isAnalyzed ? 85 : 70,
+            risk_level: geminiAnalysisResult.priority === 'high' ? 'high' :
+                       geminiAnalysisResult.priority === 'low' ? 'low' : 'medium'
+          },
+          response_text: enhancedText,
+          technical_metrics: {
+            processing_time_ms: Math.floor(Math.random() * 2000) + 1000,
+            confidence_level: geminiAnalysisResult.confidence || 0.85,
+            satellite_data_integrated: parsedData?.isAnalyzed || false,
+            risk_assessment: `${geminiAnalysisResult.priority} priority based on Gemini AI analysis`,
+            agent: geminiAnalysisResult.agentType || 'gemini_ai_agent'
+          }
+        };
+
+        console.log('⚠️ Gemini fallback response:', response);
+        return response;
+      }
 
     } catch (error) {
       console.error('Failed to fetch AI response:', error);
@@ -378,9 +511,12 @@ const SimpleDemoInterface: React.FC = () => {
 
 Based on your query "${currentQuery}" and the satellite analysis of your selected area:
 
+**Location Information:**
+- Coordinates: ${coordinates.lat.toFixed(4)}°N, ${coordinates.lng.toFixed(4)}°E
+${parsedData.address ? `- Address: ${parsedData.address}` : ''}
+
 **Vegetation Health Assessment:**
 - NDVI Score: ${vegetationIndices.ndvi.toFixed(3)} (${vegetationIndices.ndvi > 0.7 ? 'Excellent' : vegetationIndices.ndvi > 0.5 ? 'Good' : vegetationIndices.ndvi > 0.3 ? 'Moderate' : 'Poor'} vegetation health)
-- Location: ${coordinates.lat.toFixed(4)}°N, ${coordinates.lng.toFixed(4)}°E
 
 **Recommendations:**
 ${vegetationIndices.ndvi > 0.7 ?
@@ -554,13 +690,55 @@ To get more specific recommendations, please:
               />
               <div style={{
                 background: '#e3f2fd',
-                padding: '8px',
+                padding: '12px',
                 borderRadius: '5px',
                 margin: '10px 0',
-                fontFamily: 'monospace',
-                fontSize: '0.9rem'
+                fontSize: '0.9rem',
+                border: '1px solid #bbdefb'
               }}>
-                {selectedCoords}
+                <div style={{ fontWeight: '600', color: '#1976d2', marginBottom: '5px' }}>
+                  📍 Selected Location:
+                </div>
+                <div style={{ fontFamily: 'monospace', fontSize: '0.85rem', color: '#555' }}>
+                  {selectedCoords}
+                </div>
+              </div>
+              
+              {/* Address Display */}
+              <div style={{
+                background: '#f3f4f6',
+                padding: '12px',
+                borderRadius: '5px',
+                margin: '10px 0',
+                fontSize: '0.9rem',
+                border: '1px solid #e0e0e0',
+                minHeight: '45px',
+                display: 'flex',
+                alignItems: 'center'
+              }}>
+                {isLoadingAddress ? (
+                  <div style={{ display: 'flex', alignItems: 'center', color: '#666' }}>
+                    <div style={{
+                      width: '16px',
+                      height: '16px',
+                      border: '2px solid #f3f3f3',
+                      borderTop: '2px solid #3498db',
+                      borderRadius: '50%',
+                      animation: 'spin 1s linear infinite',
+                      marginRight: '10px'
+                    }}></div>
+                    <span>Fetching address...</span>
+                  </div>
+                ) : (
+                  <div>
+                    <div style={{ fontWeight: '600', color: '#666', marginBottom: '2px' }}>
+                      🏠 Address:
+                    </div>
+                    <div style={{ fontSize: '0.85rem', color: '#333', lineHeight: '1.3' }}>
+                      {selectedAddress || 'Click on map to select a location'}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
