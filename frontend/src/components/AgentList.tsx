@@ -5,6 +5,7 @@ import './AgentList.css';
 export interface Agent {
   id: string;
   name: string;
+  type?: string; // Agent type to match icon
   status: 'idle' | 'running' | 'busy' | 'error' | 'offline';
   lastActivity?: string;
   currentTask?: string;
@@ -96,8 +97,25 @@ const AgentList: React.FC<AgentListProps> = ({ agents, onAgentClick }) => {
           {/* Agent Header */}
           <div className="agent-header">
             <div className="agent-info">
-              <span className="agent-id">{agent.id}</span>
-              <span className="agent-name">{agent.name}</span>
+              <div className="agent-icon-wrapper">
+                {agent.type ? (
+                  <img 
+                    src={`/icons/${agent.type.toLowerCase().replace(/_/g, '-')}-agent.svg`} 
+                    alt={`${agent.name} icon`} 
+                    className="agent-icon" 
+                    onError={(e) => {
+                      // Fallback if icon not found
+                      e.currentTarget.src = '/icons/crop-selection-agent.svg';
+                    }}
+                  />
+                ) : (
+                  <span className="agent-icon-fallback">{agent.name.substring(0, 2).toUpperCase()}</span>
+                )}
+              </div>
+              <div className="agent-text">
+                <span className="agent-id">{agent.id}</span>
+                <span className="agent-name">{agent.name}</span>
+              </div>
             </div>
             <div className="agent-status-badge">
               <span className="status-icon">{getStatusIcon(agent.status)}</span>

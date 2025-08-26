@@ -14,6 +14,8 @@ import re
 
 from .base_agent import BaseWorkerAgent
 from .satellite_integration import get_satellite_data_for_location, format_satellite_summary
+# AgriSens Disease Identification Integration
+from ..models.agrisens_disease_identification import enhance_pest_management_with_disease_id, DiseaseIdentification
 from ..core.agriculture_models import (
     AgricultureQuery, AgentResponse, CropType, SeasonType, WeatherData,
     Location, FarmProfile, QueryDomain, AgentCapability
@@ -644,381 +646,369 @@ class PestManagementAgent(BaseWorkerAgent):
         
         return context
     
-    async def _identify_pest(self, context: Dict[str, Any]) -> List[PestIdentification]:
-        """Identify pests based on symptoms and context"""
-        identifications = []
-        
-        for pest_name, pest_data in self.pest_database.items():
-            confidence = self._calculate_pest_match_confidence(pest_data, context)
-            
-            if confidence > 0.3:  # Include reasonably confident matches
-                identification = PestIdentification(
-                    pest_name=pest_name,
-                    pest_type=pest_data["pest_type"],
-                    confidence=confidence,
-                    symptoms=pest_data["symptoms"],
-                    affected_crops=pest_data["affected_crops"],
-                    severity_indicators=pest_data["severity_indicators"],
-                    common_names=pest_data["common_names"],
-                    description=pest_data["description"]
-                )
-                identifications.append(identification)
-        
-        # Sort by confidence
-        identifications.sort(key=lambda x: x.confidence, reverse=True)
-        
-        return identifications[:3]  # Return top 3 matches
-    
-    def _calculate_pest_match_confidence(self, pest_data: Dict[str, Any], context: Dict[str, Any]) -> float:
-        """Calculate confidence score for pest identification"""
-        confidence = 0.0
-        
-        # Crop match (30% weight)
-        if context["crop_type"] and context["crop_type"] in pest_data["affected_crops"]:
-            confidence += 0.30
-        
-        # Symptom match (40% weight)
-        if context["symptoms"]:
-            symptom_matches = 0
-            for user_symptom in context["symptoms"]:
-                for pest_symptom in pest_data["symptoms"]:
-                    if any(word in pest_symptom.lower() for word in user_symptom.lower().split()):
-                        symptom_matches += 1
-                        break
-            
-            symptom_score = min(symptom_matches / len(context["symptoms"]), 1.0)
-            confidence += 0.40 * symptom_score
-        
-        # Plant part match (20% weight)
-        if context["affected_parts"]:
-            part_matches = 0
-            for part in context["affected_parts"]:
-                if any(part in symptom.lower() for symptom in pest_data["symptoms"]):
-                    part_matches += 1
-            
-            if part_matches > 0:
-                confidence += 0.20
-        
-        # Seasonal relevance (10% weight)
-        current_month = datetime.now().month
-        if current_month in [10, 11, 12, 1, 2, 3]:  # Rabi
-            current_season = SeasonType.RABI
-        else:  # Kharif
-            current_season = SeasonType.KHARIF
-        
-        if current_season in pest_data["peak_season"]:
-            confidence += 0.10
-        
-        return confidence
-    
-    async def _recommend_treatments(self, pest_identifications: List[PestIdentification], context: Dict[str, Any]) -> List[TreatmentRecommendation]:
-        """Generate treatment recommendations for identified pests"""
-        treatments = []
-        
-        for pest_id in pest_identifications[:2]:  # Top 2 pest identifications
-            pest_name = pest_id.pest_name
-            
-            if pest_name in self.treatment_database:
-                pest_treatments = self.treatment_database[pest_name]
-                
-                for treatment_data in pest_treatments:
-                    treatment = TreatmentRecommendation(
-                        treatment_type=treatment_data["treatment_type"],
-                        method=treatment_data["method"],
-                        products=treatment_data["products"],
-                        application_timing=treatment_data["application_timing"],
-                        frequency=treatment_data["frequency"],
-                        dosage=treatment_data["dosage"],
-                        cost_estimate=treatment_data["cost_estimate"],
-                        effectiveness=treatment_data["effectiveness"],
-                        safety_precautions=treatment_data["safety_precautions"],
-                        environmental_impact=treatment_data["environmental_impact"]
-                    )
-                    treatments.append(treatment)
-        
-        # Sort by effectiveness and environmental friendliness
-        treatments.sort(key=lambda x: (x.effectiveness, -0.1 if x.environmental_impact == "low" else 0), reverse=True)
-        
-        return treatments[:4]  # Return top 4 treatments
-    
-    async def _generate_pest_forecast(self, context: Dict[str, Any]) -> List[PestForecast]:
-        """Generate pest outbreak forecasts"""
-        forecasts = []
-        
-        if context["query_type"] == "forecast" or context["crop_type"]:
-            current_week = datetime.now().isocalendar()[1]
-            
-            for pest_name, forecast_data in self.forecast_models.items():
-                # Check if pest is relevant to current crop
-                if context["crop_type"]:
-                    pest_data = self.pest_database.get(pest_name, {})
-                    if context["crop_type"] not in pest_data.get("affected_crops", []):
-                        continue
-                
-                # Calculate risk based on seasonal patterns
-                risk_level = self._calculate_outbreak_risk(forecast_data, current_week)
-                
-                if risk_level.value != "low":  # Only include moderate+ risks
-                    forecast = PestForecast(
-                        pest_name=pest_name,
-                        risk_level=risk_level,
-                        outbreak_probability=self._calculate_outbreak_probability(forecast_data, current_week),
-                        peak_activity_period=forecast_data["seasonal_pattern"][SeasonType.RABI]["peak_weeks"],
-                        weather_factors=forecast_data["early_warning_indicators"],
-                        preventive_measures=self._get_preventive_measures(pest_name)
-                    )
-                    forecasts.append(forecast)
-        
-        return forecasts
-    
-    def _calculate_outbreak_risk(self, forecast_data: Dict[str, Any], current_week: int) -> SeverityLevel:
-        """Calculate outbreak risk level"""
-        # This is a simplified model - in production would use weather data
-        for season, pattern in forecast_data["seasonal_pattern"].items():
-            high_risk_start, high_risk_end = pattern["high_risk_weeks"]
-            
-            if high_risk_start <= current_week <= high_risk_end:
-                return SeverityLevel.HIGH
-            elif abs(current_week - high_risk_start) <= 2 or abs(current_week - high_risk_end) <= 2:
-                return SeverityLevel.MODERATE
-        
-        return SeverityLevel.LOW
-    
-    def _calculate_outbreak_probability(self, forecast_data: Dict[str, Any], current_week: int) -> float:
-        """Calculate probability of pest outbreak"""
-        # Simplified calculation based on seasonal patterns
-        for season, pattern in forecast_data["seasonal_pattern"].items():
-            peak_start, peak_end = pattern["peak_weeks"]
-            
-            if peak_start <= current_week <= peak_end:
-                return 0.8
-            elif abs(current_week - peak_start) <= 2:
-                return 0.6
-            elif abs(current_week - peak_end) <= 2:
-                return 0.5
-        
-        return 0.2
-    
-    def _get_preventive_measures(self, pest_name: str) -> List[str]:
-        """Get preventive measures for specific pest"""
-        prevention_measures = {
-            "wheat_rust": [
-                "Use resistant varieties",
-                "Avoid excessive nitrogen fertilization", 
-                "Ensure proper air circulation",
-                "Remove crop residues"
-            ],
-            "aphids": [
-                "Monitor regularly with yellow sticky traps",
-                "Encourage natural predators",
-                "Avoid excessive nitrogen fertilization",
-                "Use reflective mulch"
-            ],
-            "bollworm": [
-                "Install pheromone traps",
-                "Maintain trap crops",
-                "Regular field monitoring",
-                "Destroy crop residues"
-            ]
-        }
-        
-        return prevention_measures.get(pest_name, [
-            "Regular field monitoring",
-            "Maintain field hygiene",
-            "Use healthy seeds",
-            "Proper crop rotation"
-        ])
-    
-    def _calculate_confidence(self, context: Dict[str, Any], identifications: List[PestIdentification]) -> float:
-        """Calculate confidence in pest management recommendations"""
-        confidence = 0.4  # Base confidence
-        
-        # Symptom detail availability
-        if len(context["symptoms"]) >= 2:
-            confidence += 0.20
-        elif len(context["symptoms"]) >= 1:
-            confidence += 0.10
-        
-        # Crop information available
-        if context["crop_type"]:
-            confidence += 0.15
-        
-        # Plant part information
-        if context["affected_parts"]:
-            confidence += 0.10
-        
-        # Identification quality
-        if identifications and identifications[0].confidence > 0.7:
-            confidence += 0.15
-        
-        return min(confidence, 0.90)
-    
-    def _generate_prevention_advice(self, context: Dict[str, Any]) -> List[str]:
-        """Generate general prevention advice"""
-        advice = [
-            "Conduct regular field inspections (2-3 times per week)",
-            "Maintain proper crop rotation to break pest cycles",
-            "Use certified and treated seeds",
-            "Ensure balanced fertilization - avoid excess nitrogen",
-            "Maintain field hygiene by removing crop residues",
-            "Encourage beneficial insects with flowering borders",
-            "Install monitoring traps early in the season",
-            "Keep records of pest occurrences for future planning"
-        ]
-        
-        # Add crop-specific advice
-        if context["crop_type"] == CropType.WHEAT:
-            advice.extend([
-                "Use rust-resistant wheat varieties in your area",
-                "Avoid late sowing to reduce aphid pressure"
-            ])
-        elif context["crop_type"] == CropType.COTTON:
-            advice.extend([
-                "Use Bt cotton varieties for bollworm management",
-                "Maintain refuge area as per guidelines"
-            ])
-        
-        return advice
-    
-    def _format_pest_summary(self, identifications: List[PestIdentification], treatments: List[TreatmentRecommendation]) -> List[str]:
-        """Format pest management summary"""
-        summary = []
-        
-        if identifications:
-            top_pest = identifications[0]
-            summary.append(f"Most likely pest: {top_pest.pest_name} ({top_pest.confidence:.1%} confidence)")
-        
-        if treatments:
-            top_treatment = treatments[0]
-            summary.append(f"Recommended treatment: {top_treatment.method} (₹{top_treatment.cost_estimate:,}/hectare)")
-        
-        return summary
-    
-    def get_capabilities(self) -> List[str]:
-        """Return list of agent capabilities"""
-        return [
-            "Pest identification from symptom descriptions",
-            "Treatment recommendations (biological, chemical, cultural)",
-            "Integrated pest management strategies",
-            "Outbreak forecasting and risk assessment",
-            "Prevention and early detection advice",
-            "Economic threshold guidance"
-        ]
-    
-    def get_supported_queries(self) -> List[str]:
-        """Return examples of supported query types"""
-        return [
-            "My wheat has yellow spots, what could it be?",
-            "How to control aphids in rice crop?",
-            "When is bollworm season in cotton?",
-            "Best spray for rust in wheat",
-            "Organic pest control methods",
-            "Early signs of stem borer in rice"
-        ]
+    async def _identify_pest(self, context: Dict[str, Any], satellite_data: Optional[Dict] = None) -> List[PestIdentification]:
+        """Integrated pest identification combining AgriSens CNN, symptom/database matching, and weather risk augmentation.
+        Order of operations:
+        1. Attempt AgriSens image-based (or symptom) disease identification
+        2. Match against internal pest database (legacy logic)
+        3. Add weather-based elevated risk pests (humidity / temperature / soil moisture)
+        4. De-duplicate and rank by confidence
+        """
+        pest_identifications: List[PestIdentification] = []
+        added_keys = set()
 
-    def _enhance_context_with_satellite_data(self, context: Dict, satellite_data: Dict) -> Dict:
-        """Enhance context with satellite data insights for pest management"""
-        enhanced_context = context.copy()
-        
+        # Collect location data for AgriSens
+        location_obj = context.get("location")
+        location_data = self._serialize_location(location_obj) if location_obj else None
+
+        # Ensure symptoms list exists
+        symptoms = context.get("symptoms") or []
+
+        # Try to obtain image data
+        image_data = context.get("image_data")
+        if not image_data and context.get("image_base64"):
+            try:
+                import base64
+                image_data = base64.b64decode(context["image_base64"])  # type: ignore
+            except Exception:
+                pass
+
+        # Weather (from satellite) for AgriSens severity context
+        weather_data = None
         if satellite_data:
-            enhanced_context["satellite_insights"] = {
-                "vegetation_health": satellite_data.get("ndvi", 0.0),
-                "soil_moisture": satellite_data.get("soil_moisture", 0.0),
-                "weather_conditions": satellite_data.get("weather", {}),
-                "outbreak_risk": self._assess_outbreak_risk(satellite_data)
+            weather = satellite_data.get("weather") or {}
+            weather_data = {
+                "temperature": weather.get("temperature") or satellite_data.get("temperature"),
+                "humidity": weather.get("humidity") or satellite_data.get("humidity"),
+                "rainfall": weather.get("rainfall") or satellite_data.get("precipitation")
             }
-            
-        return enhanced_context
-    
-    def _assess_outbreak_risk(self, satellite_data: Dict) -> str:
-        """Assess pest outbreak risk based on satellite weather data"""
-        weather = satellite_data.get("weather", {})
-        soil_moisture = satellite_data.get("soil_moisture", 0.0)
-        
-        # High risk conditions
-        if weather.get("humidity", 0) > 75 and weather.get("temperature", 0) > 25:
-            return "High"
-        elif soil_moisture > 0.8:  # Very wet conditions
-            return "High"
-        elif weather.get("humidity", 0) > 60 and weather.get("temperature", 0) > 20:
-            return "Medium"
-        else:
-            return "Low"
-    
-    async def _identify_pest(self, context: Dict[str, Any], satellite_data: Optional[Dict] = None) -> List:
-        """Identify pest with satellite weather enhancement"""
-        # Use the existing pest identification logic but enhance with weather data
-        pest_identifications = []
-        
-        # Enhanced weather-based pest identification logic would go here
-        # For now, return the basic identification with satellite insights
-        
-        return pest_identifications
-    
-    async def _recommend_treatments(self, pest_identifications: List, context: Dict[str, Any], satellite_data: Optional[Dict] = None) -> List:
-        """Generate treatment recommendations considering weather conditions"""
-        treatments = []
-        
-        # Enhanced treatment logic considering satellite weather data
-        # Weather conditions affect spray timing and effectiveness
-        
-        return treatments
-    
-    async def _generate_pest_forecast(self, context: Dict[str, Any], satellite_data: Optional[Dict] = None) -> List:
-        """Generate pest forecast enhanced with satellite weather data"""
-        forecasts = []
-        
-        # Enhanced forecasting using satellite weather patterns
-        # Weather trends help predict outbreak timing
-        
-        return forecasts
-    
-    def _calculate_confidence(self, context: Dict[str, Any], pest_identifications: List, satellite_data: Optional[Dict] = None) -> float:
-        """Calculate confidence including satellite data reliability"""
-        base_confidence = 0.6
-        
-        # Enhance confidence based on available data
+
+        # 1. AgriSens disease identification
+        try:
+            agrisens_result = enhance_pest_management_with_disease_id(
+                image_data=image_data,
+                symptoms=symptoms if symptoms else None,
+                crop_type=(context.get("crop_type") or "") if context.get("crop_type") else "",
+                location_data=location_data,
+                weather_data=weather_data
+            )
+            if agrisens_result and agrisens_result.confidence > 0.25:
+                mapped_crop = self._map_crop_name_to_type(agrisens_result.crop_type)
+                pest_id = PestIdentification(
+                    pest_name=agrisens_result.disease_name,
+                    pest_type=PestType.DISEASE,
+                    confidence=min(1.0, agrisens_result.confidence + 0.05 if image_data else agrisens_result.confidence),
+                    symptoms=agrisens_result.symptoms or symptoms,
+                    affected_crops=[mapped_crop] if mapped_crop else [],
+                    severity_indicators=[agrisens_result.severity_assessment],
+                    common_names=[agrisens_result.disease_name],
+                    description=f"AgriSens identification ({'image' if image_data else 'symptom'} based)"
+                )
+                pest_identifications.append(pest_id)
+                added_keys.add(pest_id.pest_name.lower())
+        except Exception as e:
+            logger.warning(f"AgriSens identification failed: {e}")
+
+        # 2. Internal database symptom matching (legacy logic adapted)
+        try:
+            for pest_name, pest_data in self.pest_database.items():
+                legacy_conf = self._calculate_pest_match_confidence(pest_data, context)
+                if legacy_conf > 0.30:
+                    key = pest_name.lower()
+                    if key in added_keys:
+                        # If already present (AgriSens match), boost confidence moderately
+                        for existing in pest_identifications:
+                            if existing.pest_name.lower() == key:
+                                existing.confidence = min(1.0, max(existing.confidence, legacy_conf) + 0.05)
+                        continue
+                    pest_identifications.append(PestIdentification(
+                        pest_name=pest_name,
+                        pest_type=pest_data["pest_type"],
+                        confidence=legacy_conf,
+                        symptoms=pest_data["symptoms"],
+                        affected_crops=pest_data["affected_crops"],
+                        severity_indicators=pest_data["severity_indicators"],
+                        common_names=pest_data["common_names"],
+                        description=pest_data["description"]
+                    ))
+                    added_keys.add(key)
+        except Exception as e:
+            logger.error(f"Legacy database matching failed: {e}")
+
+        # 3. Weather-based risk augmentation
         if satellite_data:
-            base_confidence += 0.1  # Satellite data bonus
-        
+            self._add_weather_based_pest_risks(pest_identifications, context, satellite_data, added_keys)
+
+        # 4. De-duplicate (already controlled), sort & trim
+        pest_identifications.sort(key=lambda x: x.confidence, reverse=True)
+        return pest_identifications[:5]
+
+    async def _recommend_treatments(self, pest_identifications: List[PestIdentification], context: Dict[str, Any], satellite_data: Optional[Dict] = None) -> List[TreatmentRecommendation]:
+        """Generate treatment recommendations with weather & AgriSens augmentation.
+        - Pull from treatment_database
+        - If AgriSens identification present but not in DB, add generic disease management steps
+        - Adjust timing & safety based on satellite weather
+        """
+        treatments: List[TreatmentRecommendation] = []
+        if not pest_identifications:
+            return treatments
+
+        weather = (satellite_data or {}).get("weather", {})
+        humidity = weather.get("humidity") or satellite_data.get("humidity") if satellite_data else None
+        wind_speed = weather.get("wind_speed") or satellite_data.get("wind_speed") if satellite_data else None
+
+        for pest in pest_identifications[:3]:  # limit top pests
+            if pest.pest_name in self.treatment_database:
+                for t_data in self.treatment_database[pest.pest_name]:
+                    treatment = TreatmentRecommendation(
+                        treatment_type=t_data["treatment_type"],
+                        method=t_data["method"],
+                        products=t_data["products"],
+                        application_timing=t_data["application_timing"],
+                        frequency=t_data["frequency"],
+                        dosage=t_data["dosage"],
+                        cost_estimate=t_data["cost_estimate"],
+                        effectiveness=t_data["effectiveness"],
+                        safety_precautions=list(t_data["safety_precautions"]),
+                        environmental_impact=t_data["environmental_impact"]
+                    )
+                    self._augment_treatments_with_weather(treatment, humidity, wind_speed)
+                    treatments.append(treatment)
+            else:
+                # Generic disease management (for AgriSens diseases not in DB)
+                generic = TreatmentRecommendation(
+                    treatment_type=TreatmentType.INTEGRATED,
+                    method="Integrated disease management (sanitation + resistant varieties + preventive spray)",
+                    products=["Copper-based fungicide", "Neem oil"],
+                    application_timing="At first sign; morning hours if humidity high",
+                    frequency="Repeat every 10-14 days if conditions persist",
+                    dosage="As per label (rotate actives)",
+                    cost_estimate=2000,
+                    effectiveness=0.65,
+                    safety_precautions=["Use PPE", "Rotate fungicide groups"],
+                    environmental_impact="moderate"
+                )
+                self._augment_treatments_with_weather(generic, humidity, wind_speed)
+                treatments.append(generic)
+
+        # Rank (effectiveness, then lower environmental impact) & limit
+        treatments.sort(key=lambda x: (x.effectiveness, -1 if x.environmental_impact in ["low", "very low", "positive"] else 0), reverse=True)
+        return treatments[:6]
+
+    async def _generate_pest_forecast(self, context: Dict[str, Any], satellite_data: Optional[Dict] = None) -> List[PestForecast]:
+        """Weather & season enhanced outbreak forecasts.
+        Adjust base seasonal model with humidity/temperature multipliers from satellite data.
+        """
+        forecasts: List[PestForecast] = []
+        if not (context.get("crop_type") or context.get("query_type") == "forecast"):
+            return forecasts
+
+        current_week = datetime.now().isocalendar()[1]
+        humidity = None
+        temperature = None
+        if satellite_data:
+            w = satellite_data.get("weather", {})
+            humidity = w.get("humidity") or satellite_data.get("humidity")
+            temperature = w.get("temperature") or satellite_data.get("temperature")
+
+        for pest_name, model in self.forecast_models.items():
+            # Crop relevance
+            pest_data = self.pest_database.get(pest_name)
+            if context.get("crop_type") and pest_data and context["crop_type"] not in pest_data.get("affected_crops", []):
+                continue
+            base_risk = self._calculate_outbreak_risk(model, current_week)
+            probability = self._calculate_outbreak_probability(model, current_week)
+
+            # Weather adjustments
+            if humidity is not None:
+                if humidity > 80 and base_risk in [SeverityLevel.MODERATE, SeverityLevel.HIGH]:
+                    probability = min(1.0, probability + 0.1)
+                elif humidity < 40:
+                    probability = max(0.1, probability - 0.1)
+            if temperature is not None:
+                # Light adjustment: extreme temps reduce risk
+                if temperature < 12 or temperature > 38:
+                    probability = max(0.1, probability - 0.15)
+
+            # Map probability back to risk
+            if probability >= 0.75:
+                risk_level = SeverityLevel.HIGH
+            elif probability >= 0.5:
+                risk_level = SeverityLevel.MODERATE
+            else:
+                risk_level = SeverityLevel.LOW
+
+            if risk_level != SeverityLevel.LOW:
+                peak_weeks = list(model["seasonal_pattern"].values())[0]["peak_weeks"]
+                forecasts.append(PestForecast(
+                    pest_name=pest_name,
+                    risk_level=risk_level,
+                    outbreak_probability=round(probability, 2),
+                    peak_activity_period=peak_weeks,
+                    weather_factors=model.get("early_warning_indicators", []),
+                    preventive_measures=self._get_preventive_measures(pest_name)
+                ))
+        return forecasts[:4]
+
+    def _calculate_confidence(self, context: Dict[str, Any], pest_identifications: List[PestIdentification], satellite_data: Optional[Dict] = None) -> float:
+        """Composite confidence using:
+        - Symptom detail
+        - Top pest confidence (legacy or AgriSens)
+        - Satellite data quality (presence & key fields)
+        - Image contribution
+        """
+        confidence = 0.30  # base
+
         if context.get("symptoms"):
-            base_confidence += 0.2
-        
-        return min(base_confidence, 1.0)
-    
-    def _generate_prevention_advice(self, context: Dict[str, Any], satellite_data: Optional[Dict] = None) -> List[str]:
-        """Generate prevention advice including satellite-based insights"""
-        advice = []
-        
-        # Base prevention advice
-        advice.append("Regular field monitoring for early detection")
-        advice.append("Maintain field hygiene and remove crop residues")
-        
-        # Satellite-based advice
-        if satellite_data:
-            weather = satellite_data.get("weather", {})
-            humidity = weather.get("humidity", 0)
-            
-            if humidity > 75:
-                advice.append("[SATELLITE] High humidity detected - increased disease risk, apply preventive fungicides")
-            elif humidity < 40:
-                advice.append("[SATELLITE] Low humidity conditions - good time for field operations")
-                
-        return advice
-    
-    def _format_pest_summary(self, pest_identifications: List, treatments: List, satellite_data: Optional[Dict] = None) -> List[str]:
-        """Format pest management summary including satellite insights"""
-        summary = []
-        
+            confidence += 0.15 if len(context["symptoms"]) >= 2 else 0.08
         if pest_identifications:
-            for pest in pest_identifications[:3]:
-                summary.append(f"Pest identified: {pest}")
-        
-        if treatments:
-            for treatment in treatments[:2]:
-                summary.append(f"Treatment: {treatment}")
-        
+            top = pest_identifications[0]
+            confidence += min(0.30, top.confidence * 0.30)
         if satellite_data:
-            summary.append("[SATELLITE] Weather-enhanced recommendations")
-            
-        return summary
+            confidence += 0.10 * self._estimate_satellite_data_quality(satellite_data)
+        if context.get("image_data") or context.get("image_base64"):
+            confidence += 0.10
+        if context.get("crop_type"):
+            confidence += 0.05
+        return round(min(confidence, 0.95), 2)
+
+    def _generate_prevention_advice(self, context: Dict[str, Any], satellite_data: Optional[Dict] = None) -> List[str]:
+        """Merge generic, crop-specific, AgriSens (if any), and weather-based preventive guidance."""
+        advice = [
+            "Regular scouting 2-3 times per week",
+            "Rotate crops to break pest cycles",
+            "Remove and destroy infected residues",
+            "Avoid excessive nitrogen which encourages aphids & disease",
+            "Maintain balanced irrigation to reduce fungal pressure"
+        ]
+        crop = context.get("crop_type")
+        if crop == CropType.WHEAT:
+            advice.append("Use rust-resistant varieties; early sowing reduces aphid pressure")
+        elif crop == CropType.RICE:
+            advice.append("Maintain proper water management to limit blast risk")
+        elif crop == CropType.COTTON:
+            advice.append("Deploy pheromone traps early for bollworm monitoring")
+
+        if satellite_data:
+            w = satellite_data.get("weather", {})
+            h = w.get("humidity") or satellite_data.get("humidity")
+            if h and h > 75:
+                advice.append("High humidity detected – schedule preventive fungicide sprays in morning hours")
+            sm = satellite_data.get("soil_moisture")
+            if sm and sm > 0.8:
+                advice.append("Excess soil moisture – improve drainage to reduce root & fungal diseases")
+        return advice[:8]
+
+    def _format_pest_summary(self, pest_identifications: List[PestIdentification], treatments: List[TreatmentRecommendation], satellite_data: Optional[Dict] = None) -> List[str]:
+        """Concise summary list for UI display."""
+        summary: List[str] = []
+        if pest_identifications:
+            top = pest_identifications[0]
+            summary.append(f"Top suspect: {top.pest_name} ({top.confidence:.0%})")
+            if len(pest_identifications) > 1:
+                others = ", ".join(p.pest_name for p in pest_identifications[1:3])
+                summary.append(f"Other possibilities: {others}")
+        if treatments:
+            best = treatments[0]
+            summary.append(f"Primary treatment: {best.method} (est. effectiveness {best.effectiveness:.0%})")
+        if satellite_data:
+            summary.append("Satellite weather integrated into risk & timing")
+        return summary[:4]
+
+    # ----------------- Helper Methods (AgriSens & Weather Integration) -----------------
+    def _map_crop_name_to_type(self, crop_name: str) -> Optional[CropType]:
+        if not crop_name:
+            return None
+        name = crop_name.lower()
+        mapping = {
+            "wheat": CropType.WHEAT,
+            "rice": CropType.RICE,
+            "maize": CropType.MAIZE,
+            "corn": CropType.MAIZE,
+            "cotton": CropType.COTTON,
+            "tomato": CropType.VEGETABLES,
+            "potato": CropType.VEGETABLES,
+            "apple": CropType.FRUITS,
+            "grape": CropType.FRUITS
+        }
+        return mapping.get(name, CropType.OTHER)
+
+    def _serialize_location(self, location: Any) -> Dict[str, Any]:  # type: ignore
+        if not location:
+            return {}
+        return {
+            "state": getattr(location, "state", None),
+            "district": getattr(location, "district", None),
+            "latitude": getattr(location, "latitude", None),
+            "longitude": getattr(location, "longitude", None)
+        }
+
+    def _add_weather_based_pest_risks(self, pest_identifications: List[PestIdentification], context: Dict[str, Any], satellite_data: Dict, added_keys: set):
+        """Augment identifications with pests favored by current weather (simple heuristic)."""
+        weather = satellite_data.get("weather", {})
+        humidity = weather.get("humidity") or satellite_data.get("humidity", 0)
+        temperature = weather.get("temperature") or satellite_data.get("temperature", 0)
+        soil_moisture = satellite_data.get("soil_moisture", 0)
+
+        # Fungal disease boost
+        if humidity and humidity > 80 and context.get("crop_type") in [CropType.WHEAT, CropType.RICE, CropType.COTTON]:
+            candidate = "wheat_rust" if context.get("crop_type") == CropType.WHEAT else "blast_disease" if context.get("crop_type") == CropType.RICE else None
+            if candidate and candidate in self.pest_database and candidate not in added_keys:
+                pdata = self.pest_database[candidate]
+                pest_identifications.append(PestIdentification(
+                    pest_name=candidate,
+                    pest_type=pdata["pest_type"],
+                    confidence=0.45,
+                    symptoms=pdata["symptoms"],
+                    affected_crops=pdata["affected_crops"],
+                    severity_indicators=pdata["severity_indicators"],
+                    common_names=pdata["common_names"],
+                    description="Weather-risk augmented (high humidity)"
+                ))
+                added_keys.add(candidate)
+
+        # High soil moisture -> root/stem fungal risks (generic)
+        if soil_moisture and soil_moisture > 0.85 and "soil_root_fungal" not in added_keys:
+            pest_identifications.append(PestIdentification(
+                pest_name="Root/Stem Fungal Risk",
+                pest_type=PestType.FUNGAL,
+                confidence=0.35,
+                symptoms=context.get("symptoms", []),
+                affected_crops=[context.get("crop_type")] if context.get("crop_type") else [],
+                severity_indicators=["Prolonged saturated soil"],
+                common_names=["Soil fungus"],
+                description="Weather-risk augmented (excess moisture)"
+            ))
+            added_keys.add("soil_root_fungal")
+
+        # Temperature driven insect surge
+        if temperature and 24 <= temperature <= 32 and context.get("crop_type") == CropType.COTTON and "bollworm" not in added_keys:
+            pdata = self.pest_database.get("bollworm")
+            if pdata:
+                pest_identifications.append(PestIdentification(
+                    pest_name="bollworm",
+                    pest_type=pdata["pest_type"],
+                    confidence=0.40,
+                    symptoms=pdata["symptoms"],
+                    affected_crops=pdata["affected_crops"],
+                    severity_indicators=pdata["severity_indicators"],
+                    common_names=pdata["common_names"],
+                    description="Weather-risk augmented (favorable temperature)"
+                ))
+                added_keys.add("bollworm")
+
+    def _augment_treatments_with_weather(self, treatment: TreatmentRecommendation, humidity: Optional[float], wind_speed: Optional[float]):
+        """Adjust timing / precautions based on humidity & wind."""
+        if humidity and humidity > 80:
+            treatment.application_timing += " (prefer morning dry window)"
+            if "Avoid spraying during high humidity" not in treatment.safety_precautions:
+                treatment.safety_precautions.append("Avoid spraying during peak humidity periods")
+        if wind_speed and wind_speed > 15:
+            if "Avoid spraying in high winds" not in treatment.safety_precautions:
+                treatment.safety_precautions.append("Avoid spraying in high winds (drift risk)")
+
+    def _estimate_satellite_data_quality(self, satellite_data: Dict[str, Any]) -> float:
+        """Rough quality metric 0-1 based on presence of key fields."""
+        keys = ["weather", "soil_moisture", "ndvi"]
+        present = sum(1 for k in keys if k in satellite_data and satellite_data.get(k) is not None)
+        return present / len(keys)

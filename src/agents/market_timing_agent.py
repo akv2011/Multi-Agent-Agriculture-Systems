@@ -28,6 +28,8 @@ from ..core.agriculture_models import (
 )
 from ..core.models import AgentCapability, Task
 from ..services.satellite_service import SatelliteService, LocationData
+# AgriSens Model Integration
+from ..models.agrisens_market_timing import get_market_timing_model, MarketTimingModel
 
 logger = logging.getLogger(__name__)
 
@@ -352,56 +354,147 @@ class MarketTimingAgent(BaseWorkerAgent):
         )
     
     async def _generate_satellite_enhanced_forecast(self, commodity: Commodity, satellite_data=None, location=None) -> PriceForecast:
-        """Generate price forecast enhanced with satellite data"""
-        # Start with basic forecast
-        basic_forecast = self._generate_price_forecast(commodity)
+        """
+        Generate price forecast enhanced with satellite data using AgriSens ML model
         
-        if not satellite_data:
-            return basic_forecast
+        Args:
+            commodity: Commodity to forecast
+            satellite_data: Optional satellite data
+            location: Optional location data
+            
+        Returns:
+            Price forecast with satellite enhancements
+        """
+        # Initialize AgriSens Market Timing Model
+        market_timing_model = get_market_timing_model()
+        logger.info(f"[AGRISENS] Using AgriSens market timing model for enhanced price forecast")
+        
+        # Get current price for commodity
+        current_price = self._get_current_price(commodity)
+        
+        # Prepare location data for model
+        location_data = {"region": "unknown"}
+        if location:
+            location_data = {
+                "region": location.state if hasattr(location, "state") else "unknown",
+                "district": location.district if hasattr(location, "district") else "unknown",
+                "latitude": location.latitude if hasattr(location, "latitude") else None,
+                "longitude": location.longitude if hasattr(location, "longitude") else None
+            }
+        
+        # Get harvest date if available (simplified)
+        harvest_date = None  # Default - assume already harvested
+        
+        # Use AgriSens model for enhanced forecasting
+        model_result = market_timing_model.generate_satellite_enhanced_market_timing(
+            crop_type=commodity.value,
+            location_data=location_data,
+            current_price=current_price,
+            harvest_date=harvest_date,
+            satellite_data=satellite_data
+        )
+        
+        logger.info(f"[AGRISENS] Generated market timing analysis for {commodity.value}")
+        
+        # If model couldn't produce results, fall back to basic forecast
+        if not model_result:
+            logger.warning(f"[AGRISENS] Model failed to generate forecast, falling back to basic")
+            return self._generate_price_forecast(commodity)
         
         try:
-            # Calculate yield forecast based on satellite data
-            yield_forecast = self._calculate_yield_forecast(commodity, satellite_data)
+            # Extract key information from model output
+            price_forecast = model_result.get("price_forecast", {})
+            supply_demand = model_result.get("supply_demand_analysis", {})
+            selling_strategy = model_result.get("selling_strategy", {})
+            satellite_yield = model_result.get("satellite_yield_assessment", {}) if satellite_data else {}
             
-            # Assess supply risk based on environmental conditions
-            supply_risk = self._assess_supply_risk(satellite_data, commodity)
+            # Extract model forecasts
+            forecasts = price_forecast.get("forecasts", [])
+            price_trend = price_forecast.get("price_trend", "stable")
             
-            # Calculate environmental score
-            environmental_score = self._calculate_environmental_score(satellite_data)
+            # Extract price data
+            forecast_prices = []
+            forecast_dates = []
             
-            # Adjust price forecast based on satellite insights
-            price_adjustment = self._calculate_satellite_price_adjustment(
-                commodity, satellite_data, yield_forecast, supply_risk
-            )
+            for forecast in forecasts:
+                price = forecast.get("expected_price", current_price)
+                date_str = forecast.get("month", "")
+                
+                if date_str:
+                    try:
+                        date = datetime.strptime(date_str, "%Y-%m")
+                        forecast_dates.append(date)
+                        forecast_prices.append(price)
+                    except ValueError:
+                        pass
             
-            # Enhanced confidence based on satellite data quality
-            satellite_confidence = satellite_data.metrics.confidence_score
+            # Calculate yield forecast from satellite data
+            yield_forecast = 0.0
+            if satellite_yield:
+                yield_deviation_str = satellite_yield.get("yield_deviation", "0%")
+                try:
+                    yield_forecast = float(yield_deviation_str.replace("%", "")) / 100.0
+                except (ValueError, AttributeError):
+                    yield_forecast = 0.0
+            
+            # Assess supply risk based on model output
+            supply_risk = 0.0
+            market_outlook = supply_demand.get("market_outlook", "neutral")
+            if market_outlook == "bearish":
+                supply_risk = -0.3  # Oversupply
+            elif market_outlook == "bullish":
+                supply_risk = 0.3   # Undersupply
+            
+            # Enhanced confidence based on model and satellite data quality
+            model_confidence = 0.8  # Base confidence in the model
+            satellite_confidence = 0.5
+            if satellite_data:
+                # Extract confidence from satellite yield assessment
+                if "confidence" in satellite_yield:
+                    conf_str = satellite_yield["confidence"]
+                    if conf_str == "high":
+                        satellite_confidence = 0.9
+                    elif conf_str == "medium":
+                        satellite_confidence = 0.7
+                    elif conf_str == "low":
+                        satellite_confidence = 0.5
             enhanced_confidence = min(0.95, basic_forecast.confidence + (satellite_confidence * 0.1))
             
             # Apply adjustments
             adjusted_7d = basic_forecast.forecast_price_7d * (1 + price_adjustment)
             adjusted_30d = basic_forecast.forecast_price_30d * (1 + price_adjustment)
             
-            return PriceForecast(
+            # Create price forecast object with model data
+            forecast = PriceForecast(
                 commodity=commodity,
-                current_price=basic_forecast.current_price,
-                forecast_price_7d=round(adjusted_7d, 2),
-                forecast_price_30d=round(adjusted_30d, 2),
-                confidence=round(enhanced_confidence, 3),
-                trend=self._determine_satellite_adjusted_trend(basic_forecast.trend, price_adjustment),
-                volatility=basic_forecast.volatility,
-                seasonal_factor=basic_forecast.seasonal_factor,
-                news_sentiment=basic_forecast.news_sentiment,
-                # Satellite-enhanced fields
-                yield_forecast=round(yield_forecast, 2),
+                current_price=current_price,
+                market=self._get_market_for_commodity(commodity),
+                min_price=min(forecast_prices) if forecast_prices else current_price * 0.9,
+                max_price=max(forecast_prices) if forecast_prices else current_price * 1.1,
+                avg_price=sum(forecast_prices) / len(forecast_prices) if forecast_prices else current_price,
+                forecast_dates=forecast_dates,
+                forecast_prices=forecast_prices,
+                price_trend=self._convert_trend_to_enum(price_trend),
+                factors=self._get_price_factors(commodity),
+                confidence_score=model_confidence,
+                yield_forecast=yield_forecast,
                 supply_risk=supply_risk,
-                environmental_score=round(environmental_score, 1),
-                satellite_confidence=round(satellite_confidence, 3)
+                satellite_confidence=satellite_confidence,
+                optimal_selling_time=selling_strategy.get("recommendation", "unknown"),
+                satellite_enhanced=True if satellite_data else False,
+                model_enhanced=True
             )
             
+            # Add model-specific recommendations
+            if "recommendations" in model_result:
+                forecast.model_recommendations = model_result["recommendations"]
+            
+            return forecast
+            
         except Exception as e:
-            logger.error(f"Error in satellite enhancement: {e}")
-            return basic_forecast
+            logger.error(f"[AGRISENS] Error generating forecast with ML model: {e}")
+            # Fall back to basic forecast if model fails
+            return self._generate_price_forecast(commodity)
     
     def _calculate_yield_forecast(self, commodity: Commodity, satellite_data) -> float:
         """Calculate expected yield based on satellite metrics"""
@@ -629,11 +722,33 @@ class MarketTimingAgent(BaseWorkerAgent):
         )
     
     def _create_satellite_enhanced_recommendation(self, forecast: PriceForecast, satellite_data=None) -> MarketRecommendation:
-        """Create market recommendation enhanced with satellite insights"""
+        """
+        Create market recommendation enhanced with satellite insights and AgriSens ML model
+        
+        Args:
+            forecast: Price forecast with model data
+            satellite_data: Optional satellite data
+            
+        Returns:
+            Market recommendation with model and satellite enhancements
+        """
         # Start with basic recommendation logic
         basic_rec = self._create_market_recommendation(forecast)
         
-        if not satellite_data:
+        # Add ML model recommendations if available
+        model_reasoning = []
+        if hasattr(forecast, 'model_recommendations') and forecast.model_recommendations:
+            model_reasoning = [f"[AgriSens Model] {rec}" for rec in forecast.model_recommendations]
+            
+            # Update recommendation based on model if available
+            if forecast.optimal_selling_time == "sell_immediately":
+                basic_rec.recommendation = "SELL"
+                basic_rec.timeline = "IMMEDIATE"
+            elif forecast.optimal_selling_time == "hold_for_future_sale":
+                basic_rec.recommendation = "HOLD"
+                basic_rec.timeline = "MEDIUM_TERM"
+        
+        if not satellite_data and not model_reasoning:
             # Add empty satellite fields to basic recommendation
             return MarketRecommendation(
                 commodity=basic_rec.commodity,
@@ -642,19 +757,24 @@ class MarketTimingAgent(BaseWorkerAgent):
                 expected_gain=basic_rec.expected_gain,
                 confidence_score=basic_rec.confidence_score,
                 timeline=basic_rec.timeline,
-                yield_impact="No satellite data available",
+                yield_impact="No satellite data or model analysis available",
                 supply_outlook="Unable to assess",
                 environmental_factors=[]
             )
         
-        # Enhanced reasoning with satellite insights
-        enhanced_reasoning = basic_rec.reasoning.copy()
+        # Enhanced reasoning with satellite insights and model recommendations
+        enhanced_reasoning = basic_rec.reasoning.copy() if not model_reasoning else model_reasoning
         environmental_factors = []
         
-        # Add satellite-specific insights
-        if forecast.environmental_score > 80:
-            enhanced_reasoning.append(f"Excellent crop conditions (Environmental Score: {forecast.environmental_score:.1f}/100)")
-            environmental_factors.append("Optimal growing conditions detected")
+        # Add ML model insights
+        if hasattr(forecast, 'model_enhanced') and forecast.model_enhanced:
+            enhanced_reasoning.append(f"Analysis powered by AgriSens ML market timing model")
+            
+        # Add satellite-specific insights if available
+        if satellite_data:
+            if hasattr(forecast, 'environmental_score') and forecast.environmental_score > 80:
+                enhanced_reasoning.append(f"Excellent crop conditions (Environmental Score: {forecast.environmental_score:.1f}/100)")
+                environmental_factors.append("Optimal growing conditions detected")
         elif forecast.environmental_score < 50:
             enhanced_reasoning.append(f"Poor crop conditions (Environmental Score: {forecast.environmental_score:.1f}/100)")
             environmental_factors.append("Environmental stress detected")

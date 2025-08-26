@@ -36,6 +36,27 @@ interface DemoResponse {
   };
 }
 
+// --- Added types for query classification & agent execution ---
+type AgentId = 'disease_identification' | 'crop_recommendation' | 'irrigation_scheduling' | 'market_analysis';
+interface QueryClassification {
+  agentId: AgentId | 'general';
+  confidence: number; // 0-1
+  reasons: string[];
+  usedImage: boolean;
+}
+interface AgentExecutionResult {
+  agentId: AgentId | 'general';
+  success: boolean;
+  data?: JsonObject | JsonObject[] | string;
+  fallbackUsed?: boolean;
+  fallbackSource?: 'grounding_search' | 'local_mock';
+  errorMessage?: string;
+}
+// ------------------------------------------------------------
+
+export type JsonValue = string | number | boolean | null | JsonObject | JsonValue[];
+export interface JsonObject { [k: string]: JsonValue }
+
 const SimpleDemoInterface: React.FC = () => {
   const [currentQuery, setCurrentQuery] = useState<string>('');
   const [demoResponse, setDemoResponse] = useState<DemoResponse | null>(null);
@@ -51,7 +72,9 @@ const SimpleDemoInterface: React.FC = () => {
   // Map-related state
   const mapRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<L.Map | null>(null);
-  const [currentMarker, setCurrentMarker] = useState<L.Marker | null>(null);
+  // (States are used throughout; suppress false positive for exhaustive-deps where intentional)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [currentMarker, setCurrentMarker] = useState<L.Marker | null>(null); // kept for potential future use
   const [selectedPoint, setSelectedPoint] = useState<L.LatLng | null>(null);
   const [selectedCoords, setSelectedCoords] = useState<string>('Click on map to select analysis point');
   const [analysisDate, setAnalysisDate] = useState<string>('');
@@ -60,29 +83,24 @@ const SimpleDemoInterface: React.FC = () => {
   const [analysisProgress, setAnalysisProgress] = useState<string>('');
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
 
+  // --- Added state for query classification & agent result ---
+  const [classification, setClassification] = useState<QueryClassification | null>(null);
+  const [agentResult, setAgentResult] = useState<AgentExecutionResult | null>(null);
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  // -------------------------------------------------------
+
   // Initialize map
+  // Adjust map init effect dependencies by isolating initializer
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (mapRef.current && !map) {
       const mapInstance = L.map(mapRef.current).setView([10.7905, 78.7047], 11);
-
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
-      }).addTo(mapInstance);
-
-      mapInstance.on('click', (e: L.LeafletMouseEvent) => {
-        selectAnalysisPoint(e.latlng, mapInstance);
-      });
-
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap contributors' }).addTo(mapInstance);
+      mapInstance.on('click', (e: L.LeafletMouseEvent) => { selectAnalysisPoint(e.latlng, mapInstance); });
       setMap(mapInstance);
       setDefaultDate();
     }
-
-    return () => {
-      if (map) {
-        map.remove();
-      }
-    };
-  }, []);
+  }, [map]);
 
   const setDefaultDate = () => {
     const today = new Date();
@@ -97,7 +115,7 @@ const SimpleDemoInterface: React.FC = () => {
     setSelectedPoint(latlng);
 
     // Remove ALL existing markers from the map to ensure only one marker exists
-    activeMap.eachLayer((layer: any) => {
+    activeMap.eachLayer((layer: L.Layer) => {
       if (layer instanceof L.Marker) {
         activeMap.removeLayer(layer);
       }
@@ -118,7 +136,7 @@ const SimpleDemoInterface: React.FC = () => {
     setSelectedCoords(`Selected: ${latlng.lat.toFixed(5)}°N, ${latlng.lng.toFixed(5)}°E`);
   };
 
-  const analyzeSelectedPoint = async (point?: L.LatLng) => {
+  const analyzeSelectedPoint = React.useCallback(async (point?: L.LatLng) => {
     const targetPoint = point || selectedPoint;
     if (!targetPoint) {
       setError('Please select a point on the map first');
@@ -177,12 +195,12 @@ const SimpleDemoInterface: React.FC = () => {
     } finally {
       setIsAnalyzing(false);
     }
-  };
+  }, [selectedPoint, analysisDate, satelliteSource]);
 
   // Make analyzeCurrentPoint available globally for popup button
   useEffect(() => {
-    (window as any).analyzeCurrentPoint = () => analyzeSelectedPoint();
-  }, [selectedPoint]);
+    (window as unknown as { analyzeCurrentPoint?: () => void }).analyzeCurrentPoint = () => analyzeSelectedPoint();
+  }, [analyzeSelectedPoint]);
 
   // Function to convert markdown-like formatting to HTML
   const formatResponseText = (text: string) => {
@@ -222,6 +240,104 @@ const SimpleDemoInterface: React.FC = () => {
     }
   ];
 
+  // Image upload handler
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => setUploadedImage(ev.target?.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  // Simple rule-based classifier (client-side)
+  const classifyQuery = (text: string, hasImage: boolean): QueryClassification => {
+    const lower = text.toLowerCase();
+    const reasons: string[] = [];
+    let agentId: QueryClassification['agentId'] = 'general';
+    let score = 0.35; // base
+
+    const boost = (s: number, r: string) => { score = Math.min(1, score + s); reasons.push(r); };
+
+    if (/(disease|blight|rust|spot|infection|leaf|pest)/.test(lower)) {
+      agentId = 'disease_identification';
+      boost(0.3, 'Disease related keyword detected');
+    }
+    if (/(recommend|which crop|best crop|grow|variety|fertiliz|soil|nutrient)/.test(lower)) {
+      if (agentId === 'general') agentId = 'crop_recommendation';
+      boost(0.25, 'Crop recommendation keyword detected');
+    }
+    if (/(irrigat|water|moisture|schedule)/.test(lower)) {
+      agentId = 'irrigation_scheduling';
+      boost(0.25, 'Irrigation / water management keywords');
+    }
+    if (/(price|market|sell|demand|forecast|rate)/.test(lower)) {
+      agentId = 'market_analysis';
+      boost(0.3, 'Market analytics keywords');
+    }
+    if (hasImage && agentId === 'general') {
+      agentId = 'disease_identification';
+      boost(0.2, 'Image provided – prioritizing disease detection');
+    }
+    if (hasImage && agentId === 'disease_identification') boost(0.1, 'Image supports disease classification');
+
+    return { agentId, confidence: Math.min(1, score), reasons, usedImage: hasImage };
+  };
+
+  // Attempt agent execution with fallback
+  const runAgentForQuery = async (cls: QueryClassification, query: string): Promise<AgentExecutionResult> => {
+    if (cls.agentId === 'general') {
+      return { agentId: 'general', success: true, data: { message: 'General advisory response generated locally.' } };
+    }
+    const payload = {
+      agentId: cls.agentId,
+      query,
+      image: uploadedImage,
+      vegetationAnalysis: (() => { try { return JSON.parse(localStorage.getItem('mapAnalysis') || 'null'); } catch { return null; } })()
+    };
+
+    // Primary attempt – backend agent
+    try {
+      const resp = await fetch('/api/agents/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!resp.ok) throw new Error('Non-200 response');
+      const data: JsonObject = await resp.json();
+      return { agentId: cls.agentId, success: true, data };
+    } catch (err) {
+      console.warn('Primary agent run failed, attempting grounding search fallback:', err);
+      // Fallback 1: Google Grounding Search proxy
+      try {
+        const g = await fetch(`/api/grounding?query=${encodeURIComponent(query)}`);
+        if (!g.ok) throw new Error('Grounding search non-200');
+        const gData: JsonObject = await g.json();
+        return { agentId: cls.agentId, success: true, data: gData, fallbackUsed: true, fallbackSource: 'grounding_search' };
+      } catch (gErr) {
+        console.warn('Grounding search failed, using local mock.', gErr);
+        // Local mock fallback
+        const mock = { source: 'local_mock', note: 'Both agent and grounding failed; providing heuristic suggestion.', query, tips: generateLocalFallbackTips(cls.agentId) };
+        return { agentId: cls.agentId, success: true, data: mock, fallbackUsed: true, fallbackSource: 'local_mock' };
+      }
+    }
+  };
+
+  const generateLocalFallbackTips = (agent: AgentId): string[] => {
+    switch (agent) {
+      case 'disease_identification':
+        return ['Capture clear close-up images of affected leaves', 'Check for uniform vs. patchy symptoms', 'Consider recent weather favoring fungal growth'];
+      case 'crop_recommendation':
+        return ['Test soil pH and macro nutrients', 'Rotate crops to prevent nutrient depletion', 'Match crop to rainfall pattern'];
+      case 'irrigation_scheduling':
+        return ['Measure current soil moisture at root depth', 'Irrigate early morning to reduce evaporation', 'Adjust schedule after significant rainfall'];
+      case 'market_analysis':
+        return ['Track daily mandi prices', 'Store produce properly to wait for favorable pricing', 'Diversify crops to hedge price volatility'];
+      default:
+        return ['Provide more context for better recommendations'];
+    }
+  };
+
+  // --- Modified submitQuery to classify & run agent ---
   const submitQuery = async () => {
     if (!currentQuery.trim()) {
       setError('Please enter a query');
@@ -229,74 +345,51 @@ const SimpleDemoInterface: React.FC = () => {
     }
 
     setIsLoading(true);
+    setAnalysisComplete(false);
     setError('');
     setDemoResponse(null);
+    setClassification(null);
+    setAgentResult(null);
 
     try {
-      // Simulate processing delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const cls = classifyQuery(currentQuery, !!uploadedImage);
+      setClassification(cls);
 
-      // Simple response based on whether vegetation analysis has been done
-      let responseText = '';
-      const analysisData = localStorage.getItem('mapAnalysis');
-      const parsedData = analysisData ? JSON.parse(analysisData) : null;
+      // Simulate prior satellite analysis portion (retain existing behavior)
+      await new Promise(r => setTimeout(r, 400));
 
-      if (parsedData && parsedData.isAnalyzed) {
-        const { vegetationIndices, coordinates } = parsedData;
+      const agentExec = await runAgentForQuery(cls, currentQuery);
+      setAgentResult(agentExec);
 
-        // NOW move the indices to agents (only after query submission)
-        localStorage.setItem('vegetationAnalysis', JSON.stringify(parsedData));
-        responseText = `**Agricultural Analysis Complete**
+      // Build a DemoResponse wrapper (re-using existing UI sections) – lightweight mapping
+      const responseText = agentExec.success ? (
+        agentExec.fallbackUsed ? `Fallback (${agentExec.fallbackSource}) used.\n\n${JSON.stringify(agentExec.data, null, 2)}` : `Agent Execution Successful:\n\n${JSON.stringify(agentExec.data, null, 2)}`
+      ) : 'Agent execution failed.';
 
-Based on satellite analysis at coordinates ${coordinates?.lat.toFixed(5)}°N, ${coordinates?.lng.toFixed(5)}°E:
-
-**Crop Health Status:**
-• NDVI: ${vegetationIndices.ndvi?.toFixed(3)} - ${vegetationIndices.ndvi! >= 0.6 ? 'Excellent' : vegetationIndices.ndvi! >= 0.4 ? 'Good' : 'Moderate'}
-• EVI: ${vegetationIndices.evi?.toFixed(3)} - Enhanced vegetation index
-• SAVI: ${vegetationIndices.savi?.toFixed(3)} - Soil-adjusted index
-
-**Moisture Status:**
-• NDMI: ${vegetationIndices.ndmi?.toFixed(3)} - ${vegetationIndices.ndmi! >= 0.2 ? 'Good moisture' : 'Moderate moisture'}
-
-**View detailed metrics in Agents → Crop Selection Agent → Metrics and Irrigation Controller → Metrics**`;
-      } else {
-        responseText = `**Query: "${currentQuery}"**
-
-To get detailed analysis with vegetation indices:
-1. Click on the map to select coordinates
-2. Click "Analyze Point" to process satellite data
-3. Then submit your query for detailed results
-
-The analysis will provide NDVI, EVI, SAVI, and NDMI values that will appear in the Agents metrics.`;
-      }
-
-      const response = {
+      const response: DemoResponse = {
         routing_analysis: {
-          agent: (parsedData && parsedData.isAnalyzed) ? 'Crop Selection Agent' : 'Query Processing Agent',
-          confidence: 0.92,
-          reasoning: (parsedData && parsedData.isAnalyzed) ?
-            'Query involves vegetation analysis and crop health assessment' :
-            'General agricultural query requiring basic processing',
-          language_detected: 'English'
+          agent: cls.agentId === 'general' ? 'General Advisory' : cls.agentId,
+          confidence: cls.confidence,
+          reasoning: cls.reasons.join('; '),
+          language_detected: 'auto'
         },
         satellite_data: {
-          ndvi: parsedData?.vegetationIndices?.ndvi || 0.45,
-          soil_moisture: parsedData?.vegetationIndices?.ndmi || 0.35,
-          temperature: 28 + Math.random() * 8, // 28-36°C
-          humidity: 65 + Math.random() * 20, // 65-85%
-          environmental_score: parsedData ? 85 : 65,
-          risk_level: parsedData ? 'low' : 'medium'
+          ndvi: 0.5,
+            soil_moisture: 0.4,
+            temperature: 30,
+            humidity: 70,
+            environmental_score: 70,
+            risk_level: 'medium'
         },
         response_text: responseText,
         technical_metrics: {
-          processing_time_ms: 1200 + Math.random() * 800, // 1200-2000ms
-          confidence_level: 0.89,
-          satellite_data_integrated: parsedData ? true : false,
-          risk_assessment: parsedData ? 'Low risk based on vegetation health' : 'Medium risk - analysis recommended',
-          agent: (parsedData && parsedData.isAnalyzed) ? 'Crop Selection Agent' : 'Query Processing Agent'
+          processing_time_ms: 800 + Math.random() * 400,
+          confidence_level: cls.confidence,
+          satellite_data_integrated: !!localStorage.getItem('mapAnalysis'),
+          risk_assessment: 'Heuristic',
+          agent: cls.agentId
         }
       };
-
       setDemoResponse(response);
     } catch (err) {
       setError('Query processing failed. Please try again.');
@@ -305,6 +398,7 @@ The analysis will provide NDVI, EVI, SAVI, and NDMI values that will appear in t
       setIsLoading(false);
     }
   };
+  // -------------------------------------------------------
 
   const selectSampleQuery = (query: { query: string }) => {
     setCurrentQuery(query.query);
@@ -504,6 +598,32 @@ The analysis will provide NDVI, EVI, SAVI, and NDMI values that will appear in t
             rows={3}
             className="query-textarea"
           />
+          {/* Added image upload */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '8px', flexWrap: 'wrap' }}>
+            <label style={{
+              background: '#f1f5f9',
+              padding: '8px 12px',
+              borderRadius: '6px',
+              border: '1px solid #cbd5e1',
+              fontSize: '0.8rem',
+              fontWeight: 600,
+              cursor: 'pointer'
+            }}>
+              📷 Add Image
+              <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageUpload} />
+            </label>
+            {uploadedImage && (
+              <div style={{ position: 'relative' }}>
+                <img src={uploadedImage} alt="query upload" style={{ width: 80, height: 60, objectFit: 'cover', borderRadius: 6, border: '1px solid #e2e8f0' }} />
+                <button onClick={() => setUploadedImage(null)} style={{ position: 'absolute', top: -6, right: -6, background: '#ef4444', color: '#fff', border: 'none', borderRadius: '50%', width: 20, height: 20, cursor: 'pointer', fontSize: 12 }}>×</button>
+              </div>
+            )}
+            {classification && (
+              <div style={{ fontSize: '0.7rem', background: '#e0f2fe', padding: '4px 8px', borderRadius: 6, border: '1px solid #bae6fd', fontWeight: 600 }}>
+                Routed → {classification.agentId} ({Math.round(classification.confidence * 100)}%)
+              </div>
+            )}
+          </div>
           <button 
             onClick={submitQuery} 
             disabled={isLoading}
@@ -523,7 +643,14 @@ The analysis will provide NDVI, EVI, SAVI, and NDMI values that will appear in t
       {demoResponse && (
         <div className="response-section">
           <h3>🤖 AI Response</h3>
-          
+          {/* Added agent execution summary */}
+          {agentResult && (
+            <div style={{ background: '#f1f5f9', padding: '10px 14px', borderRadius: 8, marginBottom: 16, border: '1px solid #e2e8f0', fontSize: '0.8rem' }}>
+              <strong>Execution:</strong> {agentResult.agentId} – {agentResult.success ? 'Success' : 'Failed'} {agentResult.fallbackUsed ? `(Fallback: ${agentResult.fallbackSource})` : ''}
+              {agentResult.errorMessage && <div style={{ color: '#dc2626' }}>{agentResult.errorMessage}</div>}
+            </div>
+          )}
+
           <div className="routing-analysis">
             <h4>🧠 AI Routing Analysis:</h4>
             <div className="analysis-info">

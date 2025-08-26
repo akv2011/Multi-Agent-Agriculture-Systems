@@ -25,7 +25,7 @@
   z-index: 10; /* Ensure sidebar is above most content but below chatbot */
 }
 
-.user-profile {
+.logo-container {
   display: flex;
   align-items: center;
   padding-bottom: 1.5rem;
@@ -33,23 +33,18 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.avatar {
+.sidebar-logo {
   width: 50px;
   height: 50px;
-  border-radius: 50%;
-  background-color: var(--primary-color, #DFBA47);
-  display: flex;
-  align-items: center;
-  justify-content: center;
   margin-right: 0.75rem;
-  font-weight: 600;
-  font-size: 1.2rem;
+  filter: drop-shadow(0 0 8px rgba(223, 186, 71, 0.3));
 }
 
 .user-info h3 {
   margin: 0;
-  font-size: 0.95rem;
+  font-size: 1.1rem;
   font-weight: 600;
+  color: var(--primary-color, #DFBA47);
 }
 
 .user-info p {
@@ -102,11 +97,29 @@
 
 .nav-icon {
   margin-right: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-icon svg {
+  color: var(--text-light);
+  opacity: 0.8;
+  transition: all 0.2s ease;
+}
+
+.nav-item.active .nav-icon svg {
+  color: var(--primary-color, #DFBA47);
+  opacity: 1;
 }
 
 .nav-name {
   font-size: 0.9rem;
   font-weight: 500;
+}
+
+.nav-item.active .nav-name {
+  color: var(--primary-color, #DFBA47);
 }
 
 /* System stats in sidebar */

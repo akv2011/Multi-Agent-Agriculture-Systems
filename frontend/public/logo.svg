@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Main circular background -->
+  <circle cx="100" cy="100" r="95" fill="#1E293B" stroke="#DFBA47" stroke-width="3"/>
+  
+  <!-- Inner circular highlight -->
+  <circle cx="100" cy="100" r="85" fill="#1E293B" stroke="#DFBA47" stroke-opacity="0.3" stroke-width="1.5"/>
+  
+  <!-- Main wheat symbol - more detailed and professional -->
+  <g transform="translate(50, 40) scale(0.6)">
+    <!-- Central wheat stalk -->
+    <path d="M100 30C100 30 85 45 85 65C85 75 90 85 100 90C110 85 115 75 115 65C115 45 100 30 100 30Z" fill="#DFBA47" stroke="#DFBA47" stroke-width="2"/>
+    <path d="M100 100V160" stroke="#DFBA47" stroke-width="6" stroke-linecap="round"/>
+    
+    <!-- Left wheat stalks -->
+    <path d="M80 50C80 50 65 65 65 85C65 95 70 105 80 110" stroke="#DFBA47" stroke-width="4" stroke-linecap="round"/>
+    <path d="M70 70C70 70 55 85 55 105C55 115 60 125 70 130" stroke="#DFBA47" stroke-width="3" stroke-linecap="round"/>
+    <path d="M60 85C60 85 45 100 45 120C45 130 50 140 60 145" stroke="#DFBA47" stroke-width="2" stroke-linecap="round"/>
+    
+    <!-- Right wheat stalks -->
+    <path d="M120 50C120 50 135 65 135 85C135 95 130 105 120 110" stroke="#DFBA47" stroke-width="4" stroke-linecap="round"/>
+    <path d="M130 70C130 70 145 85 145 105C145 115 140 125 130 130" stroke="#DFBA47" stroke-width="3" stroke-linecap="round"/>
+    <path d="M140 85C140 85 155 100 155 120C155 130 150 140 140 145" stroke="#DFBA47" stroke-width="2" stroke-linecap="round"/>
+  </g>
+  
+  <!-- Circuit/Tech pattern representing AI - more detailed -->
+  <g stroke="#3A4A63" stroke-width="1.5">
+    <!-- Horizontal and vertical lines -->
+    <path d="M30 100 H 50" stroke-linecap="round"/>
+    <path d="M150 100 H 170" stroke-linecap="round"/>
+    <path d="M100 30 V 50" stroke-linecap="round"/>
+    <path d="M100 150 V 170" stroke-linecap="round"/>
+    
+    <!-- Corner curves -->
+    <path d="M40 60 Q 50 50 60 40" stroke-linecap="round"/>
+    <path d="M140 60 Q 150 50 160 40" stroke-linecap="round"/>
+    <path d="M40 140 Q 50 150 60 160" stroke-linecap="round"/>
+    <path d="M140 140 Q 150 150 160 160" stroke-linecap="round"/>
+    
+    <!-- Additional circuit lines for complexity -->
+    <path d="M60 80 H 80" stroke-linecap="round" stroke-opacity="0.7"/>
+    <path d="M120 80 H 140" stroke-linecap="round" stroke-opacity="0.7"/>
+    <path d="M70 60 V 80" stroke-linecap="round" stroke-opacity="0.7"/>
+    <path d="M130 60 V 80" stroke-linecap="round" stroke-opacity="0.7"/>
+    <path d="M70 120 V 140" stroke-linecap="round" stroke-opacity="0.7"/>
+    <path d="M130 120 V 140" stroke-linecap="round" stroke-opacity="0.7"/>
+    <path d="M60 120 H 80" stroke-linecap="round" stroke-opacity="0.7"/>
+    <path d="M120 120 H 140" stroke-linecap="round" stroke-opacity="0.7"/>
+  </g>
+  
+  <!-- Circuit nodes -->
+  <g fill="#DFBA47">
+    <!-- Main nodes -->
+    <circle cx="30" cy="100" r="4"/>
+    <circle cx="170" cy="100" r="4"/>
+    <circle cx="100" cy="30" r="4"/>
+    <circle cx="100" cy="170" r="4"/>
+    
+    <!-- Corner nodes -->
+    <circle cx="40" cy="60" r="3"/>
+    <circle cx="160" cy="40" r="3"/>
+    <circle cx="40" cy="140" r="3"/>
+    <circle cx="160" cy="160" r="3"/>
+    
+    <!-- Additional nodes -->
+    <circle cx="60" cy="80" r="2" fill-opacity="0.9"/>
+    <circle cx="140" cy="80" r="2" fill-opacity="0.9"/>
+    <circle cx="70" cy="60" r="2" fill-opacity="0.9"/>
+    <circle cx="130" cy="60" r="2" fill-opacity="0.9"/>
+    <circle cx="70" cy="140" r="2" fill-opacity="0.9"/>
+    <circle cx="130" cy="140" r="2" fill-opacity="0.9"/>
+    <circle cx="80" cy="120" r="2" fill-opacity="0.9"/>
+    <circle cx="120" cy="120" r="2" fill-opacity="0.9"/>
+  </g>
+  
+  <!-- Text "AgriSens" with more professional font -->
+  <text x="100" y="190" font-family="'Segoe UI', Arial, sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF" text-anchor="middle">AgriSens</text>
+</svg>
