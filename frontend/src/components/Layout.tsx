@@ -73,7 +73,7 @@ const Layout = () => {
       {/* ChatBot positioned at the end for proper layering */}
       <nav className="sidebar">
         <div className="logo-container">
-          <img src="/logo.svg" alt="AgriSens Logo" className="sidebar-logo" />
+          <img src="/logo.png" alt="AgriSens Logo" className="sidebar-logo" />
           <div className="user-info">
             <h3>AgriSens</h3>
             <p>Smart Agriculture Platform</p>
@@ -106,27 +106,27 @@ const Layout = () => {
           <div className="stat-item">
             <span className="stat-icon">🔄</span>
             <span className="stat-label">Active Workflows:</span>
-            <span className="stat-value">3</span>
+            <span className="stat-value" style={{color: '#FFD700', fontWeight: '700', fontSize: '1.9rem', textShadow: '0 0 2px rgba(255,215,0,0.8)'}}>3</span>
           </div>
           <div className="stat-item">
             <span className="stat-icon">📊</span>
             <span className="stat-label">Total Workflows:</span>
-            <span className="stat-value">7</span>
+            <span className="stat-value" style={{color: '#FFD700', fontWeight: '700', fontSize: '1.9rem', textShadow: '0 0 2px rgba(255,215,0,0.8)'}}>7</span>
           </div>
           <div className="stat-item">
             <span className="stat-icon">🔌</span>
             <span className="stat-label">Connected Clients:</span>
-            <span className="stat-value">1</span>
+            <span className="stat-value" style={{color: '#FFD700', fontWeight: '700', fontSize: '1.9rem', textShadow: '0 0 2px rgba(255,215,0,0.8)'}}>1</span>
           </div>
           <div className="stat-item">
             <span className="stat-icon">🤖</span>
             <span className="stat-label">Active Agents:</span>
-            <span className="stat-value">5</span>
+            <span className="stat-value" style={{color: '#FFD700', fontWeight: '700', fontSize: '1.9rem', textShadow: '0 0 2px rgba(255,215,0,0.8)'}}>5</span>
           </div>
           <div className="stat-item">
             <span className="stat-icon">⚡</span>
             <span className="stat-label">System Status:</span>
-            <span className="stat-value connected">Ready</span>
+            <span className="stat-value connected" style={{color: '#00FF7F', fontWeight: '700', fontSize: '1.9rem', textShadow: '0 0 2px rgba(0,255,127,0.8)'}}>Ready</span>
           </div>
         </div>
         

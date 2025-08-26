@@ -134,35 +134,80 @@
   align-items: center;
   margin-bottom: 0.75rem;
   font-size: 0.8rem;
+  padding: 0.5rem;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.stat-item:hover {
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
 .stat-icon {
   margin-right: 0.5rem;
   opacity: 0.9;
+  font-size: 1rem;
 }
 
 .stat-label {
   flex: 1;
-  opacity: 0.8;
+  opacity: 0.9;
+  color: #E2E8F0;
 }
 
 .stat-value {
-  font-weight: 600;
-  color: var(--text-light, #FFFFFF);
-  background: none;
+  font-weight: 600 !important;
+  color: #DFBA47 !important;
+  background: none !important;
   padding: 0;
   min-width: 1.5rem;
   text-align: left;
+  font-size: 0.9rem !important;
 }
 
 .stat-value.connected {
-  color: var(--text-light, #FFFFFF);
-  background: none;
+  color: #10b981 !important;
+  background: none !important;
+  font-weight: 700 !important;
 }
 
 .stat-value.disconnected {
-  color: var(--text-light, #FFFFFF);
-  background: none;
+  color: #ef4444 !important;
+  background: none !important;
+  font-weight: 700 !important;
+}
+
+/* Additional specificity for sidebar stat values to ensure they override any global styles */
+.sidebar .stat-value {
+  color: #DFBA47 !important;
+  font-weight: 600 !important;
+  font-size: 0.9rem !important;
+}
+
+.sidebar .stat-value.connected {
+  color: #10b981 !important;
+  font-weight: 700 !important;
+}
+
+.sidebar .stat-value.disconnected {
+  color: #ef4444 !important;
+  font-weight: 700 !important;
+}
+
+/* Even more specific targeting */
+.dashboard .sidebar .system-stats .stat-item .stat-value {
+  color: #DFBA47 !important;
+  font-weight: 600 !important;
+}
+
+.dashboard .sidebar .system-stats .stat-item .stat-value.connected {
+  color: #10b981 !important;
+  font-weight: 700 !important;
+}
+
+.dashboard .sidebar .system-stats .stat-item .stat-value.disconnected {
+  color: #ef4444 !important;
+  font-weight: 700 !important;
 }
 
 /* Connected users section */
