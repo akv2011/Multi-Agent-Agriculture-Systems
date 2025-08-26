@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="96" height="96" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Harvest Planning Agent Icon -->
+  <circle cx="48" cy="48" r="44" fill="#1E293B" stroke="#DFBA47" stroke-width="2"/>
+  
+  <!-- Calendar Base -->
+  <rect x="24" y="26" width="48" height="44" rx="4" fill="none" stroke="#DFBA47" stroke-width="2.5"/>
+  
+  <!-- Calendar Header -->
+  <rect x="24" y="26" width="48" height="10" rx="2" fill="#DFBA47" fill-opacity="0.3" stroke="#DFBA47" stroke-width="2"/>
+  
+  <!-- Calendar grid lines -->
+  <line x1="24" y1="46" x2="72" y2="46" stroke="#DFBA47" stroke-width="1.5" stroke-opacity="0.7"/>
+  <line x1="24" y1="56" x2="72" y2="56" stroke="#DFBA47" stroke-width="1.5" stroke-opacity="0.7"/>
+  <line x1="40" y1="36" x2="40" y2="70" stroke="#DFBA47" stroke-width="1.5" stroke-opacity="0.7"/>
+  <line x1="56" y1="36" x2="56" y2="70" stroke="#DFBA47" stroke-width="1.5" stroke-opacity="0.7"/>
+  
+  <!-- Harvest symbols -->
+  <circle cx="32" cy="51" r="4" fill="#DFBA47" fill-opacity="0.6"/>
+  <circle cx="64" cy="61" r="4" fill="#DFBA47"/>
+  <circle cx="48" cy="51" r="4" fill="#DFBA47" fill-opacity="0.8"/>
+  
+  <!-- Wheat symbol -->
+  <g transform="translate(30, 18) scale(0.3)">
+    <path d="M100 30C100 30 85 45 85 65C85 75 90 85 100 90C110 85 115 75 115 65C115 45 100 30 100 30Z" fill="#DFBA47" stroke="#DFBA47" stroke-width="2"/>
+    <path d="M100 100V160" stroke="#DFBA47" stroke-width="6" stroke-linecap="round"/>
+    <path d="M80 50C80 50 65 65 65 85C65 95 70 105 80 110" stroke="#DFBA47" stroke-width="4" stroke-linecap="round"/>
+    <path d="M120 50C120 50 135 65 135 85C135 95 130 105 120 110" stroke="#DFBA47" stroke-width="4" stroke-linecap="round"/>
+  </g>
+</svg>

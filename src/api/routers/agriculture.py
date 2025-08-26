@@ -52,6 +52,24 @@ class AgricultureStatusResponse(BaseModel):
     agent_details: Dict[str, Any] = Field(default_factory=dict)
 
 
+class GroundSearchRequest(BaseModel):
+    """Request model for ground search functionality"""
+    query: str = Field(..., description="Search query")
+    language: str = Field("english", description="Language for search")
+    domain: str = Field("general", description="Agricultural domain")
+    max_results: int = Field(5, description="Maximum number of results")
+
+
+class GroundSearchResponse(BaseModel):
+    """Response model for ground search results"""
+    status: str
+    query: str
+    language: str
+    results: list
+    search_time: float
+    data_source: str = "web_search"
+
+
 @router.post("/query", response_model=AgricultureQueryResponse)
 async def submit_agriculture_query(
     request: AgricultureQueryRequest,
@@ -362,3 +380,148 @@ async def test_agriculture_system(config: ConfigService = Depends(get_config)) -
             "error": str(e),
             "message": "Agriculture system test failed"
         }
+
+
+@router.post("/ground-search", response_model=GroundSearchResponse)
+async def perform_ground_search(request: GroundSearchRequest):
+    """
+    Perform ground search when model data is not available
+    """
+    start_time = datetime.now()
+    
+    try:
+        # Get ground search service
+        from ...services.ground_search_service import GroundSearchService
+        search_service = GroundSearchService()
+        
+        # Perform search
+        search_results = await search_service.search(
+            query=request.query,
+            language=request.language,
+            domain=request.domain,
+            max_results=request.max_results
+        )
+        
+        # Calculate search time
+        search_time = (datetime.now() - start_time).total_seconds()
+        
+        return GroundSearchResponse(
+            status="success",
+            query=request.query,
+            language=request.language,
+            results=search_results,
+            search_time=search_time
+        )
+        
+    except Exception as e:
+        logger.error(f"Ground search failed: {e}")
+        search_time = (datetime.now() - start_time).total_seconds()
+        
+        # Return mock results for development
+        mock_results = get_mock_search_results(request.query, request.language, request.domain)
+        
+        return GroundSearchResponse(
+            status="success_mock",
+            query=request.query,
+            language=request.language,
+            results=mock_results,
+            search_time=search_time,
+            data_source="mock_search"
+        )
+
+
+def get_mock_search_results(query: str, language: str, domain: str) -> list:
+    """Generate mock search results for development"""
+    
+    if "disease" in query.lower() or "நோய்" in query:
+        if language == "tamil":
+            return [
+                {
+                    "title": "தாவர நோய் கண்டறிதல் மற்றும் சிகிச்சை வழிமுறைகள்",
+                    "snippet": "தாவர நோய்களை எளிதாக கண்டறிந்து சரியான சிகிச்சை முறைகளை பயன்படுத்துவது எப்படி",
+                    "url": "https://example.com/plant-diseases-tamil",
+                    "source": "AgriGuide Tamil"
+                },
+                {
+                    "title": "இயற்கை பூஞ்சாணக் கொல்லி தயாரிப்பு",
+                    "snippet": "வீட்டிலேயே தயாரிக்கக்கூடிய இயற்கை பூஞ்சாணக் கொல்லி மருந்துகள்",
+                    "url": "https://example.com/organic-fungicide-tamil",
+                    "source": "Organic Farming Tamil"
+                }
+            ]
+        else:
+            return [
+                {
+                    "title": "Plant Disease Identification and Treatment Guide",
+                    "snippet": "Comprehensive guide to identify common plant diseases and their organic treatment methods",
+                    "url": "https://example.com/plant-diseases",
+                    "source": "Agricultural Extension Service"
+                },
+                {
+                    "title": "Organic Fungicide Preparation Methods",
+                    "snippet": "Learn how to prepare effective organic fungicides at home using common ingredients",
+                    "url": "https://example.com/organic-fungicides",
+                    "source": "Sustainable Agriculture Network"
+                }
+            ]
+    
+    elif "crop" in query.lower() or "பயிர்" in query:
+        if language == "tamil":
+            return [
+                {
+                    "title": "மண் பரிசோதனை அடிப்படையில் பயிர் தேர்வு",
+                    "snippet": "உங்கள் மண்ணின் NPK அளவுகளின் அடிப்படையில் சரியான பயிரை தேர்ந்தெடுக்கும் முறை",
+                    "url": "https://example.com/crop-selection-tamil",
+                    "source": "வேளாண் அறிவியல் மையம்"
+                }
+            ]
+        else:
+            return [
+                {
+                    "title": "Soil-Based Crop Recommendation System",
+                    "snippet": "Choose the right crop based on your soil NPK levels and climatic conditions",
+                    "url": "https://example.com/crop-recommendation",
+                    "source": "Agricultural Research Institute"
+                }
+            ]
+    
+    elif "irrigation" in query.lower() or "நீர்" in query:
+        if language == "tamil":
+            return [
+                {
+                    "title": "நீர்ப்பாசன அட்டவணை திட்டமிடல்",
+                    "snippet": "பயிர் வகை மற்றும் மண் வகையின் அடிப்படையில் நீர்ப்பாசன அட்டவணை",
+                    "url": "https://example.com/irrigation-tamil",
+                    "source": "நீர் மேலாண்மை வழிகாட்டி"
+                }
+            ]
+        else:
+            return [
+                {
+                    "title": "Smart Irrigation Scheduling Guide",
+                    "snippet": "Create efficient irrigation schedules based on crop type, soil conditions, and weather",
+                    "url": "https://example.com/irrigation-scheduling",
+                    "source": "Water Management Institute"
+                }
+            ]
+    
+    else:
+        # General agricultural advice
+        if language == "tamil":
+            return [
+                {
+                    "title": "நவீன விவசாய வழிmுறைகள்",
+                    "snippet": "சுற்றுச்சூழல் நட்பு விவசாய முறைகள் மற்றும் அதிக விளைச்சல் பெறும் வழிகள்",
+                    "url": "https://example.com/modern-farming-tamil",
+                    "source": "தமிழ்நாடு வேளாண் பல்கலைக்கழகம்"
+                }
+            ]
+        else:
+            return [
+                {
+                    "title": "Modern Agricultural Practices Guide",
+                    "snippet": "Sustainable farming methods and best practices for higher yields",
+                    "url": "https://example.com/modern-agriculture",
+                    "source": "National Agricultural Institute"
+                }
+            ]

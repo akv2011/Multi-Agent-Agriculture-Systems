@@ -1,0 +1,384 @@
+.agriculture-tester {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  line-height: 1.6;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.header h1 {
+  color: #2c5530;
+  margin-bottom: 10px;
+  font-size: 2.5em;
+}
+
+.header p {
+  color: #666;
+  font-size: 1.2em;
+}
+
+/* System Status Section */
+.system-status {
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 30px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.system-status h2 {
+  color: #2c5530;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.status-card {
+  background: white;
+  border-radius: 8px;
+  padding: 15px;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.status-card h3 {
+  margin: 0 0 10px 0;
+  color: #555;
+  font-size: 0.9em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.status-value {
+  font-size: 1.8em;
+  font-weight: bold;
+  color: #2c5530;
+  margin: 0;
+}
+
+.capabilities-detail {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.capability-section {
+  background: white;
+  border-radius: 8px;
+  padding: 15px;
+}
+
+.capability-section h4 {
+  margin: 0 0 15px 0;
+  color: #2c5530;
+}
+
+.capability-section ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.agent-item, .feature-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.agent-item:last-child, .feature-item:last-child {
+  border-bottom: none;
+}
+
+.agent-status, .feature-status {
+  margin-right: 10px;
+  font-size: 1.2em;
+}
+
+/* Query Section */
+.query-section {
+  background: white;
+  border-radius: 12px;
+  padding: 25px;
+  margin-bottom: 30px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border: 2px solid #e8f5e8;
+}
+
+.query-section h2 {
+  color: #2c5530;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.input-group {
+  margin-bottom: 20px;
+}
+
+.input-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #2c5530;
+}
+
+.location-select {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  font-size: 16px;
+  background: white;
+}
+
+.location-select:focus {
+  outline: none;
+  border-color: #4caf50;
+}
+
+.query-input {
+  width: 100%;
+  padding: 15px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  font-size: 16px;
+  resize: vertical;
+  min-height: 80px;
+}
+
+.query-input:focus {
+  outline: none;
+  border-color: #4caf50;
+}
+
+.submit-button {
+  background: linear-gradient(135deg, #4caf50, #45a049);
+  color: white;
+  border: none;
+  padding: 15px 30px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 100%;
+}
+
+.submit-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+}
+
+.submit-button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+/* Sample Queries */
+.sample-queries {
+  margin-bottom: 30px;
+}
+
+.sample-queries h3 {
+  color: #2c5530;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.sample-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 15px;
+}
+
+.sample-card {
+  background: white;
+  border-radius: 8px;
+  padding: 15px;
+  border: 1px solid #e0e0e0;
+  transition: all 0.3s ease;
+}
+
+.sample-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.sample-card h4 {
+  margin: 0 0 10px 0;
+  color: #2c5530;
+  font-size: 1.1em;
+}
+
+.sample-description {
+  color: #666;
+  font-size: 0.9em;
+  margin-bottom: 15px;
+}
+
+.sample-button {
+  background: #f0f8f0;
+  color: #2c5530;
+  border: 1px solid #4caf50;
+  padding: 8px 16px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.sample-button:hover {
+  background: #4caf50;
+  color: white;
+}
+
+/* Error Section */
+.error-section {
+  background: #ffebee;
+  border: 1px solid #f44336;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.error-section h3 {
+  color: #d32f2f;
+  margin: 0 0 10px 0;
+}
+
+.error-message {
+  color: #d32f2f;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.error-help {
+  color: #666;
+  font-size: 0.9em;
+}
+
+/* Response Section */
+.response-section {
+  background: white;
+  border-radius: 12px;
+  padding: 25px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border: 2px solid #e8f5e8;
+}
+
+.response-section h2 {
+  color: #2c5530;
+  margin-bottom: 25px;
+  text-align: center;
+}
+
+.analysis-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  margin-bottom: 25px;
+}
+
+.analysis-card {
+  background: #f9f9f9;
+  border-radius: 8px;
+  padding: 20px;
+  border-left: 4px solid #4caf50;
+}
+
+.analysis-card h3 {
+  margin: 0 0 15px 0;
+  color: #2c5530;
+  font-size: 1.2em;
+}
+
+.analysis-card p {
+  margin: 8px 0;
+  color: #555;
+}
+
+.analysis-card strong {
+  color: #2c5530;
+}
+
+.risk-low { color: #4caf50; font-weight: bold; }
+.risk-moderate { color: #ff9800; font-weight: bold; }
+.risk-high { color: #f44336; font-weight: bold; }
+
+.agent-response {
+  background: #f0f8f0;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.agent-response h3 {
+  margin: 0 0 15px 0;
+  color: #2c5530;
+}
+
+.response-text {
+  color: #333;
+  line-height: 1.8;
+}
+
+.response-text p {
+  margin: 8px 0;
+}
+
+.technical-details {
+  background: #f5f5f5;
+  border-radius: 8px;
+  padding: 15px;
+}
+
+.technical-details h3 {
+  margin: 0 0 15px 0;
+  color: #2c5530;
+  font-size: 1.1em;
+}
+
+.tech-info p {
+  margin: 5px 0;
+  color: #666;
+  font-size: 0.9em;
+}
+
+.tech-info strong {
+  color: #333;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .agriculture-tester {
+    padding: 15px;
+  }
+  
+  .capabilities-detail {
+    grid-template-columns: 1fr;
+  }
+  
+  .status-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .analysis-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .sample-grid {
+    grid-template-columns: 1fr;
+  }
+}

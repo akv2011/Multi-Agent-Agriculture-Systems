@@ -1,5 +1,6 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import AgentsPage from "./components/AgentsPage";
+import EnhancedAgentsPage from "./components/EnhancedAgentsPage";
 import Layout from "./components/Layout";
 import DashboardPage from "./components/DashboardPage";
 import WorkflowsPage from "./components/WorkflowsPage";
@@ -18,6 +19,10 @@ const router = createBrowserRouter([
       },
       {
         path: "agents",
+        element: <EnhancedAgentsPage />,
+      },
+      {
+        path: "agents-old",
         element: <AgentsPage />,
       },
       {
