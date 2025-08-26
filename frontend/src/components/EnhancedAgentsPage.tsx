@@ -908,7 +908,7 @@ const EnhancedAgentsPage: React.FC = () => {
                         placeholder={language === 'tamil' ? param.placeholderML : language === 'hindi' ? param.placeholderHI : param.placeholder}
                         min={param.min}
                         max={param.max}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm hover:border-gray-400 transition-colors duration-200 placeholder-gray-400"
+                        className={`w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm hover:border-gray-400 transition-colors duration-200 placeholder-gray-400 ${param.type === 'date' ? 'enhanced-date-input' : ''}`}
                       />
                     )}
                   </div>

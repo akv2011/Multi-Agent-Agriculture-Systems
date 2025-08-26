@@ -210,3 +210,58 @@ header.dashboard-header {
     justify-content: space-between;
   }
 }
+
+/* Date input calendar icon visibility for dashboard */
+.dashboard-content input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0) !important;
+  cursor: pointer !important;
+  color: #000000 !important;
+  background-color: transparent !important;
+  opacity: 1 !important;
+  width: 16px !important;
+  height: 16px !important;
+  display: block !important;
+  visibility: visible !important;
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+.dashboard-content input[type="date"]::-moz-calendar-picker-indicator {
+  cursor: pointer !important;
+  color: #000000 !important;
+  background-color: transparent !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Ensure date inputs have proper styling */
+.dashboard-content input[type="date"] {
+  color: #333333 !important;
+  background-color: #ffffff !important;
+  border: 1px solid #ddd !important;
+  position: relative !important;
+}
+
+/* More specific targeting for dashboard date inputs */
+.dashboard-date-input::-webkit-calendar-picker-indicator {
+  filter: invert(0) !important;
+  cursor: pointer !important;
+  color: #000000 !important;
+  background-color: transparent !important;
+  opacity: 1 !important;
+  width: 16px !important;
+  height: 16px !important;
+  display: block !important;
+  visibility: visible !important;
+  position: relative !important;
+  z-index: 10 !important;
+  margin-left: auto !important;
+}
+
+.dashboard-date-input::-moz-calendar-picker-indicator {
+  cursor: pointer !important;
+  color: #000000 !important;
+  background-color: transparent !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}

@@ -1194,3 +1194,27 @@
     justify-content: space-between;
   }
 }
+
+/* Date input calendar icon visibility */
+.agents-page input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0) !important;
+  cursor: pointer;
+  color: #000000 !important;
+  background-color: transparent !important;
+  opacity: 1 !important;
+  width: 16px;
+  height: 16px;
+}
+
+.agents-page input[type="date"]::-moz-calendar-picker-indicator {
+  cursor: pointer;
+  color: #000000 !important;
+  background-color: transparent !important;
+  opacity: 1 !important;
+}
+
+.agents-page input[type="date"] {
+  color: #333333 !important;
+  background-color: #ffffff !important;
+  border: 1px solid #ddd !important;
+}

@@ -675,7 +675,7 @@ function DashboardPage() {
                     📅 Analysis Period:
                   </label>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
-                    <input type="date" style={{
+                    <input type="date" className="dashboard-date-input" style={{
                       padding: "10px",
                       border: "1px solid #ddd",
                       borderRadius: "6px",
@@ -683,7 +683,7 @@ function DashboardPage() {
                       background: "white",
                       color: "#333"
                     }} />
-                    <input type="date" style={{
+                    <input type="date" className="dashboard-date-input" style={{
                       padding: "10px",
                       border: "1px solid #ddd",
                       borderRadius: "6px",
