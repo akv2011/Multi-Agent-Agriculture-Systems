@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Comprehensive Agent Model Integration Test
-Tests all agents that use AgriSens models to ensure they're working properly.
+Tests all agents that use AgriMitr models to ensure they're working properly.
 """
 
 import asyncio
@@ -49,7 +49,7 @@ class AgentModelTester:
         )
     
     async def test_crop_selection_agent(self):
-        """Test Crop Selection Agent with AgriSens model"""
+        """Test Crop Selection Agent with AgriMitr model"""
         print("\n🌾 Testing Crop Selection Agent...")
         try:
             from src.agents.crop_selection_agent import CropSelectionAgent
@@ -133,7 +133,7 @@ class AgentModelTester:
             print(f"❌ Disease Identification Agent: {str(e)}")
     
     async def test_irrigation_agent(self):
-        """Test Irrigation Agent with AgriSens model"""
+        """Test Irrigation Agent with AgriMitr model"""
         print("\n💧 Testing Irrigation Agent...")
         try:
             from src.agents.irrigation_agent import IrrigationAgent
@@ -373,7 +373,7 @@ class AgentModelTester:
             if "error" in result:
                 print(f"   Error: {result['error']}")
         
-        print("\n🤖 = Uses AgriSens ML Model")
+        print("\n🤖 = Uses AgriMitr ML Model")
         print("🌐 = Uses API/External Service")
         
         # Failed tests details

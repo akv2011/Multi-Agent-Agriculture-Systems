@@ -12,7 +12,7 @@ const AppContent: React.FC = () => {
     return (
       <div className="loading-container">
         <div className="loading-spinner-large"></div>
-        <p>Loading AgriSens...</p>
+        <p>Loading AgriMitr...</p>
       </div>
     );
   }

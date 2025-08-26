@@ -12,12 +12,12 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.agents.disease_identification_agent import DiseaseIdentificationAgent
-from src.models.agrisens_disease_identification import DiseaseIdentificationResult
+from src.models.AgriMitr_disease_identification import DiseaseIdentificationResult
 from src.core.agriculture_models import AgricultureQuery, Location
 
 
 class TestDiseaseIdentificationIntegration(unittest.TestCase):
-    """Test integration of disease identification agent with AgriSens model"""
+    """Test integration of disease identification agent with AgriMitr model"""
     
     def setUp(self):
         """Set up test environment"""
@@ -25,8 +25,8 @@ class TestDiseaseIdentificationIntegration(unittest.TestCase):
         
         # Sample test image paths
         self.test_images = {
-            "apple_scab": "AgriSens/PLANT-DISEASE-IDENTIFICATION/sample_images/apple_scab.jpg",
-            "tomato_late_blight": "AgriSens/PLANT-DISEASE-IDENTIFICATION/sample_images/tomato_late_blight.jpg"
+            "apple_scab": "AgriMitr/PLANT-DISEASE-IDENTIFICATION/sample_images/apple_scab.jpg",
+            "tomato_late_blight": "AgriMitr/PLANT-DISEASE-IDENTIFICATION/sample_images/tomato_late_blight.jpg"
         }
         
         # Sample image data
@@ -44,7 +44,7 @@ class TestDiseaseIdentificationIntegration(unittest.TestCase):
             print(f"Warning: Test image {self.test_images[image_key]} not found")
             return None
     
-    @patch('src.models.agrisens_disease_identification.load_disease_model')
+    @patch('src.models.AgriMitr_disease_identification.load_disease_model')
     @patch('src.agents.disease_identification_agent.DiseaseIdentificationAgent._identify_disease')
     def test_image_based_identification(self, mock_identify, mock_load_model):
         """Test disease identification with image data"""
@@ -79,7 +79,7 @@ class TestDiseaseIdentificationIntegration(unittest.TestCase):
         self.assertEqual(response.data["identification_method"], "image_analysis")
         self.assertGreater(response.data["confidence"], 90)
     
-    @patch('src.models.agrisens_disease_identification.identify_disease_from_symptoms')
+    @patch('src.models.AgriMitr_disease_identification.identify_disease_from_symptoms')
     def test_text_based_identification(self, mock_identify_from_symptoms):
         """Test disease identification with text description"""
         # Setup mock

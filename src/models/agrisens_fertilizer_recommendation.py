@@ -1,5 +1,5 @@
 """
-AgriSens Fertilizer Recommendation Integration
+AgriMitr Fertilizer Recommendation Integration
 Soil quality analysis and crop-specific nutrient optimization
 """
 
@@ -61,14 +61,14 @@ class NutrientPlan:
     total_cost: float
     expected_roi: float
 
-class AgriSensFertilizerModel:
-    """AgriSens fertilizer recommendation model"""
+class AgriMitrFertilizerModel:
+    """AgriMitr fertilizer recommendation model"""
     
     def __init__(self):
         self.fertilizer_database = self._load_fertilizer_database()
         self.crop_requirements = self._load_crop_requirements()
         self.soil_standards = self._load_soil_standards()
-        logger.info("AgriSens Fertilizer Model initialized")
+        logger.info("AgriMitr Fertilizer Model initialized")
     
     def _load_fertilizer_database(self) -> Dict[str, Dict[str, Any]]:
         """Load fertilizer database with properties and costs"""
@@ -711,15 +711,15 @@ class AgriSensFertilizerModel:
         return schedule
 
 # Global instance
-_agrisens_fertilizer_model = None
+_AgriMitr_fertilizer_model = None
 
-def get_agrisens_fertilizer_model() -> AgriSensFertilizerModel:
-    """Get singleton instance of AgriSens fertilizer model"""
-    global _agrisens_fertilizer_model
-    if _agrisens_fertilizer_model is None:
-        _agrisens_fertilizer_model = AgriSensFertilizerModel()
-        logger.info("AgriSens Fertilizer Model initialized successfully")
-    return _agrisens_fertilizer_model
+def get_AgriMitr_fertilizer_model() -> AgriMitrFertilizerModel:
+    """Get singleton instance of AgriMitr fertilizer model"""
+    global _AgriMitr_fertilizer_model
+    if _AgriMitr_fertilizer_model is None:
+        _AgriMitr_fertilizer_model = AgriMitrFertilizerModel()
+        logger.info("AgriMitr Fertilizer Model initialized successfully")
+    return _AgriMitr_fertilizer_model
 
 def enhance_input_materials_with_fertilizer_recommendation(
     crop_type: str,
@@ -730,7 +730,7 @@ def enhance_input_materials_with_fertilizer_recommendation(
     location_data: Optional[Dict[str, Any]] = None
 ) -> NutrientPlan:
     """
-    Enhance input materials agent with AgriSens fertilizer recommendations
+    Enhance input materials agent with AgriMitr fertilizer recommendations
     
     Args:
         crop_type: Type of crop being grown
@@ -743,7 +743,7 @@ def enhance_input_materials_with_fertilizer_recommendation(
     Returns:
         NutrientPlan with comprehensive fertilizer recommendations
     """
-    model = get_agrisens_fertilizer_model()
+    model = get_AgriMitr_fertilizer_model()
     
     # Analyze soil
     soil_analysis = model.analyze_soil(soil_data)

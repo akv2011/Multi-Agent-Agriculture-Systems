@@ -1,7 +1,7 @@
 """
 Test Irrigation Model Integration
 
-This test validates the integration of the AgriSens Irrigation Scheduling ML model 
+This test validates the integration of the AgriMitr Irrigation Scheduling ML model 
 with the Irrigation Agent, ensuring that it correctly generates irrigation schedules,
 water requirement calculations, and method recommendations.
 """
@@ -18,14 +18,14 @@ import json
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from src.agents.irrigation_agent import IrrigationAgent
-from src.models.agrisens_irrigation_scheduling import IrrigationModel
+from src.models.AgriMitr_irrigation_scheduling import IrrigationModel
 from src.core.agriculture_models import (
     AgricultureQuery, CropType, SoilType, Location, WeatherData
 )
 
 
 class TestIrrigationModelIntegration(unittest.TestCase):
-    """Test the integration of AgriSens irrigation model with the Irrigation Agent"""
+    """Test the integration of AgriMitr irrigation model with the Irrigation Agent"""
 
     def setUp(self):
         """Set up test environment"""
@@ -79,7 +79,7 @@ class TestIrrigationModelIntegration(unittest.TestCase):
         }
         
     @patch('src.agents.satellite_integration.get_satellite_data_for_location')
-    @patch('src.models.agrisens_irrigation_scheduling.get_irrigation_model')
+    @patch('src.models.AgriMitr_irrigation_scheduling.get_irrigation_model')
     async def test_irrigation_schedule_generation_with_model(self, mock_get_model, mock_get_satellite):
         """Test that irrigation schedules are correctly generated with ML model integration"""
         # Set up mocks
@@ -207,8 +207,8 @@ class TestIrrigationModelIntegration(unittest.TestCase):
         self.assertEqual(args["soil_data"]["soil_type"], "sandy_loam")
         
         # Verify model data integration in the response
-        self.assertIn("agrisens_model_output", response.metadata)
-        self.assertIn("agrisens_irrigation_ml_model", response.sources)
+        self.assertIn("AgriMitr_model_output", response.metadata)
+        self.assertIn("AgriMitr_irrigation_ml_model", response.sources)
         
         # Verify enhanced confidence score
         self.assertGreater(response.confidence_score, 0.7)
@@ -219,7 +219,7 @@ class TestIrrigationModelIntegration(unittest.TestCase):
                 self.assertTrue(any("model" in line.lower() for line in response.metadata.get("efficiency_tips", [])))
                 
     @patch('src.agents.satellite_integration.get_satellite_data_for_location')
-    @patch('src.models.agrisens_irrigation_scheduling.get_irrigation_model')
+    @patch('src.models.AgriMitr_irrigation_scheduling.get_irrigation_model')
     async def test_water_requirement_calculation_with_model(self, mock_get_model, mock_get_satellite):
         """Test that water requirements are correctly calculated using ML model"""
         # Set up mocks
@@ -262,7 +262,7 @@ class TestIrrigationModelIntegration(unittest.TestCase):
         mock_model.generate_satellite_enhanced_irrigation_plan.assert_called_once()
         
     @patch('src.agents.satellite_integration.get_satellite_data_for_location')
-    @patch('src.models.agrisens_irrigation_scheduling.get_irrigation_model')
+    @patch('src.models.AgriMitr_irrigation_scheduling.get_irrigation_model')
     async def test_irrigation_method_recommendation_with_model(self, mock_get_model, mock_get_satellite):
         """Test irrigation method recommendations are correctly enhanced using ML model"""
         # Set up mocks
@@ -297,7 +297,7 @@ class TestIrrigationModelIntegration(unittest.TestCase):
         
         # Check efficiency tips include model recommendations
         efficiency_tips = response.metadata["efficiency_tips"]
-        self.assertTrue(any("[AgriSens Model]" in tip for tip in efficiency_tips))
+        self.assertTrue(any("[AgriMitr Model]" in tip for tip in efficiency_tips))
         
         # Verify model was called
         mock_model.generate_satellite_enhanced_irrigation_plan.assert_called_once()

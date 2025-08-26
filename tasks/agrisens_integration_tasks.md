@@ -1,4 +1,4 @@
-# AgriSens Integration Task List
+# AgriMitr Integration Task List
 
 ## 1. Model Implementation Tasks
 

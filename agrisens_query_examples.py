@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-AgriSens Query Examples
-This script demonstrates example queries for each AgriSens agent and how they would be processed.
+AgriMitr Query Examples
+This script demonstrates example queries for each AgriMitr agent and how they would be processed.
 """
 
 import os
@@ -91,7 +91,7 @@ def crop_recommendation_examples():
                 "phosphorus": "Adequate (32 kg/hectare)",
                 "potassium": "High (72 kg/hectare)"
             },
-            "agrisens_confidence": 99.55,
+            "AgriMitr_confidence": 99.55,
             "satellite_data": {
                 "vegetation_index": "Healthy",
                 "soil_moisture": "Adequate (35%)"
@@ -124,7 +124,7 @@ def crop_recommendation_examples():
                 "summary": "Balanced nitrogen and phosphorus with high potassium",
                 "recommendation": "Consider adding nitrogen supplement for non-legume crops"
             },
-            "agrisens_confidence": 99.55
+            "AgriMitr_confidence": 99.55
         }
     )
 
@@ -297,8 +297,8 @@ def router_examples():
 
 def main():
     """Main function to show examples for all agents"""
-    print_header("AgriSens Agent Query Examples")
-    print("This script demonstrates example queries for each AgriSens agent and how they would be processed.")
+    print_header("AgriMitr Agent Query Examples")
+    print("This script demonstrates example queries for each AgriMitr agent and how they would be processed.")
     
     disease_identification_examples()
     crop_recommendation_examples()
@@ -307,9 +307,9 @@ def main():
     smart_farming_examples()
     router_examples()
     
-    print_header("AgriSens Integration Summary")
+    print_header("AgriMitr Integration Summary")
     print("""
-The AgriSens integration provides comprehensive AI-powered agricultural advisory services
+The AgriMitr integration provides comprehensive AI-powered agricultural advisory services
 through specialized agents that can handle a wide range of queries related to:
 
 1. Crop Selection (with 99.55% accuracy model)

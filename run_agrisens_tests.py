@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-AgriSens Test Runner
+AgriMitr Test Runner
 
-This script runs tests for the key AgriSens components:
+This script runs tests for the key AgriMitr components:
 1. Disease Prediction Agent
 2. Crop Recommendation Agent  
 3. Weather Forecast Functionality
@@ -10,7 +10,7 @@ This script runs tests for the key AgriSens components:
 5. Market Timing Model Integration
 
 Usage:
-    python run_agrisens_tests.py
+    python run_AgriMitr_tests.py
 """
 
 import os
@@ -26,16 +26,16 @@ def print_section(title):
     print("="*80)
 
 def run_tests():
-    """Run all AgriSens integration tests"""
-    print_section("Running AgriSens Models and Agents Tests")
+    """Run all AgriMitr integration tests"""
+    print_section("Running AgriMitr Models and Agents Tests")
     
     # Define all test files to run
     test_files = [
-        "tests/test_agrisens_integration.py",
+        "tests/test_AgriMitr_integration.py",
         "tests/test_disease_identification_integration.py", 
         "tests/test_irrigation_model_integration.py",
         "tests/test_market_timing_model_integration.py",
-        "tests/test_agrisens_models_and_agents.py"
+        "tests/test_AgriMitr_models_and_agents.py"
     ]
     
     # Run each test file individually using subprocess

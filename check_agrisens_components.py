@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Check AgriSens Model Availability
+Check AgriMitr Model Availability
 
-This script checks for the existence and structure of key AgriSens model files 
+This script checks for the existence and structure of key AgriMitr model files 
 without actually importing them to avoid TensorFlow initialization issues.
 """
 
@@ -44,7 +44,7 @@ def check_disease_prediction_agent():
     agent_exists = check_file_exists(agent_path, "Disease identification agent")
     
     # Check model file
-    model_path = os.path.join("src", "models", "agrisens_disease_identification.py")
+    model_path = os.path.join("src", "models", "AgriMitr_disease_identification.py")
     model_exists = check_file_exists(model_path, "Disease identification model")
     
     # Check test file
@@ -52,7 +52,7 @@ def check_disease_prediction_agent():
     test_exists = check_file_exists(test_path, "Disease identification test")
     
     # Check disease dataset directory
-    dataset_path = os.path.join("AgriSens", "PLANT-DISEASE-IDENTIFICATION")
+    dataset_path = os.path.join("AgriMitr", "PLANT-DISEASE-IDENTIFICATION")
     dataset_exists = check_directory_exists(dataset_path, "Disease identification dataset")
     
     # Check sample images
@@ -78,19 +78,19 @@ def check_crop_recommendation_agent():
     agent_exists = check_file_exists(agent_path, "Crop selection agent")
     
     # Check model file
-    model_path = os.path.join("src", "models", "agrisens_crop_recommendation.py")
+    model_path = os.path.join("src", "models", "AgriMitr_crop_recommendation.py")
     model_exists = check_file_exists(model_path, "Crop recommendation model")
     
     # Check integration test
-    test_path = os.path.join("tests", "test_agrisens_integration.py")
-    test_exists = check_file_exists(test_path, "AgriSens integration test")
+    test_path = os.path.join("tests", "test_AgriMitr_integration.py")
+    test_exists = check_file_exists(test_path, "AgriMitr integration test")
     
     # Check crop dataset directory
-    dataset_path = os.path.join("AgriSens", "CROP-RECOMMENDATION")
+    dataset_path = os.path.join("AgriMitr", "CROP-RECOMMENDATION")
     dataset_exists = check_directory_exists(dataset_path, "Crop recommendation dataset")
     
     # Check test data file
-    data_path = os.path.join("data", "agrisens", "crop_recommendation_test.csv")
+    data_path = os.path.join("data", "AgriMitr", "crop_recommendation_test.csv")
     data_exists = check_file_exists(data_path, "Crop recommendation test data")
     
     result = {
@@ -116,7 +116,7 @@ def check_weather_forecast_agent():
     test_exists = check_file_exists(test_path, "Agent router integration test")
     
     # Check weather data
-    weather_path = os.path.join("data", "agrisens", "weather_data_test.csv")
+    weather_path = os.path.join("data", "AgriMitr", "weather_data_test.csv")
     weather_exists = check_file_exists(weather_path, "Weather test data")
     
     result = {
@@ -136,7 +136,7 @@ def check_irrigation_model():
     agent_exists = check_file_exists(agent_path, "Irrigation agent")
     
     # Check model file
-    model_path = os.path.join("src", "models", "agrisens_irrigation_scheduling.py")
+    model_path = os.path.join("src", "models", "AgriMitr_irrigation_scheduling.py")
     model_exists = check_file_exists(model_path, "Irrigation model")
     
     # Check test file
@@ -144,7 +144,7 @@ def check_irrigation_model():
     test_exists = check_file_exists(test_path, "Irrigation model integration test")
     
     # Check irrigation data file
-    data_path = os.path.join("data", "agrisens", "irrigation_data_test.csv")
+    data_path = os.path.join("data", "AgriMitr", "irrigation_data_test.csv")
     data_exists = check_file_exists(data_path, "Irrigation test data")
     
     result = {
@@ -165,7 +165,7 @@ def check_market_timing_model():
     agent_exists = check_file_exists(agent_path, "Market timing agent")
     
     # Check model file
-    model_path = os.path.join("src", "models", "agrisens_market_timing.py")
+    model_path = os.path.join("src", "models", "AgriMitr_market_timing.py")
     model_exists = check_file_exists(model_path, "Market timing model")
     
     # Check test file
@@ -173,7 +173,7 @@ def check_market_timing_model():
     test_exists = check_file_exists(test_path, "Market timing integration test")
     
     # Check market data file
-    data_path = os.path.join("data", "agrisens", "market_prices_test.csv")
+    data_path = os.path.join("data", "AgriMitr", "market_prices_test.csv")
     data_exists = check_file_exists(data_path, "Market prices test data")
     
     result = {
@@ -213,12 +213,12 @@ def generate_report(results):
     
     print("\nOVERALL STATUS:")
     if all_files_exist:
-        print("✅ SUCCESS: All AgriSens model and agent files are in place")
+        print("✅ SUCCESS: All AgriMitr model and agent files are in place")
     else:
-        print("❌ WARNING: Some AgriSens model or agent files are missing")
+        print("❌ WARNING: Some AgriMitr model or agent files are missing")
     
     # Generate a complete report file
-    report_path = "agrisens_status_report.json"
+    report_path = "AgriMitr_status_report.json"
     report_data = {
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "components": {
@@ -238,7 +238,7 @@ def generate_report(results):
 
 def main():
     """Run all checks and generate report"""
-    print("Checking AgriSens model and agent files...")
+    print("Checking AgriMitr model and agent files...")
     
     results = [
         check_disease_prediction_agent(),

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-AgriSens Agent Verification Script (Minimal Version)
+AgriMitr Agent Verification Script (Minimal Version)
 Simple script to verify that the model agents exist and can be imported
 """
 
@@ -15,13 +15,13 @@ def print_header(text):
 
 def verify_model_files():
     """Verify that the model files exist"""
-    print_header("Verifying AgriSens Model Files")
+    print_header("Verifying AgriMitr Model Files")
     
     model_files = [
-        "src/models/agrisens_crop_recommendation.py",
-        "src/models/agrisens_disease_identification.py",
-        "src/models/agrisens_irrigation_scheduling.py",
-        "src/models/agrisens_fertilizer_recommendation.py"
+        "src/models/AgriMitr_crop_recommendation.py",
+        "src/models/AgriMitr_disease_identification.py",
+        "src/models/AgriMitr_irrigation_scheduling.py",
+        "src/models/AgriMitr_fertilizer_recommendation.py"
     ]
     
     for file_path in model_files:
@@ -30,11 +30,11 @@ def verify_model_files():
         else:
             print(f"❌ Missing: {file_path}")
     
-    print("\nThese files contain the AgriSens AI models that power the agent capabilities.")
+    print("\nThese files contain the AgriMitr AI models that power the agent capabilities.")
 
 def verify_agent_files():
     """Verify that the agent files exist"""
-    print_header("Verifying AgriSens Agent Files")
+    print_header("Verifying AgriMitr Agent Files")
     
     agent_files = [
         "src/agents/crop_selection_agent.py",
@@ -51,11 +51,11 @@ def verify_agent_files():
         else:
             print(f"❌ Missing: {file_path}")
     
-    print("\nThese agents utilize the AgriSens models to provide agricultural advice.")
+    print("\nThese agents utilize the AgriMitr models to provide agricultural advice.")
 
 def verify_test_files():
     """Verify that the test files exist"""
-    print_header("Verifying AgriSens Test Files")
+    print_header("Verifying AgriMitr Test Files")
     
     test_files = [
         "tests/test_disease_identification_integration.py",
@@ -71,15 +71,15 @@ def verify_test_files():
         else:
             print(f"❌ Missing: {file_path}")
     
-    print("\nThese test files verify the functionality of the AgriSens integration.")
+    print("\nThese test files verify the functionality of the AgriMitr integration.")
 
 def verify_sample_data():
     """Verify that sample data exists"""
     print_header("Verifying Sample Data")
     
     sample_files = [
-        "AgriSens/PLANT-DISEASE-IDENTIFICATION/sample_images/apple_scab.jpg",
-        "AgriSens/PLANT-DISEASE-IDENTIFICATION/sample_images/tomato_late_blight.jpg"
+        "AgriMitr/PLANT-DISEASE-IDENTIFICATION/sample_images/apple_scab.jpg",
+        "AgriMitr/PLANT-DISEASE-IDENTIFICATION/sample_images/tomato_late_blight.jpg"
     ]
     
     for file_path in sample_files:
@@ -129,9 +129,9 @@ def show_weather_agent_sample():
     print_file_content_sample("src/agents/weather_forecast_agent.py", 20)
 
 def main():
-    """Main function to verify AgriSens integration"""
-    print_header("AgriSens Integration Verification")
-    print("This script verifies that the AgriSens models and agents are properly integrated.")
+    """Main function to verify AgriMitr integration"""
+    print_header("AgriMitr Integration Verification")
+    print("This script verifies that the AgriMitr models and agents are properly integrated.")
     
     # Verify files
     verify_model_files()
@@ -146,9 +146,9 @@ def main():
     
     print_header("Verification Summary")
     print("""
-The AgriSens integration appears to be in place with the following components:
+The AgriMitr integration appears to be in place with the following components:
 
-1. AgriSens Model Files - ML models for agricultural applications
+1. AgriMitr Model Files - ML models for agricultural applications
 2. Agent Implementation Files - Agent code that uses the models
 3. Test Files - Integration tests to verify functionality
 4. Sample Data - Sample images and data for testing

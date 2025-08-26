@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
-AgriSens Agent Testing Script
-This script tests the functionality of the main AgriSens agents:
+AgriMitr Agent Testing Script
+This script tests the functionality of the main AgriMitr agents:
 - Disease Prediction Agent
 - Crop Recommendation Agent  
 - Weather Forecast Agent
@@ -146,8 +146,8 @@ def check_dependencies():
         "src/agents/crop_selection_agent.py",
         "src/agents/weather_forecast_agent.py",
         "src/agents/agriculture_router.py",
-        "src/models/agrisens_disease_identification.py",
-        "src/models/agrisens_crop_recommendation.py"
+        "src/models/AgriMitr_disease_identification.py",
+        "src/models/AgriMitr_crop_recommendation.py"
     ]
     
     all_present = True
@@ -162,7 +162,7 @@ def check_dependencies():
     return all_present
 
 if __name__ == "__main__":
-    print("🌱 AgriSens Agent Functionality Test 🌱")
+    print("🌱 AgriMitr Agent Functionality Test 🌱")
     print("=======================================")
     
     if not check_dependencies():

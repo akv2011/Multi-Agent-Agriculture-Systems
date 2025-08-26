@@ -1,5 +1,5 @@
 """
-AgriSens Irrigation Scheduling Model
+AgriMitr Irrigation Scheduling Model
 ====================================
 
 Advanced machine learning model for optimizing irrigation scheduling based on:
@@ -61,7 +61,7 @@ class IrrigationModel:
     
     def __init__(self):
         """Initialize the irrigation scheduling model"""
-        logger.info("Initializing AgriSens Irrigation Scheduling Model")
+        logger.info("Initializing AgriMitr Irrigation Scheduling Model")
         
     def calculate_crop_water_needs(self, 
                                   crop_type: str,

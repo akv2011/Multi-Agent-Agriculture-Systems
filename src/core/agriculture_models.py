@@ -74,10 +74,10 @@ class QueryDomain(str, Enum):
     MARKET_TIMING = "market_timing"
     HARVEST_PLANNING = "harvest_planning"
     INPUT_MATERIALS = "input_materials"
-    DISEASE_IDENTIFICATION = "disease_identification"  # AgriSens disease identification
-    FERTILIZER_RECOMMENDATION = "fertilizer_recommendation"  # AgriSens fertilizer recommendation
-    WEATHER_FORECAST = "weather_forecast"  # AgriSens weather forecast
-    SMART_FARMING = "smart_farming"  # AgriSens smart farming guidance
+    DISEASE_IDENTIFICATION = "disease_identification"  # AgriMitr disease identification
+    FERTILIZER_RECOMMENDATION = "fertilizer_recommendation"  # AgriMitr fertilizer recommendation
+    WEATHER_FORECAST = "weather_forecast"  # AgriMitr weather forecast
+    SMART_FARMING = "smart_farming"  # AgriMitr smart farming guidance
     GENERAL = "general"
 
 

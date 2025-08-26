@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-AgriSens Agent Testing Script
+AgriMitr Agent Testing Script
 Tests specific agents with sample queries to verify functionality
 """
 
@@ -101,7 +101,7 @@ async def test_crop_recommendation_agent():
         
         # Print results
         if response.success:
-            print_result("AgriSens model confidence", f"{response.data.get('agrisens_confidence', 'N/A')}%")
+            print_result("AgriMitr model confidence", f"{response.data.get('AgriMitr_confidence', 'N/A')}%")
             
             if 'recommendations' in response.data:
                 recommendations = response.data['recommendations']
@@ -125,8 +125,8 @@ async def test_disease_identification_agent():
     
     # Sample image paths for testing
     sample_images = [
-        "AgriSens/PLANT-DISEASE-IDENTIFICATION/sample_images/apple_scab.jpg",
-        "AgriSens/PLANT-DISEASE-IDENTIFICATION/sample_images/tomato_late_blight.jpg"
+        "AgriMitr/PLANT-DISEASE-IDENTIFICATION/sample_images/apple_scab.jpg",
+        "AgriMitr/PLANT-DISEASE-IDENTIFICATION/sample_images/tomato_late_blight.jpg"
     ]
     
     # Test image-based identification
@@ -322,12 +322,12 @@ async def run_all_tests():
         traceback.print_exc()
 
 if __name__ == "__main__":
-    print("🧪 Starting AgriSens Agent Testing")
-    print("This script will test if the AgriSens model agents are working as expected")
+    print("🧪 Starting AgriMitr Agent Testing")
+    print("This script will test if the AgriMitr model agents are working as expected")
     
     # Parse command line arguments
     import argparse
-    parser = argparse.ArgumentParser(description='Test AgriSens agents')
+    parser = argparse.ArgumentParser(description='Test AgriMitr agents')
     parser.add_argument('--agent', type=str, choices=['crop', 'disease', 'weather', 'fertilizer', 'all'],
                         default='all', help='Specify which agent to test')
     args = parser.parse_args()

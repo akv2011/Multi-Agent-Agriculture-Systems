@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-AgriSens Agent & Model Status Check
+AgriMitr Agent & Model Status Check
 Quick verification of agent and model availability without loading heavy dependencies.
 """
 
@@ -17,24 +17,24 @@ def check_file_exists(file_path):
     return False, "Missing"
 
 def main():
-    print("🌱 AgriSens System Status Check")
+    print("🌱 AgriMitr System Status Check")
     print("=" * 50)
     
     # Check core model files
-    print("\n📚 AgriSens Model Files:")
+    print("\n📚 AgriMitr Model Files:")
     models = [
-        "src/models/agrisens_crop_recommendation.py",
-        "src/models/agrisens_disease_identification.py", 
-        "src/models/agrisens_irrigation_scheduling.py",
-        "src/models/agrisens_fertilizer_recommendation.py",
-        "src/models/agrisens_market_timing.py",
-        "src/models/agrisens_harvest_planning.py"
+        "src/models/AgriMitr_crop_recommendation.py",
+        "src/models/AgriMitr_disease_identification.py", 
+        "src/models/AgriMitr_irrigation_scheduling.py",
+        "src/models/AgriMitr_fertilizer_recommendation.py",
+        "src/models/AgriMitr_market_timing.py",
+        "src/models/AgriMitr_harvest_planning.py"
     ]
     
     model_status = {}
     for model in models:
         exists, size = check_file_exists(model)
-        model_name = Path(model).stem.replace("agrisens_", "").replace("_", " ").title()
+        model_name = Path(model).stem.replace("AgriMitr_", "").replace("_", " ").title()
         status = "✅" if exists else "❌"
         model_status[model_name] = exists
         print(f"   {status} {model_name}: {size}")
@@ -80,9 +80,9 @@ def main():
     # Check test data
     print("\n📊 Test Data:")
     test_files = [
-        "data/agrisens/crop_recommendation_test.csv",
-        "data/agrisens/irrigation_data_test.csv",
-        "data/agrisens/market_prices_test.csv"
+        "data/AgriMitr/crop_recommendation_test.csv",
+        "data/AgriMitr/irrigation_data_test.csv",
+        "data/AgriMitr/market_prices_test.csv"
     ]
     
     test_status = {}

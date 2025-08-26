@@ -1,7 +1,7 @@
 #!/bin/bash
 # Quick start script for testing the enhanced image upload functionality
 
-echo "🌱 Starting AgriSens Disease Detection Demo with Enhanced Image Upload"
+echo "🌱 Starting AgriMitr Disease Detection Demo with Enhanced Image Upload"
 echo "======================================================================="
 
 # Go to the project root

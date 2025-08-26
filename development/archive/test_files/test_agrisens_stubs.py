@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Simple AgriSens Model Agent Test
+Simple AgriMitr Model Agent Test
 
-This script runs basic tests on the AgriSens agents using stub models.
+This script runs basic tests on the AgriMitr agents using stub models.
 It avoids direct TensorFlow calls to prevent segmentation faults.
 
 1. Disease Prediction Agent
@@ -18,14 +18,14 @@ from unittest.mock import patch, MagicMock
 # Add project root to path
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
-class StubAgriSensTest(unittest.TestCase):
-    """Test the basic functionality of AgriSens agents using stubs"""
+class StubAgriMitrTest(unittest.TestCase):
+    """Test the basic functionality of AgriMitr agents using stubs"""
 
     def setUp(self):
         """Set up test environment"""
         print("\nSetting up stub test environment...")
 
-    @patch('src.models.agrisens_disease_identification.identify_disease_from_text')
+    @patch('src.models.AgriMitr_disease_identification.identify_disease_from_text')
     def test_disease_prediction_stub(self, mock_identify):
         """Test disease prediction agent with stub response"""
         from src.agents.disease_identification_agent import DiseaseIdentificationAgent
@@ -62,7 +62,7 @@ class StubAgriSensTest(unittest.TestCase):
         
         print("✅ Disease prediction agent test passed")
 
-    @patch('src.models.agrisens_crop_recommendation.AgriSensCropModel.get_model')
+    @patch('src.models.AgriMitr_crop_recommendation.AgriMitrCropModel.get_model')
     def test_crop_recommendation_stub(self, mock_get_model):
         """Test crop recommendation agent with stub response"""
         from src.agents.crop_selection_agent import CropSelectionAgent
@@ -90,7 +90,7 @@ class StubAgriSensTest(unittest.TestCase):
         )
         
         # Test recommendation method directly
-        result = agent._get_agrisens_crop_recommendation(query)
+        result = agent._get_AgriMitr_crop_recommendation(query)
         
         print(f"Crop recommendation result: {result}")
         self.assertIsNotNone(result)
@@ -149,7 +149,7 @@ class StubAgriSensTest(unittest.TestCase):
         
         print("✅ Weather forecast agent test passed")
 
-    @patch('src.models.agrisens_irrigation_scheduling.IrrigationModel.get_model')
+    @patch('src.models.AgriMitr_irrigation_scheduling.IrrigationModel.get_model')
     def test_irrigation_model_stub(self, mock_get_model):
         """Test irrigation model with stub response"""
         from src.agents.irrigation_agent import IrrigationAgent
@@ -192,7 +192,7 @@ class StubAgriSensTest(unittest.TestCase):
         
         print("✅ Irrigation model test passed")
 
-    @patch('src.models.agrisens_market_timing.MarketTimingModel.get_model')
+    @patch('src.models.AgriMitr_market_timing.MarketTimingModel.get_model')
     def test_market_timing_stub(self, mock_get_model):
         """Test market timing model with stub response"""
         try:

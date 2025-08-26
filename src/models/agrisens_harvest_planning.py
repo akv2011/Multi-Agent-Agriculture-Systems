@@ -1,5 +1,5 @@
 """
-AgriSens Harvest Planning Integration
+AgriMitr Harvest Planning Integration
 Advanced harvest scheduling with crop maturity detection and weather integration
 """
 
@@ -69,13 +69,13 @@ class HarvestPlan:
     post_harvest_handling: List[str]
     satellite_enhancement: Optional[Dict[str, Any]] = None
 
-class AgriSensHarvestModel:
-    """AgriSens harvest planning model"""
+class AgriMitrHarvestModel:
+    """AgriMitr harvest planning model"""
     
     def __init__(self):
         self.crop_maturity_models = self._load_crop_maturity_models()
         self.weather_impact_models = self._load_weather_impact_models()
-        logger.info("AgriSens Harvest Planning Model initialized")
+        logger.info("AgriMitr Harvest Planning Model initialized")
     
     def _load_crop_maturity_models(self) -> Dict[str, Dict[str, Any]]:
         """Load crop maturity models and standards"""
@@ -779,17 +779,17 @@ class AgriSensHarvestModel:
             ]
         
 # Global instance
-_agrisens_harvest_model = None
+_AgriMitr_harvest_model = None
 
-def get_agrisens_harvest_model() -> AgriSensHarvestModel:
-    """Get singleton instance of AgriSens harvest model"""
-    global _agrisens_harvest_model
-    if _agrisens_harvest_model is None:
-        _agrisens_harvest_model = AgriSensHarvestModel()
-        logger.info("AgriSens Harvest Planning Model initialized successfully")
-    return _agrisens_harvest_model
+def get_AgriMitr_harvest_model() -> AgriMitrHarvestModel:
+    """Get singleton instance of AgriMitr harvest model"""
+    global _AgriMitr_harvest_model
+    if _AgriMitr_harvest_model is None:
+        _AgriMitr_harvest_model = AgriMitrHarvestModel()
+        logger.info("AgriMitr Harvest Planning Model initialized successfully")
+    return _AgriMitr_harvest_model
 
-def enhance_harvest_planning_with_agrisens(
+def enhance_harvest_planning_with_AgriMitr(
     crop_type: str,
     crop_variety: str,
     planting_date: datetime,
@@ -800,7 +800,7 @@ def enhance_harvest_planning_with_agrisens(
     satellite_data: Optional[Dict[str, Any]] = None
 ) -> HarvestPlan:
     """
-    Enhance harvest planning with AgriSens harvest timing model
+    Enhance harvest planning with AgriMitr harvest timing model
     
     Args:
         crop_type: Type of crop (Rice, Wheat, etc)
@@ -815,7 +815,7 @@ def enhance_harvest_planning_with_agrisens(
     Returns:
         HarvestPlan with detailed harvest recommendations
     """
-    model = get_agrisens_harvest_model()
+    model = get_AgriMitr_harvest_model()
     
     # Assess crop maturity
     maturity = model.assess_maturity(

@@ -10,7 +10,7 @@ import time
 from pathlib import Path
 
 def main():
-    print("🌱 AgriSens Disease Detection - Enhanced Image Upload Demo")
+    print("🌱 AgriMitr Disease Detection - Enhanced Image Upload Demo")
     print("=" * 60)
     
     print("\n📊 Frontend UI Enhancements Made:")
@@ -32,7 +32,7 @@ def main():
     print("- Enhanced AgricultureChat.tsx component")
     print("- Added lucide-react icons (Camera, X)")
     print("- Improved image handling with base64 encoding")
-    print("- Context payload includes image_base64 for AgriSens CNN")
+    print("- Context payload includes image_base64 for AgriMitr CNN")
     print("- Responsive design with mobile-friendly upload")
     
     print("\n📁 Files Modified:")
@@ -70,17 +70,17 @@ def main():
     print("4. UI shows 'Disease Image Attached' with remove option")
     print("5. Example queries change to disease-focused suggestions")
     print("6. User can type or click example query")
-    print("7. Image sent as base64 in context payload to AgriSens CNN")
+    print("7. Image sent as base64 in context payload to AgriMitr CNN")
     
     print("\n🔍 Backend Integration:")
     print("- Image data sent as 'image_base64' in context payload")
-    print("- AgriSens CNN model can process the image")
+    print("- AgriMitr CNN model can process the image")
     print("- Ground search service provides additional context")
     print("- Gemini API fallback for robust disease identification")
     
     print("\n✨ Next Steps:")
     print("- Test with actual plant disease images")
-    print("- Verify AgriSens CNN model integration")
+    print("- Verify AgriMitr CNN model integration")
     print("- Add more visual feedback during processing")
     print("- Consider adding image compression for large files")
     

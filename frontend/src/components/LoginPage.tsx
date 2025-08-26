@@ -57,14 +57,14 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
           <div className="logo-container">
             <img 
               src="/logo.png" 
-              alt="AgriSens Logo" 
+              alt="AgriMitr Logo" 
               className="login-logo"
               onError={(e) => {
                 (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByeD0iMTIiIGZpbGw9IiNERkJBNDciLz4KPHN2ZyB4PSIxNiIgeT0iMTYiIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIj4KPHA=';
               }}
             />
           </div>
-          <h1 className="login-title">AgriSens</h1>
+          <h1 className="login-title">AgriMitr</h1>
           <p className="login-subtitle">Smart Agriculture Platform</p>
         </div>
 
@@ -192,7 +192,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         </div>
 
         <div className="login-footer">
-          <p>&copy; 2025 AgriSens. All rights reserved.</p>
+          <p>&copy; 2025 AgriMitr. All rights reserved.</p>
           <p>Empowering Agriculture with Smart Technology</p>
         </div>
       </div>

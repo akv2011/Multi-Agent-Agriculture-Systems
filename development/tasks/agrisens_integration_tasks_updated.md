@@ -1,4 +1,4 @@
-# AgriSens Integration Task List - Updated
+# AgriMitr Integration Task List - Updated
 
 ## 1. Complete Agent Implementations
 
@@ -72,7 +72,7 @@
 - [ ] Create test_google_search_integration.py
 
 ### 4.2 Create End-to-End Demo
-- [ ] Update agrisens_demo.py to include all new features
+- [ ] Update AgriMitr_demo.py to include all new features
 - [ ] Create example queries for each agent type
 - [ ] Add example images for disease identification testing
 - [ ] Add example NPK values for fertilizer recommendations
@@ -81,7 +81,7 @@
 ## 5. Documentation
 
 ### 5.1 Update Documentation
-- [ ] Update AGRISENS_INTEGRATION_README.md with new features
+- [ ] Update AgriMitr_INTEGRATION_README.md with new features
 - [ ] Create agent-specific documentation
 - [ ] Add API documentation for query routing
 - [ ] Create user guide for frontend features
