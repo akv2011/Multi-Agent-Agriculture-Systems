@@ -292,8 +292,10 @@ textarea.query-textarea:active {
 }
 
 .analysis-controls input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: none !important;
+  filter: invert(0) !important;
   cursor: pointer;
+  color: #000000 !important;
+  background-color: transparent;
 }
 
 .analysis-controls select option {
@@ -318,11 +320,33 @@ select {
 
 input[type="date"]::-webkit-calendar-picker-indicator {
   cursor: pointer;
+  filter: invert(0) !important;
+  color: #000000 !important;
+  background-color: transparent;
 }
 
-select option {
-  color: #333333 !important;
-  background-color: #ffffff !important;
+/* More specific targeting for analysis date input */
+.analysis-date-input::-webkit-calendar-picker-indicator {
+  filter: invert(0) !important;
+  cursor: pointer !important;
+  color: #000000 !important;
+  background-color: transparent !important;
+  opacity: 1 !important;
+  width: 16px !important;
+  height: 16px !important;
+  display: block !important;
+  visibility: visible !important;
+  position: relative !important;
+  z-index: 10 !important;
+  margin-left: auto !important;
+}
+
+.analysis-date-input::-moz-calendar-picker-indicator {
+  cursor: pointer !important;
+  color: #000000 !important;
+  background-color: transparent !important;
+  opacity: 1 !important;
+  visibility: visible !important;
 }
 
 /* Responsive design */

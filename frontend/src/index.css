@@ -405,3 +405,130 @@ button:focus-visible {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* Global styles for date input calendar icons */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0) !important;
+  cursor: pointer;
+  color: #000000 !important;
+  background-color: transparent !important;
+  opacity: 1 !important;
+  width: 16px;
+  height: 16px;
+}
+
+/* Firefox support for date input calendar icon */
+input[type="date"]::-moz-calendar-picker-indicator {
+  cursor: pointer;
+  color: #000000 !important;
+  background-color: transparent !important;
+  opacity: 1 !important;
+}
+
+/* General styling for date inputs to ensure proper contrast */
+input[type="date"] {
+  color: #333333 !important;
+  background-color: #ffffff !important;
+  border: 1px solid #ddd !important;
+}
+
+/* Dark mode support for calendar icons */
+@media (prefers-color-scheme: dark) {
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1) !important;
+  }
+  
+  input[type="date"]::-moz-calendar-picker-indicator {
+    filter: invert(1) !important;
+  }
+}
+
+/* Additional specific overrides for date inputs across all components */
+.agents-page input[type="date"]::-webkit-calendar-picker-indicator,
+.dashboard input[type="date"]::-webkit-calendar-picker-indicator,
+.demo-interface input[type="date"]::-webkit-calendar-picker-indicator,
+.simple-demo input[type="date"]::-webkit-calendar-picker-indicator,
+div input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0) !important;
+  cursor: pointer;
+  color: #000000 !important;
+  background-color: transparent !important;
+  opacity: 1 !important;
+}
+
+/* Enhanced visibility with higher specificity */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0) !important;
+  cursor: pointer !important;
+  color: #000000 !important;
+  background-color: transparent !important;
+  opacity: 1 !important;
+  width: 16px !important;
+  height: 16px !important;
+  display: block !important;
+  visibility: visible !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+/* Force calendar icon visibility with maximum specificity */
+* input[type="date"]::-webkit-calendar-picker-indicator,
+div input[type="date"]::-webkit-calendar-picker-indicator,
+.dashboard-content input[type="date"]::-webkit-calendar-picker-indicator,
+.simple-demo input[type="date"]::-webkit-calendar-picker-indicator,
+.analysis-date-input::-webkit-calendar-picker-indicator,
+.dashboard-date-input::-webkit-calendar-picker-indicator {
+  filter: invert(0) !important;
+  cursor: pointer !important;
+  color: #000000 !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>') !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  background-size: 16px 16px !important;
+  opacity: 1 !important;
+  width: 20px !important;
+  height: 20px !important;
+  display: block !important;
+  visibility: visible !important;
+  position: relative !important;
+  z-index: 999 !important;
+  margin: 0 !important;
+  padding: 2px !important;
+  border: none !important;
+  outline: none !important;
+}
+
+/* Firefox support */
+* input[type="date"]::-moz-calendar-picker-indicator {
+  cursor: pointer !important;
+  color: #000000 !important;
+  background-color: transparent !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Specific class for enhanced agents page date inputs */
+.enhanced-date-input::-webkit-calendar-picker-indicator {
+  filter: invert(0) !important;
+  cursor: pointer !important;
+  color: #000000 !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>') !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  background-size: 16px 16px !important;
+  opacity: 1 !important;
+  width: 20px !important;
+  height: 20px !important;
+  display: block !important;
+  visibility: visible !important;
+  position: relative !important;
+  z-index: 999 !important;
+  margin: 0 !important;
+  padding: 2px !important;
+  border: none !important;
+  outline: none !important;
+}
