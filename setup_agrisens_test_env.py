@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
-Environment Setup for AgriSens Integration Tests
-This script sets up the required Python environment for running AgriSens integration tests.
+Environment Setup for AgriMitr Integration Tests
+This script sets up the required Python environment for running AgriMitr integration tests.
 """
 
 import os
@@ -68,7 +68,7 @@ def install_missing_packages(packages):
 
 def create_simple_test_data():
     """Create simple test data for the models if it doesn't exist"""
-    data_dir = project_root / "data" / "agrisens"
+    data_dir = project_root / "data" / "AgriMitr"
     data_dir.mkdir(parents=True, exist_ok=True)
     
     # Create a simple crop recommendation test dataset
@@ -222,7 +222,7 @@ def check_directories():
     """Check that all required directories exist"""
     required_dirs = [
         "data",
-        "data/agrisens",
+        "data/AgriMitr",
         "models",
         "models/stubs",
         "src/models",
@@ -241,7 +241,7 @@ def check_directories():
 
 def setup_environment():
     """Set up the testing environment"""
-    print("Setting up AgriSens testing environment...")
+    print("Setting up AgriMitr testing environment...")
     
     # Check directories
     check_directories()

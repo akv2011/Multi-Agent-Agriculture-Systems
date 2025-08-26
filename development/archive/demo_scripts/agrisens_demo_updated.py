@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-AgriSens Integration Demo - Updated
-Demonstrates all integrated AgriSens models with the Multi-Agent Agriculture Systems
+AgriMitr Integration Demo - Updated
+Demonstrates all integrated AgriMitr models with the Multi-Agent Agriculture Systems
 """
 
 import sys
@@ -60,23 +60,23 @@ def print_result(label, value):
     """Print a formatted result"""
     print(f"   {label}: {value}")
 
-class AgriSensDemo:
-    """Demo class for showcasing AgriSens integration"""
+class AgriMitrDemo:
+    """Demo class for showcasing AgriMitr integration"""
     
     def __init__(self):
         """Initialize the demo"""
-        print("🌾🔍 AgriSens AI Models Integration Demo")
+        print("🌾🔍 AgriMitr AI Models Integration Demo")
         print("=" * 60)
-        print("Demonstrating the integration of advanced AgriSens AI models")
+        print("Demonstrating the integration of advanced AgriMitr AI models")
         print("with the Multi-Agent Agriculture Systems")
         
         # Initialize agents
-        self.crop_agent = CropSelectionAgent("crop-agent-1", "AgriSens Crop Selection")
-        self.irrigation_agent = IrrigationAgent("irrigation-agent-1", "AgriSens Irrigation Scheduling")
-        self.disease_agent = DiseaseIdentificationAgent("disease-agent-1", "AgriSens Disease Identification")
-        self.fertilizer_agent = FertilizerRecommendationAgent("fertilizer-agent-1", "AgriSens Fertilizer Recommendation")
-        self.weather_agent = WeatherForecastAgent("weather-agent-1", "AgriSens Weather Forecast")
-        self.guidance_agent = SmartFarmingGuidanceAgent("guidance-agent-1", "AgriSens Smart Farming Guide")
+        self.crop_agent = CropSelectionAgent("crop-agent-1", "AgriMitr Crop Selection")
+        self.irrigation_agent = IrrigationAgent("irrigation-agent-1", "AgriMitr Irrigation Scheduling")
+        self.disease_agent = DiseaseIdentificationAgent("disease-agent-1", "AgriMitr Disease Identification")
+        self.fertilizer_agent = FertilizerRecommendationAgent("fertilizer-agent-1", "AgriMitr Fertilizer Recommendation")
+        self.weather_agent = WeatherForecastAgent("weather-agent-1", "AgriMitr Weather Forecast")
+        self.guidance_agent = SmartFarmingGuidanceAgent("guidance-agent-1", "AgriMitr Smart Farming Guide")
         
         # Initialize router
         self.router = AgricultureRouter()
@@ -85,7 +85,7 @@ class AgriSensDemo:
         self.search_service = create_google_search_service()
         
         # Initialize agents
-        print("\n🚀 Initializing AgriSens-powered agents...")
+        print("\n🚀 Initializing AgriMitr-powered agents...")
         self.crop_agent.initialize()
         self.irrigation_agent.initialize()
         self.disease_agent.initialize()
@@ -94,8 +94,8 @@ class AgriSensDemo:
         print("✅ All agents initialized successfully")
 
     async def demo_crop_recommendation(self):
-        """Demonstrate crop recommendation with AgriSens ML model"""
-        print_header("🌱 DEMO 1: AgriSens Crop Recommendation (99.55% accuracy)")
+        """Demonstrate crop recommendation with AgriMitr ML model"""
+        print_header("🌱 DEMO 1: AgriMitr Crop Recommendation (99.55% accuracy)")
         
         locations = [
             {
@@ -131,7 +131,7 @@ class AgriSensDemo:
             print("   🔍 Analyzing soil, climate, and satellite data...")
             response = await self.crop_agent.process_query(query)
             
-            print_result("✅ AgriSens ML model confidence", f"{response.data.get('agrisens_confidence', 'N/A')}%")
+            print_result("✅ AgriMitr ML model confidence", f"{response.data.get('AgriMitr_confidence', 'N/A')}%")
             if 'npk_analysis' in response.data:
                 print_result("🧪 NPK Analysis", response.data['npk_analysis'].get('summary', 'N/A'))
             
@@ -153,16 +153,16 @@ class AgriSensDemo:
                         print(f"   - {key}: {value}")
 
     async def demo_disease_identification(self):
-        """Demonstrate disease identification with AgriSens CNN model"""
-        print_header("🔍 DEMO 2: AgriSens Disease Identification")
+        """Demonstrate disease identification with AgriMitr CNN model"""
+        print_header("🔍 DEMO 2: AgriMitr Disease Identification")
         
         # Demo image-based disease identification
         print_section("📷 Image-based Disease Identification")
         
         # Paths to sample disease images
         sample_images = {
-            "apple_scab": "AgriSens/PLANT-DISEASE-IDENTIFICATION/sample_images/apple_scab.jpg",
-            "tomato_late_blight": "AgriSens/PLANT-DISEASE-IDENTIFICATION/sample_images/tomato_late_blight.jpg",
+            "apple_scab": "AgriMitr/PLANT-DISEASE-IDENTIFICATION/sample_images/apple_scab.jpg",
+            "tomato_late_blight": "AgriMitr/PLANT-DISEASE-IDENTIFICATION/sample_images/tomato_late_blight.jpg",
         }
         
         # Process each sample image
@@ -184,7 +184,7 @@ class AgriSensDemo:
             )
             
             # Process query
-            print("   🔍 Analyzing image with AgriSens CNN model...")
+            print("   🔍 Analyzing image with AgriMitr CNN model...")
             response = await self.disease_agent.process_query(query)
             
             if response.success:
@@ -217,7 +217,7 @@ class AgriSensDemo:
             )
             
             # Process query
-            print("   🔍 Analyzing symptoms with AgriSens disease model...")
+            print("   🔍 Analyzing symptoms with AgriMitr disease model...")
             response = await self.disease_agent.process_query(query)
             
             if response.success:
@@ -232,8 +232,8 @@ class AgriSensDemo:
                 print(f"   ❌ Error: {response.message}")
 
     async def demo_fertilizer_recommendation(self):
-        """Demonstrate fertilizer recommendation with AgriSens model"""
-        print_header("🧪 DEMO 3: AgriSens Fertilizer Recommendation")
+        """Demonstrate fertilizer recommendation with AgriMitr model"""
+        print_header("🧪 DEMO 3: AgriMitr Fertilizer Recommendation")
         
         soil_samples = [
             {
@@ -414,19 +414,19 @@ class AgriSensDemo:
         
         print("\n\n✅ All demos completed successfully!")
         print("=" * 60)
-        print("AgriSens models have been successfully integrated with the")
+        print("AgriMitr models have been successfully integrated with the")
         print("Multi-Agent Agriculture Systems platform!")
 
 
 async def main():
     """Main demo function"""
-    parser = argparse.ArgumentParser(description="AgriSens Integration Demo")
+    parser = argparse.ArgumentParser(description="AgriMitr Integration Demo")
     parser.add_argument('--demo', type=str, choices=[
         'all', 'crop', 'disease', 'fertilizer', 'guidance', 'router'
     ], default='all', help="Specify which demo to run (default: all)")
     
     args = parser.parse_args()
-    demo = AgriSensDemo()
+    demo = AgriMitrDemo()
     
     if args.demo == 'all':
         await demo.run_all_demos()

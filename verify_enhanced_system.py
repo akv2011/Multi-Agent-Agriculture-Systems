@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Enhanced AgriSens System Verification Script
+Enhanced AgriMitr System Verification Script
 
 This script verifies all the newly implemented features:
 1. Image upload functionality
@@ -174,7 +174,7 @@ def test_file_structure():
 
 async def main():
     """Run all verification tests"""
-    print("🔍 ENHANCED AGRISENS SYSTEM VERIFICATION")
+    print("🔍 ENHANCED AgriMitr SYSTEM VERIFICATION")
     print("=" * 50)
     print(f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print()
@@ -214,7 +214,7 @@ async def main():
     if passed == total:
         print()
         print("🎉 ALL TESTS PASSED!")
-        print("✅ Enhanced AgriSens System is fully operational")
+        print("✅ Enhanced AgriMitr System is fully operational")
         print("✅ Image upload for disease identification: READY")
         print("✅ Auto query categorization: READY") 
         print("✅ English & Tamil language support: READY")

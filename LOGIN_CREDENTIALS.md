@@ -11,7 +11,7 @@
 | **👑 Administrator** | `admin` | `admin123` | Full system access |
 | **👤 Regular User** | `user` | `user123` | Standard user access |
 | **🌾 Farmer** | `farmer` | `farmer123` | Farm management access |
-| **🎯 AgriSens Expert** | `agrisens` | `agrisens2025` | Expert system access |
+| **🎯 AgriMitr Expert** | `AgriMitr` | `AgriMitr2025` | Expert system access |
 
 ---
 
@@ -37,7 +37,7 @@ VITE_DEMO_MODE=true                               # Demo mode enabled
 VITE_DEMO_ADMIN_HASH=YWRtaW46YWRtaW4xMjM=         # admin:admin123
 VITE_DEMO_USER_HASH=dXNlcjp1c2VyMTIz              # user:user123
 VITE_DEMO_FARMER_HASH=ZmFybWVyOmZhcm1lcjEyMw==     # farmer:farmer123
-VITE_DEMO_AGRISENS_HASH=YWdyaXNlbnM6YWdyaXNlbnMyMDI1 # agrisens:agrisens2025
+VITE_DEMO_AgriMitr_HASH=YWdyaXNlbnM6YWdyaXNlbnMyMDI1 # AgriMitr:AgriMitr2025
 ```
 
 ### **Security Features**

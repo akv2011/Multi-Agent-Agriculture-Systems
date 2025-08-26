@@ -46,7 +46,7 @@ frontend/
 - `VITE_DEMO_ADMIN_HASH`: admin:admin123 (encoded)
 - `VITE_DEMO_USER_HASH`: user:user123 (encoded)
 - `VITE_DEMO_FARMER_HASH`: farmer:farmer123 (encoded)
-- `VITE_DEMO_AGRISENS_HASH`: agrisens:agrisens2025 (encoded)
+- `VITE_DEMO_AgriMitr_HASH`: AgriMitr:AgriMitr2025 (encoded)
 
 ### Setup Instructions
 1. Copy `.env.example` to `.env` in the frontend directory

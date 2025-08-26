@@ -41,7 +41,7 @@ const mockCredentials = {
   admin: { password: 'admin123', role: 'Administrator' },
   user: { password: 'user123', role: 'User' },
   farmer: { password: 'farmer123', role: 'Farmer' },
-  agrisens: { password: 'agrisens2025', role: 'AgriSens Expert' }
+  AgriMitr: { password: 'AgriMitr2025', role: 'AgriMitr Expert' }
 };
 
 // LoginPage.tsx (commit 2cd8055)
@@ -49,7 +49,7 @@ const mockCredentials = {
   admin: 'admin123',
   user: 'user123', 
   farmer: 'farmer123',
-  agrisens: 'agrisens2025'
+  AgriMitr: 'AgriMitr2025'
 };
 ```
 

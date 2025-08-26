@@ -52,7 +52,7 @@ class AgricultureIntegrationService:
             from ..agents.crop_selection_agent import CropSelectionAgent
             from ..agents.pest_management_agent import PestManagementAgent
             from ..agents.irrigation_agent import IrrigationAgent
-            # Added: Input materials agent for fertilizer (AgriSens) integration
+            # Added: Input materials agent for fertilizer (AgriMitr) integration
             try:
                 from ..agents.input_materials_agent import InputMaterialsAgent
             except Exception as e:  # pragma: no cover - defensive import

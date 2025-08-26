@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-AgriSens Irrigation Model Integration Test
+AgriMitr Irrigation Model Integration Test
 This script tests the irrigation model integration to verify proper functionality.
 """
 
@@ -24,7 +24,7 @@ def test_irrigation_model_manually():
     
     try:
         # Import the model
-        from src.models.agrisens_irrigation_scheduling import IrrigationSchedulingModel
+        from src.models.AgriMitr_irrigation_scheduling import IrrigationSchedulingModel
         
         # Initialize the model
         irrigation_model = IrrigationSchedulingModel()
@@ -93,7 +93,7 @@ def test_irrigation_agent():
         print(f"Error testing irrigation agent: {e}")
 
 if __name__ == "__main__":
-    print("💧 AgriSens Irrigation Model Integration Test 💧")
+    print("💧 AgriMitr Irrigation Model Integration Test 💧")
     print("===============================================")
     
     try:

@@ -13,7 +13,7 @@ const AuthDebug: React.FC = () => {
     VITE_DEMO_ADMIN_HASH: import.meta.env.VITE_DEMO_ADMIN_HASH ? 'Present' : 'Missing',
     VITE_DEMO_USER_HASH: import.meta.env.VITE_DEMO_USER_HASH ? 'Present' : 'Missing',
     VITE_DEMO_FARMER_HASH: import.meta.env.VITE_DEMO_FARMER_HASH ? 'Present' : 'Missing',
-    VITE_DEMO_AGRISENS_HASH: import.meta.env.VITE_DEMO_AGRISENS_HASH ? 'Present' : 'Missing',
+    VITE_DEMO_AgriMitr_HASH: import.meta.env.VITE_DEMO_AgriMitr_HASH ? 'Present' : 'Missing',
   });
 
   return (

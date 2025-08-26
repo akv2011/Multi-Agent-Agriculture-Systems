@@ -28,8 +28,8 @@ from ..core.agriculture_models import (
 )
 from ..core.models import AgentCapability, Task
 from ..services.satellite_service import SatelliteService, LocationData
-# AgriSens Model Integration
-from ..models.agrisens_market_timing import get_market_timing_model, MarketTimingModel
+# AgriMitr Model Integration
+from ..models.AgriMitr_market_timing import get_market_timing_model, MarketTimingModel
 
 logger = logging.getLogger(__name__)
 
@@ -355,7 +355,7 @@ class MarketTimingAgent(BaseWorkerAgent):
     
     async def _generate_satellite_enhanced_forecast(self, commodity: Commodity, satellite_data=None, location=None) -> PriceForecast:
         """
-        Generate price forecast enhanced with satellite data using AgriSens ML model
+        Generate price forecast enhanced with satellite data using AgriMitr ML model
         
         Args:
             commodity: Commodity to forecast
@@ -365,9 +365,9 @@ class MarketTimingAgent(BaseWorkerAgent):
         Returns:
             Price forecast with satellite enhancements
         """
-        # Initialize AgriSens Market Timing Model
+        # Initialize AgriMitr Market Timing Model
         market_timing_model = get_market_timing_model()
-        logger.info(f"[AGRISENS] Using AgriSens market timing model for enhanced price forecast")
+        logger.info(f"[AgriMitr] Using AgriMitr market timing model for enhanced price forecast")
         
         # Get current price for commodity
         current_price = self._get_current_price(commodity)
@@ -385,7 +385,7 @@ class MarketTimingAgent(BaseWorkerAgent):
         # Get harvest date if available (simplified)
         harvest_date = None  # Default - assume already harvested
         
-        # Use AgriSens model for enhanced forecasting
+        # Use AgriMitr model for enhanced forecasting
         model_result = market_timing_model.generate_satellite_enhanced_market_timing(
             crop_type=commodity.value,
             location_data=location_data,
@@ -394,11 +394,11 @@ class MarketTimingAgent(BaseWorkerAgent):
             satellite_data=satellite_data
         )
         
-        logger.info(f"[AGRISENS] Generated market timing analysis for {commodity.value}")
+        logger.info(f"[AgriMitr] Generated market timing analysis for {commodity.value}")
         
         # If model couldn't produce results, fall back to basic forecast
         if not model_result:
-            logger.warning(f"[AGRISENS] Model failed to generate forecast, falling back to basic")
+            logger.warning(f"[AgriMitr] Model failed to generate forecast, falling back to basic")
             return self._generate_price_forecast(commodity)
         
         try:
@@ -492,7 +492,7 @@ class MarketTimingAgent(BaseWorkerAgent):
             return forecast
             
         except Exception as e:
-            logger.error(f"[AGRISENS] Error generating forecast with ML model: {e}")
+            logger.error(f"[AgriMitr] Error generating forecast with ML model: {e}")
             # Fall back to basic forecast if model fails
             return self._generate_price_forecast(commodity)
     
@@ -723,7 +723,7 @@ class MarketTimingAgent(BaseWorkerAgent):
     
     def _create_satellite_enhanced_recommendation(self, forecast: PriceForecast, satellite_data=None) -> MarketRecommendation:
         """
-        Create market recommendation enhanced with satellite insights and AgriSens ML model
+        Create market recommendation enhanced with satellite insights and AgriMitr ML model
         
         Args:
             forecast: Price forecast with model data
@@ -738,7 +738,7 @@ class MarketTimingAgent(BaseWorkerAgent):
         # Add ML model recommendations if available
         model_reasoning = []
         if hasattr(forecast, 'model_recommendations') and forecast.model_recommendations:
-            model_reasoning = [f"[AgriSens Model] {rec}" for rec in forecast.model_recommendations]
+            model_reasoning = [f"[AgriMitr Model] {rec}" for rec in forecast.model_recommendations]
             
             # Update recommendation based on model if available
             if forecast.optimal_selling_time == "sell_immediately":
@@ -768,7 +768,7 @@ class MarketTimingAgent(BaseWorkerAgent):
         
         # Add ML model insights
         if hasattr(forecast, 'model_enhanced') and forecast.model_enhanced:
-            enhanced_reasoning.append(f"Analysis powered by AgriSens ML market timing model")
+            enhanced_reasoning.append(f"Analysis powered by AgriMitr ML market timing model")
             
         # Add satellite-specific insights if available
         if satellite_data:

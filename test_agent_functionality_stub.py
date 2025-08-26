@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-AgriSens Agent Functionality Test with Stub Models
+AgriMitr Agent Functionality Test with Stub Models
 Tests agent functionality using lightweight stub models to avoid TensorFlow issues.
 """
 
@@ -18,7 +18,7 @@ os.chdir('/home/hari/Music/Multi-Agent-Agriculture-Systems')
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 os.environ['USE_STUB_MODELS'] = '1'
 
-print("🌱 AgriSens Agent Functionality Test (Stub Models)")
+print("🌱 AgriMitr Agent Functionality Test (Stub Models)")
 print("=" * 60)
 
 def test_core_imports():

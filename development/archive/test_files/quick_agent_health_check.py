@@ -65,19 +65,19 @@ def main():
     # Test models
     print("\n📚 MODELS:")
     models = [
-        "src/models/agrisens_crop_recommendation.py",
-        "src/models/agrisens_disease_identification.py",
-        "src/models/agrisens_irrigation_scheduling.py",
-        "src/models/agrisens_fertilizer_recommendation.py",
-        "src/models/agrisens_market_timing.py",
-        "src/models/agrisens_harvest_planning.py"
+        "src/models/AgriMitr_crop_recommendation.py",
+        "src/models/AgriMitr_disease_identification.py",
+        "src/models/AgriMitr_irrigation_scheduling.py",
+        "src/models/AgriMitr_fertilizer_recommendation.py",
+        "src/models/AgriMitr_market_timing.py",
+        "src/models/AgriMitr_harvest_planning.py"
     ]
     
     model_results = []
     for file_path in models:
         success, message = quick_import_test(file_path)
         status = "✅" if success else "❌"
-        model_name = os.path.basename(file_path).replace("agrisens_", "").replace(".py", "").replace("_", " ").title()
+        model_name = os.path.basename(file_path).replace("AgriMitr_", "").replace(".py", "").replace("_", " ").title()
         print(f"   {status} {model_name}")
         if not success:
             print(f"      Error: {message}")

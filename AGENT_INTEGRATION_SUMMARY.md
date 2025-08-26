@@ -90,7 +90,7 @@ All required domains are properly configured:
 Both new agents integrate with:
 - **Satellite Data**: Vegetation indices (NDVI, VARI, TCARI, etc.)
 - **Weather Services**: Forecast integration for optimal timing
-- **AgriSens Models**: ML-powered recommendations
+- **AgriMitr Models**: ML-powered recommendations
 - **WebSocket Real-time**: Live status updates
 - **Multi-language Support**: Hindi/English responses
 

@@ -1,7 +1,7 @@
 """
 Test Market Timing Model Integration
 
-This test validates the integration of the AgriSens Market Timing ML model 
+This test validates the integration of the AgriMitr Market Timing ML model 
 with the Market Timing Agent, ensuring that it correctly generates price forecasts,
 market recommendations, and optimal selling strategies.
 """
@@ -18,14 +18,14 @@ import json
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from src.agents.market_timing_agent import MarketTimingAgent, Commodity
-from src.models.agrisens_market_timing import MarketTimingModel
+from src.models.AgriMitr_market_timing import MarketTimingModel
 from src.core.agriculture_models import (
     AgricultureQuery, CropType, Location, WeatherData
 )
 
 
 class TestMarketTimingModelIntegration(unittest.TestCase):
-    """Test the integration of AgriSens market timing model with the Market Timing Agent"""
+    """Test the integration of AgriMitr market timing model with the Market Timing Agent"""
 
     def setUp(self):
         """Set up test environment"""
@@ -74,7 +74,7 @@ class TestMarketTimingModelIntegration(unittest.TestCase):
         }
         
     @patch('src.services.satellite_service.SatelliteService.get_current_data')
-    @patch('src.models.agrisens_market_timing.get_market_timing_model')
+    @patch('src.models.AgriMitr_market_timing.get_market_timing_model')
     async def test_price_forecast_with_model(self, mock_get_model, mock_get_satellite):
         """Test that price forecasts are correctly generated with ML model integration"""
         # Set up mocks
@@ -157,10 +157,10 @@ class TestMarketTimingModelIntegration(unittest.TestCase):
         self.assertIn("hold", response.response_text.lower()) 
         
         # Verify model recommendations in response
-        self.assertTrue(any("[AgriSens Model]" in rec for rec in response.recommendations))
+        self.assertTrue(any("[AgriMitr Model]" in rec for rec in response.recommendations))
         
     @patch('src.services.satellite_service.SatelliteService.get_current_data')
-    @patch('src.models.agrisens_market_timing.get_market_timing_model')
+    @patch('src.models.AgriMitr_market_timing.get_market_timing_model')
     async def test_selling_recommendation_with_model(self, mock_get_model, mock_get_satellite):
         """Test that selling recommendations are correctly generated with ML model integration"""
         # Set up mocks
@@ -219,7 +219,7 @@ class TestMarketTimingModelIntegration(unittest.TestCase):
         self.assertEqual(args["crop_type"], "wheat")
         
     @patch('src.services.satellite_service.SatelliteService.get_current_data')
-    @patch('src.models.agrisens_market_timing.get_market_timing_model')
+    @patch('src.models.AgriMitr_market_timing.get_market_timing_model')
     async def test_fallback_to_basic_forecast(self, mock_get_model, mock_get_satellite):
         """Test that the agent falls back to basic forecasting if model fails"""
         # Set up mocks

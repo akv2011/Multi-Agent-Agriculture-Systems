@@ -70,17 +70,17 @@ def test_agent_imports():
     return results
 
 def test_model_imports():
-    """Test if AgriSens model modules can be imported"""
-    print("\n🤖 Testing AgriSens Model Imports")
+    """Test if AgriMitr model modules can be imported"""
+    print("\n🤖 Testing AgriMitr Model Imports")
     print("=" * 40)
     
     models_to_test = [
-        ("Crop Recommendation Model", "src.models.agrisens_crop_recommendation"),
-        ("Disease Identification Model", "src.models.agrisens_disease_identification"),
-        ("Irrigation Scheduling Model", "src.models.agrisens_irrigation_scheduling"),
-        ("Fertilizer Recommendation Model", "src.models.agrisens_fertilizer_recommendation"),
-        ("Market Timing Model", "src.models.agrisens_market_timing"),
-        ("Harvest Planning Model", "src.models.agrisens_harvest_planning"),
+        ("Crop Recommendation Model", "src.models.AgriMitr_crop_recommendation"),
+        ("Disease Identification Model", "src.models.AgriMitr_disease_identification"),
+        ("Irrigation Scheduling Model", "src.models.AgriMitr_irrigation_scheduling"),
+        ("Fertilizer Recommendation Model", "src.models.AgriMitr_fertilizer_recommendation"),
+        ("Market Timing Model", "src.models.AgriMitr_market_timing"),
+        ("Harvest Planning Model", "src.models.AgriMitr_harvest_planning"),
     ]
     
     model_results = {}
@@ -164,7 +164,7 @@ def generate_summary(agent_results, model_results):
     if agent_success_rate < 100:
         print("   - Fix failed agent imports before proceeding")
     if model_success_rate < 100:
-        print("   - Check AgriSens model dependencies")
+        print("   - Check AgriMitr model dependencies")
     if overall_success >= 80:
         print("   - System is mostly healthy and ready for testing")
     elif overall_success >= 60:
@@ -174,7 +174,7 @@ def generate_summary(agent_results, model_results):
 
 def main():
     """Main test function"""
-    print("🌱 AgriSens Multi-Agent System - Component Availability Test")
+    print("🌱 AgriMitr Multi-Agent System - Component Availability Test")
     print("=" * 65)
     
     # Test agent imports

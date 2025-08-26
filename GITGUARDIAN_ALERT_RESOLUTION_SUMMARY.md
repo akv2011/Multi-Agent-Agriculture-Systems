@@ -72,7 +72,7 @@ The following API keys were exposed and must be **IMMEDIATELY ROTATED**:
 
 ### **Code Security Validation**
 ```bash
-🔍 AgriSens Security Validator
+🔍 AgriMitr Security Validator
 =============================
 ✅ .env: Clean
 ✅ frontend/.env: Clean  

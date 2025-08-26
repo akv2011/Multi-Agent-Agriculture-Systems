@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-AgriSens Integration Demo
-Demonstrates the AgriSens models integrated with the Multi-Agent Agriculture Systems
+AgriMitr Integration Demo
+Demonstrates the AgriMitr models integrated with the Multi-Agent Agriculture Systems
 """
 
 import sys
@@ -35,18 +35,18 @@ from src.core.agriculture_models import (
     AgricultureQuery, Location, SoilType, CropType, SeasonType
 )
 
-print("🌾🔍 AgriSens AI Models Integration Demo")
+print("🌾🔍 AgriMitr AI Models Integration Demo")
 print("=" * 60)
-print("Demonstrating the integration of advanced AgriSens AI models")
+print("Demonstrating the integration of advanced AgriMitr AI models")
 print("with the Multi-Agent Agriculture Systems")
 
 # Initialize agents
-crop_agent = CropSelectionAgent("crop-agent-1", "AgriSens Crop Selection")
-irrigation_agent = IrrigationAgent("irrigation-agent-1", "AgriSens Irrigation Scheduling")
-disease_agent = DiseaseIdentificationAgent("disease-agent-1", "AgriSens Disease Identification")
+crop_agent = CropSelectionAgent("crop-agent-1", "AgriMitr Crop Selection")
+irrigation_agent = IrrigationAgent("irrigation-agent-1", "AgriMitr Irrigation Scheduling")
+disease_agent = DiseaseIdentificationAgent("disease-agent-1", "AgriMitr Disease Identification")
 
 # Initialize agents
-print("\n🚀 Initializing AgriSens-powered agents...")
+print("\n🚀 Initializing AgriMitr-powered agents...")
 crop_agent.initialize()
 irrigation_agent.initialize()
 disease_agent.initialize()
@@ -54,8 +54,8 @@ print("✅ All agents initialized successfully")
 
 
 async def demo_crop_recommendation():
-    """Demonstrate crop recommendation with AgriSens ML model"""
-    print("\n\n🌱 DEMO 1: AgriSens Crop Recommendation (99.55% accuracy)")
+    """Demonstrate crop recommendation with AgriMitr ML model"""
+    print("\n\n🌱 DEMO 1: AgriMitr Crop Recommendation (99.55% accuracy)")
     print("-" * 60)
     
     locations = [
@@ -96,7 +96,7 @@ async def demo_crop_recommendation():
         print("   🔍 Analyzing soil, climate, and satellite data...")
         response = await crop_agent.process_query(query)
         
-        print(f"   ✅ AgriSens ML model confidence: {response.data.get('agrisens_confidence', 'N/A')}%")
+        print(f"   ✅ AgriMitr ML model confidence: {response.data.get('AgriMitr_confidence', 'N/A')}%")
         print(f"   🧪 NPK Analysis: {response.data.get('npk_analysis', {}).get('summary', 'N/A')}")
         
         if 'recommendations' in response.data and response.data['recommendations']:
@@ -120,8 +120,8 @@ async def demo_crop_recommendation():
 
 
 async def demo_irrigation_scheduling():
-    """Demonstrate irrigation scheduling with AgriSens model"""
-    print("\n\n💧 DEMO 2: AgriSens Irrigation Scheduling")
+    """Demonstrate irrigation scheduling with AgriMitr model"""
+    print("\n\n💧 DEMO 2: AgriMitr Irrigation Scheduling")
     print("-" * 60)
     
     crops = [
@@ -191,8 +191,8 @@ async def demo_irrigation_scheduling():
 
 
 async def demo_disease_identification():
-    """Demonstrate disease identification with AgriSens CNN model"""
-    print("\n\n🔍 DEMO 3: AgriSens Disease Identification")
+    """Demonstrate disease identification with AgriMitr CNN model"""
+    print("\n\n🔍 DEMO 3: AgriMitr Disease Identification")
     print("-" * 60)
     
     # In a real scenario, we would load actual plant disease images
@@ -202,7 +202,7 @@ async def demo_disease_identification():
         {
             "name": "Healthy Tomato Plant",
             "crop": CropType.TOMATO.value,
-            "image_path": "AgriSens/Datasets/PlantVillage/Tomato___healthy/0a8e7508-7777-4fe1-ad2f-246632afe65f___RS_HL 9782.JPG",
+            "image_path": "AgriMitr/Datasets/PlantVillage/Tomato___healthy/0a8e7508-7777-4fe1-ad2f-246632afe65f___RS_HL 9782.JPG",
             "location_name": "Karnataka, India",
             "lat": 12.9716,
             "lng": 77.5946
@@ -210,7 +210,7 @@ async def demo_disease_identification():
         {
             "name": "Apple with Cedar Apple Rust",
             "crop": CropType.APPLE.value,
-            "image_path": "AgriSens/Datasets/PlantVillage/Apple___Cedar_apple_rust/0040591c-ae02-4274-a777-3919cc1c7700___FREC_C.Rust 3847.JPG",
+            "image_path": "AgriMitr/Datasets/PlantVillage/Apple___Cedar_apple_rust/0040591c-ae02-4274-a777-3919cc1c7700___FREC_C.Rust 3847.JPG",
             "location_name": "Himachal Pradesh, India",
             "lat": 31.1048,
             "lng": 77.1734
@@ -281,14 +281,14 @@ async def demo_disease_identification():
 
 async def main():
     """Run all demos"""
-    print("\nRunning demos to showcase AgriSens model integration...")
+    print("\nRunning demos to showcase AgriMitr model integration...")
     
     try:
         await demo_crop_recommendation()
         await demo_irrigation_scheduling()
         await demo_disease_identification()
         
-        print("\n✨ AgriSens Integration Demo Complete ✨")
+        print("\n✨ AgriMitr Integration Demo Complete ✨")
         print("Advanced AI models are now enhancing your agricultural system's capabilities!")
         
     except Exception as e:

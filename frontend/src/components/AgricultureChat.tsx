@@ -49,7 +49,7 @@ const AgricultureChat: React.FC<AgricultureChatProps> = ({
   const [selectedLanguage, setSelectedLanguage] = useState<'english' | 'tamil'>('english');
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  // Advanced input states (AgriSens integrations)
+  // Advanced input states (AgriMitr integrations)
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [diseaseImagePreview, setDiseaseImagePreview] = useState<string | null>(null);
   const [soilFormOpen, setSoilFormOpen] = useState(false);
@@ -694,8 +694,8 @@ const AgricultureChat: React.FC<AgricultureChatProps> = ({
               <img src={imagePreview} alt="Preview" className="h-16 w-16 object-cover rounded border" />
               <div className="text-sm text-green-600">
                 {selectedLanguage === 'tamil' 
-                  ? 'AgriSens AI மாதிரியுடன் நோய் கண்டறிதலுக்கு தயார்' 
-                  : 'Ready for AI disease identification using AgriSens CNN model'}
+                  ? 'AgriMitr AI மாதிரியுடன் நோய் கண்டறிதலுக்கு தயார்' 
+                  : 'Ready for AI disease identification using AgriMitr CNN model'}
               </div>
             </div>
           </div>

@@ -18,9 +18,9 @@ from ..core.agriculture_models import (
     AgricultureQuery, AgentResponse, CropType, Location, QueryDomain, Language
 )
 from ..core.models import AgentCapability, Task
-# Import AgriSens Harvest Planning model
-from ..models.agrisens_harvest_planning import (
-    enhance_harvest_planning_with_agrisens, HarvestPlan, MaturityStage,
+# Import AgriMitr Harvest Planning model
+from ..models.AgriMitr_harvest_planning import (
+    enhance_harvest_planning_with_AgriMitr, HarvestPlan, MaturityStage,
     MaturityAssessment, WeatherWindow, HarvestRecommendation
 )
 from .satellite_integration import get_satellite_data_for_location, format_satellite_summary
@@ -276,8 +276,8 @@ class HarvestPlanningAgent(BaseWorkerAgent):
                 "semi_mechanized": context.get('has_semi_mechanized', True)
             }
             
-            # Use AgriSens model for enhanced harvest planning
-            harvest_plan = enhance_harvest_planning_with_agrisens(
+            # Use AgriMitr model for enhanced harvest planning
+            harvest_plan = enhance_harvest_planning_with_AgriMitr(
                 crop_type=str(crop_type.value) if isinstance(crop_type, Enum) else str(crop_type),
                 crop_variety=crop_variety,
                 planting_date=planting_date,
@@ -456,8 +456,8 @@ class HarvestPlanningAgent(BaseWorkerAgent):
                 "semi_mechanized": context.get('has_semi_mechanized', True)
             }
             
-            # Use AgriSens model for enhanced harvest planning
-            harvest_plan = enhance_harvest_planning_with_agrisens(
+            # Use AgriMitr model for enhanced harvest planning
+            harvest_plan = enhance_harvest_planning_with_AgriMitr(
                 crop_type=str(crop_type.value) if isinstance(crop_type, Enum) else str(crop_type),
                 crop_variety=crop_variety,
                 planting_date=planting_date,
@@ -956,7 +956,7 @@ class HarvestPlanningAgent(BaseWorkerAgent):
         )
     
     def _prepare_growth_data(self, crop_type: CropType, growth_stage: str, context: Dict[str, Any]) -> Dict[str, Any]:
-        """Prepare growth data for the AgriSens harvest model"""
+        """Prepare growth data for the AgriMitr harvest model"""
         # Default values
         daily_gdd = 10.0  # Growing Degree Days per day
         accumulated_gdd = 0.0

@@ -1,4 +1,4 @@
-# 🌱 AgriSens Disease Detection - Enhanced Image Upload Summary
+# 🌱 AgriMitr Disease Detection - Enhanced Image Upload Summary
 
 ## ✅ COMPLETED: Prominent Image Upload Button in Query Bar
 
@@ -48,7 +48,7 @@
 {diseaseImagePreview && (
   <div className="mb-3 p-3 bg-green-50 border border-green-200 rounded-lg">
     <img src={diseaseImagePreview} alt="Disease preview" />
-    <div>Ready for AI disease identification using AgriSens CNN model</div>
+    <div>Ready for AI disease identification using AgriMitr CNN model</div>
   </div>
 )}
 ```
@@ -67,12 +67,12 @@
 4. **Selects plant/leaf image** → instant preview appears
 5. **UI updates** with disease-focused suggestions
 6. **User can type or click example queries**
-7. **Image sent as base64** to AgriSens CNN for disease identification
+7. **Image sent as base64** to AgriMitr CNN for disease identification
 
 ### 🔍 Backend Integration
 
 - Image data sent as `image_base64` in context payload
-- Compatible with existing AgriSens CNN disease models
+- Compatible with existing AgriMitr CNN disease models
 - Ground search service integration for enhanced results
 - Gemini API fallback for robust disease identification
 
@@ -119,4 +119,4 @@ This enhancement makes disease identification **significantly more accessible** 
 - Offering contextual guidance
 - Maintaining professional UX standards
 
-The prominent placement of the camera button in the query bar ensures that plant disease detection - one of the core features of AgriSens - is immediately discoverable and easy to use.
+The prominent placement of the camera button in the query bar ensures that plant disease detection - one of the core features of AgriMitr - is immediately discoverable and easy to use.

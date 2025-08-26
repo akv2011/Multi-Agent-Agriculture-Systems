@@ -81,9 +81,9 @@ const Layout = () => {
       {/* ChatBot positioned at the end for proper layering */}
       <nav className="sidebar">
         <div className="logo-container">
-          <img src="/logo.png" alt="AgriSens Logo" className="sidebar-logo" />
+          <img src="/logo.png" alt="AgriMitr Logo" className="sidebar-logo" />
           <div className="user-info">
-            <h3>AgriSens</h3>
+            <h3>AgriMitr</h3>
             <p>Smart Agriculture Platform</p>
           </div>
         </div>

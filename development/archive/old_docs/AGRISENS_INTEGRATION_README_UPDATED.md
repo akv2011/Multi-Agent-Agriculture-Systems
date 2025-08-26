@@ -1,10 +1,10 @@
-# AgriSens Integration with Multi-Agent Agriculture Systems
+# AgriMitr Integration with Multi-Agent Agriculture Systems
 
-This README documents the complete integration of AgriSens AI models with the Multi-Agent Agriculture Systems project, covering backend agents, models, router integration, and frontend components.
+This README documents the complete integration of AgriMitr AI models with the Multi-Agent Agriculture Systems project, covering backend agents, models, router integration, and frontend components.
 
 ## Overview
 
-AgriSens provides advanced machine learning models for agricultural applications, including:
+AgriMitr provides advanced machine learning models for agricultural applications, including:
 - Crop recommendation (99.55% accuracy Random Forest model)
 - Disease identification (CNN model for 38 diseases across 14 crops)
 - Irrigation scheduling (ML-enhanced water management)
@@ -20,47 +20,47 @@ These models have been integrated into our agent-based system to enhance decisio
 
 The following model integrations have been implemented:
 
-- **Crop Recommendation Model**: `/src/models/agrisens_crop_recommendation.py`
+- **Crop Recommendation Model**: `/src/models/AgriMitr_crop_recommendation.py`
   - Random Forest model with 99.55% accuracy
   - Analyzes NPK values, climate factors, and soil properties
   - Enhanced with satellite data integration
   
-- **Disease Identification Model**: `/src/models/agrisens_disease_identification.py`
+- **Disease Identification Model**: `/src/models/AgriMitr_disease_identification.py`
   - CNN-based model for identifying 38 different plant diseases
   - Works with 14 crop types including wheat, rice, tomato, apple
   - Provides treatment recommendations and prevention strategies
   - Added support for text-based symptom identification
   
-- **Irrigation Scheduling Model**: `/src/models/agrisens_irrigation_scheduling.py`
+- **Irrigation Scheduling Model**: `/src/models/AgriMitr_irrigation_scheduling.py`
   - Optimizes water application based on crop needs and environmental factors
   - Reduces water usage while maximizing yield
   - Integrates with satellite soil moisture data
 
-- **Fertilizer Recommendation Model**: `/src/models/agrisens_fertilizer_recommendation.py`
+- **Fertilizer Recommendation Model**: `/src/models/AgriMitr_fertilizer_recommendation.py`
   - Recommends optimal fertilizers based on soil NPK values
   - Includes application rates and methods
   - Considers environmental impact and alternatives
 
 ### 2. Agents
 
-The following agents leverage the AgriSens models:
+The following agents leverage the AgriMitr models:
 
 - **Crop Selection Agent**: `/src/agents/crop_selection_agent.py`
-  - Uses AgriSens crop recommendation model
+  - Uses AgriMitr crop recommendation model
   - Enhanced with satellite data integration
   
 - **Irrigation Agent**: `/src/agents/irrigation_agent.py`
-  - Uses AgriSens irrigation scheduling model
+  - Uses AgriMitr irrigation scheduling model
   - Generates water-efficient irrigation schedules
   
 - **Disease Identification Agent**: `/src/agents/disease_identification_agent.py`
-  - Uses AgriSens CNN models for disease identification
+  - Uses AgriMitr CNN models for disease identification
   - Supports both image and text-based (symptom) identification
   - Provides treatment and prevention recommendations
   - Enhanced with satellite data for better context
 
 - **Fertilizer Recommendation Agent**: `/src/agents/fertilizer_recommendation_agent.py`
-  - Uses AgriSens fertilizer recommendation model
+  - Uses AgriMitr fertilizer recommendation model
   - Analyzes soil NPK values to recommend optimal fertilizers
   - Provides application rates, methods, and timing
   - Includes environmental impact assessment
@@ -81,7 +81,7 @@ The following agents leverage the AgriSens models:
 - **Agriculture Router**: `/src/agents/agriculture_router.py`
   - Intelligently routes queries to appropriate agents
   - Enhanced to detect image and NPK data in queries
-  - Added support for all AgriSens agent types
+  - Added support for all AgriMitr agent types
   - Improved multilingual support (Hindi/English)
 
 - **Google Search Fallback**: `/src/services/google_search_service.py`
@@ -94,7 +94,7 @@ The following agents leverage the AgriSens models:
 The following frontend components have been enhanced:
 
 - **AgricultureDashboard.tsx**: Main dashboard component
-  - Added support for all AgriSens agent types
+  - Added support for all AgriMitr agent types
   - Enhanced visualization for different response types
 
 - **AgricultureChat.tsx**: Interactive chat interface
@@ -102,7 +102,7 @@ The following frontend components have been enhanced:
   - Enhanced to handle NPK data input for fertilizer recommendations
 
 - **AgentList.tsx**: Agent selection component
-  - Updated to include all AgriSens agent types
+  - Updated to include all AgriMitr agent types
 
 ## Testing
 
@@ -118,7 +118,7 @@ Comprehensive test suite for all integrated features:
 
 An end-to-end demo script showcasing all integrated features:
 
-- **agrisens_demo_updated.py**: Interactive demo of all AgriSens features
+- **AgriMitr_demo_updated.py**: Interactive demo of all AgriMitr features
   - Crop Recommendation
   - Disease Identification (image and text-based)
   - Fertilizer Recommendation
@@ -130,14 +130,14 @@ An end-to-end demo script showcasing all integrated features:
 
 ```bash
 # Run the full demo
-python agrisens_demo_updated.py
+python AgriMitr_demo_updated.py
 
 # Or run specific features
-python agrisens_demo_updated.py --demo crop
-python agrisens_demo_updated.py --demo disease
-python agrisens_demo_updated.py --demo fertilizer
-python agrisens_demo_updated.py --demo guidance
-python agrisens_demo_updated.py --demo router
+python AgriMitr_demo_updated.py --demo crop
+python AgriMitr_demo_updated.py --demo disease
+python AgriMitr_demo_updated.py --demo fertilizer
+python AgriMitr_demo_updated.py --demo guidance
+python AgriMitr_demo_updated.py --demo router
 ```
 
 ## Future Enhancements
@@ -163,7 +163,7 @@ python agrisens_demo_updated.py --demo router
 
 ## Integration Status
 
-All core features of the AgriSens integration have been successfully implemented, including:
+All core features of the AgriMitr integration have been successfully implemented, including:
 
 - ✅ Crop Recommendation (Random Forest model)
 - ✅ Disease Identification (CNN model with both image and text support)
@@ -176,5 +176,5 @@ All core features of the AgriSens integration have been successfully implemented
 
 ## Contributors
 
-- AgriSens AI Model Development Team
+- AgriMitr AI Model Development Team
 - Multi-Agent Agriculture Systems Integration Team

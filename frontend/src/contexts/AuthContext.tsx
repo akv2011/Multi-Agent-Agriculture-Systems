@@ -14,13 +14,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   useEffect(() => {
     // Check if user is already logged in (from localStorage)
-    const savedUser = localStorage.getItem('agrisens_user');
+    const savedUser = localStorage.getItem('AgriMitr_user');
     if (savedUser) {
       try {
         const parsedUser = JSON.parse(savedUser);
         setUser(parsedUser);
       } catch {
-        localStorage.removeItem('agrisens_user');
+        localStorage.removeItem('AgriMitr_user');
       }
     }
     setIsLoading(false);
@@ -39,7 +39,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         };
         
         setUser(newUser);
-        localStorage.setItem('agrisens_user', JSON.stringify(newUser));
+        localStorage.setItem('AgriMitr_user', JSON.stringify(newUser));
         return true;
       }
     } else {
@@ -53,7 +53,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('agrisens_user');
+    localStorage.removeItem('AgriMitr_user');
   };
 
   const value = {

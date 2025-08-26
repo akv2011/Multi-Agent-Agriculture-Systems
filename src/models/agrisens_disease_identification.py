@@ -1,5 +1,5 @@
 """
-AgriSens Disease Identification Integration
+AgriMitr Disease Identification Integration
 CNN-based plant disease identification for 38 diseases across 14 crops
 """
 
@@ -18,7 +18,7 @@ import re
 logger = logging.getLogger(__name__)
 
 class DiseaseClass(Enum):
-    """Plant disease classes supported by AgriSens CNN"""
+    """Plant disease classes supported by AgriMitr CNN"""
     # Apple diseases
     APPLE_SCAB = "Apple___Apple_scab"
     APPLE_BLACK_ROT = "Apple___Black_rot"
@@ -109,19 +109,19 @@ class TreatmentPlan:
     expected_recovery_time: str
     cost_estimate: float
 
-class AgriSensDiseaseModel:
-    """AgriSens disease identification model wrapper"""
+class AgriMitrDiseaseModel:
+    """AgriMitr disease identification model wrapper"""
     
     def __init__(self):
         self.disease_database = self._load_disease_database()
         self.treatment_database = self._load_treatment_database()
         self.cnn_model = self._load_cnn_model()
         self.class_names = list(DiseaseClass)
-        logger.info("AgriSens Disease Model initialized with CNN capabilities")
+        logger.info("AgriMitr Disease Model initialized with CNN capabilities")
         
     def _load_cnn_model(self):
         """Load the pre-trained CNN model"""
-        model_path = "/home/hari/Music/Multi-Agent-Agriculture-Systems/models/agrisens/PLANT-DISEASE-IDENTIFICATION/trained_plant_disease_model.keras"
+        model_path = "/home/hari/Music/Multi-Agent-Agriculture-Systems/models/AgriMitr/PLANT-DISEASE-IDENTIFICATION/trained_plant_disease_model.keras"
         try:
             model = tf.keras.models.load_model(model_path)
             logger.info("Successfully loaded CNN model for disease identification")
@@ -476,14 +476,14 @@ class AgriSensDiseaseModel:
         return self.treatment_database.get(disease_class)
 
 # Global instance
-_agrisens_disease_model = None
+_AgriMitr_disease_model = None
 
-def get_agrisens_disease_model() -> AgriSensDiseaseModel:
-    """Get singleton instance of AgriSens disease model"""
-    global _agrisens_disease_model
-    if _agrisens_disease_model is None:
-        _agrisens_disease_model = AgriSensDiseaseModel()
-    return _agrisens_disease_model
+def get_AgriMitr_disease_model() -> AgriMitrDiseaseModel:
+    """Get singleton instance of AgriMitr disease model"""
+    global _AgriMitr_disease_model
+    if _AgriMitr_disease_model is None:
+        _AgriMitr_disease_model = AgriMitrDiseaseModel()
+    return _AgriMitr_disease_model
 
 def enhance_pest_management_with_disease_id(
     image_data: Optional[bytes] = None,
@@ -493,7 +493,7 @@ def enhance_pest_management_with_disease_id(
     weather_data: Optional[Dict[str, Any]] = None
 ) -> DiseaseIdentification:
     """
-    Enhance pest management with AgriSens disease identification
+    Enhance pest management with AgriMitr disease identification
     
     Args:
         image_data: Optional plant image for CNN analysis
@@ -505,7 +505,7 @@ def enhance_pest_management_with_disease_id(
     Returns:
         DiseaseIdentification with AI-powered analysis
     """
-    model = get_agrisens_disease_model()
+    model = get_AgriMitr_disease_model()
     
     if image_data:
         # Use CNN model for image-based identification
@@ -546,7 +546,7 @@ def analyze_plant_image(image_base64: str) -> DiseaseIdentification:
         image_bytes = base64.b64decode(image_base64)
         
         # Get model instance
-        model = get_agrisens_disease_model()
+        model = get_AgriMitr_disease_model()
         
         # Identify disease
         result = model.identify_disease_from_image(image_bytes)

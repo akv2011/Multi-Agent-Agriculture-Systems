@@ -66,6 +66,8 @@ __pycache__/
 .Python
 
 AgriSens/
+# AgriMitr directory
+AgriMitr/
 
 # Task files
 # tasks.json

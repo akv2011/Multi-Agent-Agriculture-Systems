@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
-Comprehensive AgriSens Integration Test Runner
-This script runs all the AgriSens integration test scripts and reports their status.
+Comprehensive AgriMitr Integration Test Runner
+This script runs all the AgriMitr integration test scripts and reports their status.
 """
 
 import os
@@ -120,10 +120,10 @@ def check_file_existence():
         "src/agents/smart_farming_guidance_agent.py",
         
         # Model files
-        "src/models/agrisens_disease_identification.py",
-        "src/models/agrisens_crop_recommendation.py",
-        "src/models/agrisens_irrigation_scheduling.py",
-        "src/models/agrisens_fertilizer_recommendation.py",
+        "src/models/AgriMitr_disease_identification.py",
+        "src/models/AgriMitr_crop_recommendation.py",
+        "src/models/AgriMitr_irrigation_scheduling.py",
+        "src/models/AgriMitr_fertilizer_recommendation.py",
         
         # Service files
         "src/services/google_search_service.py",
@@ -162,13 +162,13 @@ def check_file_existence():
 
 def create_report(results):
     """Create a test report"""
-    report_path = os.path.join(project_root, "test_results", f"agrisens_test_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt")
+    report_path = os.path.join(project_root, "test_results", f"AgriMitr_test_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt")
     
     # Ensure directory exists
     os.makedirs(os.path.dirname(report_path), exist_ok=True)
     
     with open(report_path, 'w') as f:
-        f.write("AgriSens Integration Test Report\n")
+        f.write("AgriMitr Integration Test Report\n")
         f.write(f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
         f.write("="*50 + "\n\n")
         
@@ -192,7 +192,7 @@ def create_report(results):
     return report_path
 
 if __name__ == "__main__":
-    print("🔍 AgriSens Integration Test Runner 🔍")
+    print("🔍 AgriMitr Integration Test Runner 🔍")
     print("======================================")
     
     # Dictionary to store test results
@@ -203,7 +203,7 @@ if __name__ == "__main__":
     
     # List of test scripts to run
     test_scripts = [
-        "test_agrisens_agents.py",
+        "test_AgriMitr_agents.py",
         "test_irrigation_manually.py",
         "test_market_timing_manually.py"
     ]
@@ -213,7 +213,7 @@ if __name__ == "__main__":
         test_results[script] = run_test(script)
     
     # Run VS Code task
-    test_results["vscode_integration_tests"] = run_vscode_task("Run AgriSens Model Integration Tests")
+    test_results["vscode_integration_tests"] = run_vscode_task("Run AgriMitr Model Integration Tests")
     
     # Create report
     report_path = create_report(test_results)

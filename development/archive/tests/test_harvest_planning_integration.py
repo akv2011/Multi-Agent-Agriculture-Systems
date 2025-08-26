@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test script for AgriSens model integration in harvest planning agent
+Test script for AgriMitr model integration in harvest planning agent
 """
 import asyncio
 import sys
@@ -10,11 +10,11 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from src.core.agriculture_models import AgricultureQuery, Location, CropType
 from src.agents.harvest_planning_agent import HarvestPlanningAgent
-from src.models.agrisens_harvest_planning import get_agrisens_harvest_model
+from src.models.AgriMitr_harvest_planning import get_AgriMitr_harvest_model
 
 async def test_harvest_planning_integration():
-    """Test harvest planning agent with AgriSens model integration"""
-    print("🌾 Testing AgriSens Model Integration in Harvest Planning Agent")
+    """Test harvest planning agent with AgriMitr model integration"""
+    print("🌾 Testing AgriMitr Model Integration in Harvest Planning Agent")
     print("=" * 70)
     
     try:
@@ -92,8 +92,8 @@ async def test_harvest_planning_integration():
         print("📋 Metadata:", rice_response.metadata)
         
         # Check if model initialization worked properly
-        harvest_model = get_agrisens_harvest_model()
-        print(f"\n🔧 AgriSens Harvest Model has {len(harvest_model.crop_maturity_models)} crop models loaded")
+        harvest_model = get_AgriMitr_harvest_model()
+        print(f"\n🔧 AgriMitr Harvest Model has {len(harvest_model.crop_maturity_models)} crop models loaded")
         
         # Test satellite data integration mention
         if "satellite" in rice_response.response_text.lower():
