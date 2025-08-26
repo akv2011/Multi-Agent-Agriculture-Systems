@@ -6,6 +6,7 @@
 interface AppConfig {
   api: {
     url: string;
+    baseUrl: string;
   };
   websocket: {
     url: string;
@@ -25,7 +26,8 @@ interface AppConfig {
 const config: AppConfig = {
   // API configuration
   api: {
-    url: import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
+    url: import.meta.env.VITE_API_URL || 'http://localhost:8000/api',
+    baseUrl: import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
   },
   
   // WebSocket configuration
