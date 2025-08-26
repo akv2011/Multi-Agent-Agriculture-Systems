@@ -86,24 +86,53 @@ class GeminiAgricultureAgent:
         logger.info(f"✓ Gemini Agriculture Agent initialized with model: {self.model_name}")
     
     def _create_agriculture_system_prompt(self) -> str:
-        """Create simple, effective system instructions for multilingual agriculture support"""
+        """Create comprehensive system instructions for structured agricultural analysis"""
         
-        return """You are an expert agricultural advisor for Indian farmers.
+        return """You are a professional Agricultural Expert Agent providing structured analysis for Indian farmers.
 
-CAPABILITIES:
+RESPONSE FORMAT REQUIREMENTS:
+You must ALWAYS respond in this exact structured format:
+
+## ANALYSIS
+[Provide technical analysis of the agricultural situation/query]
+
+## RECOMMENDATIONS
+1. [Primary recommendation with specific details]
+2. [Secondary recommendation with implementation steps] 
+3. [Additional recommendation if relevant]
+
+## AGENT TYPE
+[Specify: Crop Selection | Pest Management | Irrigation | Market Analysis | General Agriculture]
+
+## PRIORITY
+[Specify: High | Medium | Low]
+
+## ACTION ITEMS
+• [Immediate action required]
+• [Short-term action (1-7 days)]
+• [Long-term action (1-4 weeks)]
+
+AGRICULTURAL EXPERTISE:
 - Expert knowledge of Indian agriculture, crops, pests, irrigation, and farming practices
-- Understand multiple languages: Hindi, English, and mixed Hindi-English (Hinglish)
-- Respond in the same language the farmer uses
-- Provide practical, cost-effective solutions
+- Consider regional climate, soil conditions, and seasonal factors
+- Provide cost-effective, practical solutions suitable for Indian farming conditions
+- Include both traditional and modern agricultural techniques
+- Focus on yield optimization and sustainable practices
 
-GUIDELINES:
-- Give simple, actionable advice that farmers can implement
-- Consider Indian climate, soil, and agricultural conditions
-- Suggest both traditional and modern farming techniques
-- Keep responses helpful and farmer-friendly
-- Focus on practical solutions over complex theory
+LANGUAGE RULES:
+- Respond in the same language as the farmer's question
+- If Hindi/Hinglish: Use appropriate agricultural terminology in Hindi
+- If English: Use clear, farmer-friendly English
+- Always maintain the structured format regardless of language
 
-LANGUAGE: Always respond in the same language as the farmer's question. If they ask in Hindi, respond in Hindi. If they ask in English, respond in English. If they mix languages, respond naturally."""
+RESPONSE QUALITY:
+- Be specific with quantities, timing, and methods
+- Include cost estimates when relevant (in Indian Rupees)
+- Mention specific varieties, brands, or techniques when applicable
+- Consider local availability of resources and inputs
+- Provide weather-dependent advice when relevant
+
+Remember: Always follow the exact format above. Do not add conversational elements or chat-like responses."""
 
     async def process_query(self, query: AgricultureQuery) -> AgentResponse:
         """
@@ -216,24 +245,31 @@ Focus on:
         return "\n\n".join(enhanced_parts)
     
     def _parse_gemini_response(self, gemini_response, query: AgricultureQuery, processing_time: float) -> AgentResponse:
-        """Parse Gemini response and convert to AgentResponse format"""
+        """Parse Gemini response and convert to structured AgentResponse format"""
         
         try:
             response_text = gemini_response.text
             
-            # Extract recommendations from the response
-            recommendations = self._extract_recommendations(response_text)
+            # Parse structured sections from the response
+            structured_data = self._parse_structured_response(response_text)
             
-            # Calculate confidence based on response quality
-            confidence = self._calculate_confidence(gemini_response, response_text)
+            # Extract recommendations from the structured format
+            recommendations = self._extract_structured_recommendations(structured_data)
             
-            # Extract metadata
+            # Calculate confidence based on response quality and structure
+            confidence = self._calculate_confidence(gemini_response, response_text, structured_data)
+            
+            # Extract metadata including structured sections
             metadata = {
                 "model": self.model_name,
                 "processing_time": processing_time,
                 "response_length": len(response_text),
                 "recommendations_count": len(recommendations),
-                "gemini_candidate_count": len(gemini_response.candidates) if hasattr(gemini_response, 'candidates') else 1
+                "structured_format": True,
+                "analysis_section": structured_data.get("analysis", ""),
+                "agent_type": structured_data.get("agent_type", "General Agriculture"),
+                "priority": structured_data.get("priority", "Medium"),
+                "action_items": structured_data.get("action_items", [])
             }
             
             # Add safety ratings if available
@@ -265,6 +301,82 @@ Focus on:
                 recommendations=[],
                 metadata={"error": str(e)}
             )
+    
+    def _parse_structured_response(self, response_text: str) -> Dict[str, Any]:
+        """Parse the structured response format into components"""
+        
+        structured_data = {
+            "analysis": "",
+            "recommendations": [],
+            "agent_type": "General Agriculture",
+            "priority": "Medium",
+            "action_items": []
+        }
+        
+        if not response_text:
+            return structured_data
+        
+        # Split into sections based on markdown headers
+        sections = response_text.split('##')
+        
+        for section in sections:
+            section = section.strip()
+            if not section:
+                continue
+            
+            lines = section.split('\n')
+            header = lines[0].strip().upper()
+            content_lines = [line.strip() for line in lines[1:] if line.strip()]
+            
+            if 'ANALYSIS' in header:
+                structured_data["analysis"] = '\n'.join(content_lines)
+            
+            elif 'RECOMMENDATIONS' in header:
+                for line in content_lines:
+                    if line.startswith(('1.', '2.', '3.', '4.', '5.')):
+                        structured_data["recommendations"].append(line[2:].strip())
+            
+            elif 'AGENT TYPE' in header:
+                if content_lines:
+                    structured_data["agent_type"] = content_lines[0]
+            
+            elif 'PRIORITY' in header:
+                if content_lines:
+                    structured_data["priority"] = content_lines[0]
+            
+            elif 'ACTION ITEMS' in header:
+                for line in content_lines:
+                    if line.startswith('•'):
+                        structured_data["action_items"].append(line[1:].strip())
+        
+        return structured_data
+    
+    def _extract_structured_recommendations(self, structured_data: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Extract recommendations from structured data"""
+        
+        recommendations = []
+        
+        # Process recommendations from the structured format
+        for i, rec_text in enumerate(structured_data.get("recommendations", []), 1):
+            recommendations.append({
+                "id": f"rec_{i}",
+                "text": rec_text,
+                "type": "structured_recommendation",
+                "priority": structured_data.get("priority", "Medium").lower(),
+                "category": structured_data.get("agent_type", "General Agriculture")
+            })
+        
+        # Add action items as additional recommendations
+        for i, action in enumerate(structured_data.get("action_items", []), len(recommendations) + 1):
+            recommendations.append({
+                "id": f"action_{i}",
+                "text": action,
+                "type": "action_item", 
+                "priority": "high" if "immediate" in action.lower() else "medium",
+                "category": "Implementation"
+            })
+        
+        return recommendations
     
     def _extract_recommendations(self, response_text: str) -> List[Dict[str, Any]]:
         """Extract actionable recommendations from Gemini response"""
@@ -306,30 +418,50 @@ Focus on:
         # Limit to top 10 recommendations to avoid overwhelming
         return recommendations[:10]
     
-    def _calculate_confidence(self, gemini_response, response_text: str) -> float:
-        """Calculate confidence score based on response quality indicators"""
+    def _calculate_confidence(self, gemini_response, response_text: str, structured_data: Dict[str, Any] = None) -> float:
+        """Calculate confidence score based on response quality and structure indicators"""
         
         confidence = 0.5  # Base confidence
         
+        # Check if response follows structured format (major confidence boost)
+        if structured_data:
+            # Boost confidence for having structured sections
+            if structured_data.get("analysis"):
+                confidence += 0.15
+            if structured_data.get("recommendations"):
+                confidence += 0.15
+            if structured_data.get("agent_type"):
+                confidence += 0.05
+            if structured_data.get("priority"):
+                confidence += 0.05
+            if structured_data.get("action_items"):
+                confidence += 0.10
+        
         # Response length indicates detail (longer = higher confidence)
         if len(response_text) > 200:
-            confidence += 0.2
-        if len(response_text) > 500:
             confidence += 0.1
+        if len(response_text) > 500:
+            confidence += 0.05
         
         # Check for specific agricultural terms (indicates domain relevance)
         agricultural_terms = [
             'crop', 'soil', 'fertilizer', 'irrigation', 'pest', 'disease',
-            'variety', 'yield', 'harvest', 'sowing', 'farming',
-            'फसल', 'मिट्टी', 'खाद', 'सिंचाई', 'कीट', 'रोग'
+            'variety', 'yield', 'harvest', 'sowing', 'farming', 'seed',
+            'फसल', 'मिट्टी', 'खाद', 'सिंचाई', 'कीट', 'रोग', 'बीज'
         ]
         
         term_count = sum(1 for term in agricultural_terms if term.lower() in response_text.lower())
-        confidence += min(term_count * 0.02, 0.2)  # Max 0.2 boost from terms
+        confidence += min(term_count * 0.01, 0.1)  # Max 0.1 boost from terms
         
         # Check for specific recommendations (actionable advice)
         if "recommend" in response_text.lower() or "सुझाव" in response_text:
-            confidence += 0.1
+            confidence += 0.05
+        
+        # Check for quantitative information (specific measurements, costs, etc.)
+        import re
+        numbers_pattern = r'\d+(?:\.\d+)?(?:\s*(?:kg|gram|liter|rupee|₹|acre|hectare))'
+        if re.search(numbers_pattern, response_text, re.IGNORECASE):
+            confidence += 0.05
         
         # Check if response was blocked by safety filters
         if hasattr(gemini_response, 'candidates') and gemini_response.candidates:
@@ -418,6 +550,16 @@ Focus on:
             "sdk_version": "google-genai 1.29.0+",
             "specialization": "Indian Agriculture Advisory"
         }
+    
+    async def process_query_async(self, query: AgricultureQuery) -> AgentResponse:
+        """
+        Async wrapper for process_query method
+        """
+        # For now, call the synchronous method
+        # In a full implementation, this would use proper async Gemini calls
+        return await asyncio.create_task(
+            asyncio.to_thread(self.process_query, query)
+        )
 
 
 async def test_gemini_agent():
