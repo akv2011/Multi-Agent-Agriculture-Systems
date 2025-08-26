@@ -10,7 +10,12 @@ import sys
 from datetime import datetime
 
 # Set API key
-os.environ['GOOGLE_API_KEY'] = 'AIzaSyDiBn5VAhysDvK87Qu3mkpHdc2jS7H2t4I'
+# Get API key from environment  
+api_key = os.getenv('GOOGLE_API_KEY') or os.getenv('GEMINI_API_KEY')
+if not api_key:
+    print("ERROR: Please set GOOGLE_API_KEY or GEMINI_API_KEY environment variable")
+    sys.exit(1)
+os.environ['GOOGLE_API_KEY'] = api_key
 
 # Add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))

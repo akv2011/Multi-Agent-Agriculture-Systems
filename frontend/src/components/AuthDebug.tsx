@@ -37,9 +37,17 @@ const AuthDebug: React.FC = () => {
       <p><strong>Available users:</strong> {Object.keys(credentials).join(', ') || 'None'}</p>
       <div style={{ marginTop: '10px', padding: '10px', background: '#fff3e0', borderRadius: '4px' }}>
         <p style={{ margin: '0', fontSize: '12px' }}>
-          <strong>Try logging in with:</strong><br/>
-          Username: admin<br/>
-          Password: admin123
+          <strong>Demo Login Instructions:</strong><br/>
+          {demoMode ? (
+            <>
+              Use the credentials configured in your environment variables.<br/>
+              Check your .env file or deployment configuration for valid demo credentials.
+            </>
+          ) : (
+            <>
+              Demo mode is disabled. Enable by setting VITE_DEMO_MODE=true in your environment.
+            </>
+          )}
         </p>
       </div>
     </div>

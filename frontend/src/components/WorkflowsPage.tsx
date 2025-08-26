@@ -717,7 +717,9 @@ const WorkflowsPage: React.FC = () => {
                       
                       {step.agent && (
                         <div className="step-agent">
-                          <span>🤖</span>
+                          <div className="agent-avatar">
+                            {step.agent.split('-').map(word => word.charAt(0).toUpperCase()).join('').slice(0, 3)}
+                          </div>
                           <small>Agent: {step.agent}</small>
                         </div>
                       )}

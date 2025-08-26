@@ -11,8 +11,7 @@ from datetime import datetime
 from pathlib import Path
 
 # Latest Google GenAI imports
-from google import genai
-from google.genai import types
+import google.generativeai as genai
 from dotenv import load_dotenv
 
 # Import our agriculture models
@@ -61,7 +60,8 @@ class GeminiAgricultureAgent:
         
         # Initialize Gemini client with latest SDK
         try:
-            self.client = genai.Client(api_key=self.api_key)
+            genai.configure(api_key=self.api_key)
+            self.model = genai.GenerativeModel('gemini-1.5-flash')
             logger.info("✓ Gemini client initialized successfully")
         except Exception as e:
             logger.error(f"Failed to initialize Gemini client: {e}")
@@ -150,26 +150,26 @@ Remember: Always follow the exact format above. Do not add conversational elemen
             enhanced_prompt = self._enhance_query_with_context(query)
             
             # Configure generation parameters
-            config = types.GenerateContentConfig(
-                system_instruction=self.system_instruction,
+            generation_config = genai.GenerationConfig(
                 max_output_tokens=2000,
                 temperature=0.7,  # Balanced creativity and accuracy
-                candidate_count=1,
-                safety_settings=[
-                    types.SafetySetting(
-                        category=types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-                        threshold=types.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-                    ),
-                ]
+                candidate_count=1
             )
+            
+            safety_settings = [
+                {
+                    "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+                    "threshold": "BLOCK_MEDIUM_AND_ABOVE",
+                }
+            ]
             
             # Generate response using Gemini
             start_time = datetime.now()
             
-            response = self.client.models.generate_content(
-                model=self.model_name,
-                contents=enhanced_prompt,
-                config=config
+            response = self.model.generate_content(
+                enhanced_prompt,
+                generation_config=generation_config,
+                safety_settings=safety_settings
             )
             
             processing_time = (datetime.now() - start_time).total_seconds()
@@ -501,8 +501,7 @@ Focus on:
                 contents.append("Please analyze this image in the context of the agricultural question above.")
             
             # Configure generation
-            config = types.GenerateContentConfig(
-                system_instruction=self.system_instruction,
+            generation_config = genai.GenerationConfig(
                 max_output_tokens=2500,  # More tokens for image analysis
                 temperature=0.6,
             )
@@ -510,10 +509,9 @@ Focus on:
             # Generate response
             start_time = datetime.now()
             
-            response = self.client.models.generate_content(
-                model=self.model_name,
-                contents=contents,
-                config=config
+            response = self.model.generate_content(
+                contents,
+                generation_config=generation_config
             )
             
             processing_time = (datetime.now() - start_time).total_seconds()

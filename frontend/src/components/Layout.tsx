@@ -112,29 +112,58 @@ const Layout = () => {
         
         <div className="system-stats">
           <div className="stat-item">
-            <span className="stat-icon">🔄</span>
+            <span className="stat-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2L15.09 8.26L22 9L17 14L18.18 21L12 17.77L5.82 21L7 14L2 9L8.91 8.26L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </span>
             <span className="stat-label">Active Workflows:</span>
-            <span className="stat-value" style={{color: '#FFD700', fontWeight: '700', fontSize: '1.9rem', textShadow: '0 0 2px rgba(255,215,0,0.8)'}}>3</span>
+            <span className="stat-value stat-active-workflows">3</span>
           </div>
           <div className="stat-item">
-            <span className="stat-icon">📊</span>
+            <span className="stat-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M3 3V21H21V3H3Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M8 12L11 15L16 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </span>
             <span className="stat-label">Total Workflows:</span>
-            <span className="stat-value" style={{color: '#FFD700', fontWeight: '700', fontSize: '1.9rem', textShadow: '0 0 2px rgba(255,215,0,0.8)'}}>7</span>
+            <span className="stat-value stat-total-workflows">7</span>
           </div>
           <div className="stat-item">
-            <span className="stat-icon">🔌</span>
+            <span className="stat-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M17 21V19C17 17.9391 16.5786 16.9217 15.8284 16.1716C15.0783 15.4214 14.0609 15 13 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M23 21V19C23 18.1332 22.7361 17.2808 22.2416 16.5656C21.7471 15.8504 21.0424 15.3031 20.2209 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M16 3.13C16.8214 3.35031 17.5258 3.89788 18.0202 4.61305C18.5147 5.32822 18.7784 6.18044 18.7784 7.04705C18.7784 7.91366 18.5147 8.76588 18.0202 9.48105C17.5258 10.1962 16.8214 10.7438 16 10.964" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </span>
             <span className="stat-label">Connected Clients:</span>
-            <span className="stat-value" style={{color: '#FFD700', fontWeight: '700', fontSize: '1.9rem', textShadow: '0 0 2px rgba(255,215,0,0.8)'}}>1</span>
+            <span className="stat-value stat-connected-clients">1</span>
           </div>
           <div className="stat-item">
-            <span className="stat-icon">🤖</span>
+            <span className="stat-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <line x1="8" y1="21" x2="16" y2="21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <line x1="12" y1="17" x2="12" y2="21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <circle cx="8" cy="9" r="2" stroke="currentColor" strokeWidth="2"/>
+                <circle cx="16" cy="9" r="2" stroke="currentColor" strokeWidth="2"/>
+                <path d="M12 9H12.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </span>
             <span className="stat-label">Active Agents:</span>
-            <span className="stat-value" style={{color: '#FFD700', fontWeight: '700', fontSize: '1.9rem', textShadow: '0 0 2px rgba(255,215,0,0.8)'}}>6</span>
+            <span className="stat-value stat-active-agents">6</span>
           </div>
           <div className="stat-item">
-            <span className="stat-icon">⚡</span>
+            <span className="stat-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </span>
             <span className="stat-label">System Status:</span>
-            <span className="stat-value connected" style={{color: '#00FF7F', fontWeight: '700', fontSize: '1.9rem', textShadow: '0 0 2px rgba(0,255,127,0.8)'}}>Ready</span>
+            <span className="stat-value stat-system-status connected">Ready</span>
           </div>
         </div>
         

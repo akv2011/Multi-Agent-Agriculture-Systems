@@ -7,8 +7,14 @@ import asyncio
 import sys
 from datetime import datetime
 
-# Set API key
-os.environ['GOOGLE_API_KEY'] = 'AIzaSyACHvqkA6UHMcZwSnhSuB50lhrnJzxOAjg'
+# Set API key from environment
+api_key = os.getenv('GOOGLE_API_KEY') or os.getenv('GEMINI_API_KEY')
+if not api_key:
+    print("ERROR: Please set GOOGLE_API_KEY or GEMINI_API_KEY environment variable")
+    print("Get your API key from: https://makersuite.google.com/app/apikey")
+    sys.exit(1)
+
+os.environ['GOOGLE_API_KEY'] = api_key
 
 # Add path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
