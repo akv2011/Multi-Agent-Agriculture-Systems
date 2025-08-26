@@ -111,17 +111,31 @@ const generateMockWorkflows = (count = 5): Workflow[] => {
       }
     }
     
-    // Generate start time within the last hour
-    const startTime = faker.date.recent({ days: 0.04 }).toISOString(); // Up to ~1 hour ago
+    // Generate start time that varies over time for more realism
+    const baseTime = Date.now();
+    const timeVariation = Math.sin(baseTime / 10000) * 1800000; // Sine wave variation over time
+    const startTime = faker.date.recent({ 
+      days: 0.04 + (timeVariation / (24 * 60 * 60 * 1000)) 
+    }).toISOString();
     
-    // Set progress based on status
+    // Set progress based on status with time-aware variations
     let progress = 0;
+    let isIncreasing = false;
+    const currentTime = Date.now();
+    const timeOffset = (currentTime / 1000) % 3600; // Hour-based cycle
+    
     if (status === 'completed') {
-      progress = 1.0;
+      progress = faker.number.float({ min: 0.95, max: 1.0 }); // 95-100% for completed
     } else if (status === 'running') {
-      progress = faker.number.float({ min: 0.1, max: 0.9 }); // Between 10% and 90%
+      // Time-based progress that varies and steadily increases
+      const baseProgress = faker.number.float({ min: 0.1, max: 0.6 });
+      const timeVariation = (Math.sin(timeOffset / 600) + 1) * 0.125; // 0-0.25 variation
+      progress = Math.min(baseProgress + timeVariation, 0.85); // Cap at 85%
+      isIncreasing = Math.random() > 0.25; // 75% chance of increasing
     } else if (status === 'failed') {
-      progress = faker.number.float({ min: 0, max: 0.8 }); // Between 0% and 80%
+      progress = faker.number.float({ min: 0.05, max: 0.6 }); // 5-60% for failed
+    } else if (status === 'pending') {
+      progress = faker.number.float({ min: 0.0, max: 0.15 }); // 0-15% for pending
     }
     
     // Get steps array based on workflow type
@@ -227,6 +241,7 @@ const generateMockWorkflows = (count = 5): Workflow[] => {
       endTime,
       totalDuration,
       progress,
+      isIncreasing,
       steps,
       metadata
     });
@@ -313,10 +328,10 @@ const updateWorkflowProgress = (workflows: Workflow[], isManualRefresh = false):
 const WorkflowsPage: React.FC = () => {
   // State for workflow data with initial mock data
   const [workflows, setWorkflows] = useState<Workflow[]>(() => generateMockWorkflows(5));
-
   const [selectedWorkflow, setSelectedWorkflow] = useState<Workflow | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [showMobileDetails, setShowMobileDetails] = useState<boolean>(false);
   const intervalRef = useRef<number | null>(null);
   
   // State for modal dialogs
@@ -368,6 +383,7 @@ const WorkflowsPage: React.FC = () => {
 
   const handleWorkflowSelect = (workflow: Workflow) => {
     setSelectedWorkflow(workflow);
+    setShowMobileDetails(true); // Show details panel on mobile
   };
 
   const handleStepClick = (step: WorkflowStep) => {
@@ -578,7 +594,12 @@ const WorkflowsPage: React.FC = () => {
                 <div className="workflow-card-header">
                   <div className="workflow-name-section">
                     <div className={`status-indicator ${workflow.status}`}></div>
-                    <h3>{workflow.name}</h3>
+                    <div className="workflow-title">
+                      <h3>{workflow.name}</h3>
+                      <p className="workflow-description">
+                        {workflow.metadata?.description || `${workflow.status.charAt(0).toUpperCase() + workflow.status.slice(1)} agriculture workflow`}
+                      </p>
+                    </div>
                   </div>
                   <div className="workflow-actions">
                     <button className="action-btn" onClick={(e) => e.stopPropagation()}>
@@ -599,25 +620,37 @@ const WorkflowsPage: React.FC = () => {
                   <div className="progress-text">
                     {Math.round(workflow.progress * 100)}% Complete
                     {workflow.isIncreasing && workflow.status === 'running' && (
-                      <span className="increasing-label" style={{ marginLeft: '8px', color: '#2db782', fontSize: '0.8em', fontWeight: 'bold' }}>
+                      <span className="increasing-label">
                         ↑ Increasing
                       </span>
                     )}
                   </div>
                 </div>
 
-                <div className="workflow-card-details">
-                  <div className="detail-item">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="detail-icon">
+                <div className="workflow-metrics">
+                  <div className="metric-item">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="metric-icon">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-13a.75.75 0 00-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 000-1.5h-3.25V5z" clipRule="evenodd" />
                     </svg>
-                    <span>Started: {new Date(workflow.startTime).toLocaleTimeString()}</span>
+                    <span className="metric-label">Started</span>
+                    <span className="metric-value">{new Date(workflow.startTime).toLocaleTimeString()}</span>
                   </div>
-                  <div className="detail-item">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="detail-icon">
+                  <div className="metric-item">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="metric-icon">
                       <path fillRule="evenodd" d="M5.75 2a.75.75 0 01.75.75V4h7V2.75a.75.75 0 011.5 0V4h.25A2.75 2.75 0 0118 6.75v8.5A2.75 2.75 0 0115.25 18H4.75A2.75 2.75 0 012 15.25v-8.5A2.75 2.75 0 014.75 4H5V2.75A.75.75 0 015.75 2zm-1 5.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-6.5c0-.69-.56-1.25-1.25-1.25H4.75z" clipRule="evenodd" />
                     </svg>
-                    <span>Steps: {workflow.steps.filter(s => s.status === 'completed').length}/{workflow.steps.length}</span>
+                    <span className="metric-label">Steps</span>
+                    <span className="metric-value">{workflow.steps.filter(s => s.status === 'completed').length}/{workflow.steps.length}</span>
+                  </div>
+                  <div className="metric-item">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="metric-icon">
+                      <path fillRule="evenodd" d="M2.24 6.8a.75.75 0 001.06-.04l1.95-2.1v8.59a.75.75 0 001.5 0V4.66l1.95 2.1a.75.75 0 101.06-1.06L6.53 2.44a.75.75 0 00-1.06 0L2.2 5.7a.75.75 0 00.04 1.1zm8 6.4a.75.75 0 00-.04 1.1l3.27 3.26a.75.75 0 001.06 0l3.27-3.26a.75.75 0 00-1.06-1.06l-1.95 1.95V4.75a.75.75 0 00-1.5 0v8.84l-1.95-1.95a.75.75 0 00-1.06.04z" clipRule="evenodd" />
+                    </svg>
+                    <span className="metric-label">Duration</span>
+                    <span className="metric-value">{workflow.endTime ? 
+                      Math.round((new Date(workflow.endTime).getTime() - new Date(workflow.startTime).getTime()) / (1000 * 60)) + 'm' : 
+                      Math.round((new Date().getTime() - new Date(workflow.startTime).getTime()) / (1000 * 60)) + 'm'
+                    }</span>
                   </div>
                 </div>
 
@@ -634,14 +667,25 @@ const WorkflowsPage: React.FC = () => {
 
         {/* Workflow Details Panel */}
         {selectedWorkflow && (
-          <div className="workflow-detail-panel">
+          <div className={`workflow-detail-panel ${showMobileDetails ? 'mobile-visible' : ''}`}>
             <div className="panel-header">
               <div className="panel-title">
                 <div className={`status-indicator ${selectedWorkflow.status}`}></div>
                 <h2>{selectedWorkflow.name}</h2>
               </div>
-              <div className="status-badge">
-                {selectedWorkflow.status}
+              <div className="panel-actions">
+                <div className="status-badge">
+                  {selectedWorkflow.status}
+                </div>
+                <button 
+                  className="close-panel-btn"
+                  onClick={() => setShowMobileDetails(false)}
+                  aria-label="Close details panel"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </button>
               </div>
             </div>
 
@@ -845,6 +889,20 @@ const WorkflowsPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Mobile FAB for showing details */}
+      {selectedWorkflow && !showMobileDetails && (
+        <button 
+          className="mobile-fab"
+          onClick={() => setShowMobileDetails(true)}
+          aria-label="Show workflow details"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+          </svg>
+          <span>View Details</span>
+        </button>
+      )}
       
       {/* View Details Modal */}
       <Modal 
@@ -948,6 +1006,20 @@ const WorkflowsPage: React.FC = () => {
           </div>
         )}
       </Modal>
+
+      {/* Mobile FAB for workflow details */}
+      {selectedWorkflow && !showMobileDetails && (
+        <button 
+          className="mobile-fab"
+          onClick={() => setShowMobileDetails(true)}
+          aria-label="View workflow details"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clipRule="evenodd" />
+          </svg>
+          View Details
+        </button>
+      )}
     </div>
   );
 };
