@@ -157,12 +157,16 @@ from src.api.routers.agriculture import router as agriculture_router
 from src.api.satellite_api import router as satellite_router
 from src.api.config_routes import router as config_router
 
+# Import enhanced routers
+from src.api.routers.enhanced_demo import router as enhanced_demo_router
+
 app.include_router(agents.router)
 app.include_router(workflows.router)
 app.include_router(websocket.router)
 app.include_router(agriculture_router)
 app.include_router(satellite_router)
 app.include_router(config_router)
+app.include_router(enhanced_demo_router)
 
 @app.get("/api/info", tags=["Info"])
 async def api_info():
