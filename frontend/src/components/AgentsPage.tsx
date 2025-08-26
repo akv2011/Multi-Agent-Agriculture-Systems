@@ -312,7 +312,7 @@ const AgentsPage: React.FC = () => {
         evi: parsedData.vegetationIndices.evi,
         savi: parsedData.vegetationIndices.savi
       };
-    } else if (agentName === 'Irrigation Controller') {
+    } else if (agentName === 'Irrigation Agent') {
       return {
         ndmi: parsedData.vegetationIndices.ndmi,
         mndwi: parsedData.vegetationIndices.mndwi || 0.18
@@ -322,12 +322,12 @@ const AgentsPage: React.FC = () => {
         ndvi: parsedData.vegetationIndices.ndvi,
         evi: parsedData.vegetationIndices.evi
       };
-    } else if (agentName === 'Pest Detection Agent') {
+    } else if (agentName === 'Pest Management Agent') {
       return {
         vari: parsedData.vegetationIndices.vari || 0.15,
         tcari: parsedData.vegetationIndices.tcari || 1.2
       };
-    } else if (agentName === 'Harvest Prediction Agent') {
+    } else if (agentName === 'Harvest Planning Agent') {
       return {
         ndvi: parsedData.vegetationIndices.ndvi,
         nbr: parsedData.vegetationIndices.nbr || 0.12,
@@ -382,40 +382,7 @@ const AgentsPage: React.FC = () => {
     },
     {
       id: 2,
-      name: 'Market Timing Agent',
-      status: 'active',
-      description: 'Analyzes market trends and suggests optimal timing for crop sales',
-      type: 'market_timing',
-      lastActive: '2 minutes ago',
-      performance: 92,
-      metrics: {
-        tasksCompleted: 156,
-        averageExecutionTime: 2.3,
-        successRate: 0.98,
-        requestsHandled: 230,
-        errorRate: 0.02,
-        uptime: 99.8
-      },
-      cpu: 18,
-      memory: 245,
-      version: '1.3.2',
-      vegetationIndices: {
-        ndvi: 0.72,
-        evi: 0.58
-      },
-      logs: [
-        { timestamp: '2025-08-15T14:32:15', message: 'Market analysis completed successfully', level: 'info' },
-        { timestamp: '2025-08-15T14:30:00', message: 'Fetched latest market data from external API', level: 'info' },
-        { timestamp: '2025-08-15T14:28:45', message: 'Scheduled task: Market analysis initiated', level: 'info' },
-        { timestamp: '2025-08-15T13:15:22', message: 'Connection restored to pricing service', level: 'success' },
-        { timestamp: '2025-08-15T13:12:10', message: 'Warning: Slow response from pricing service', level: 'warning' }
-      ],
-      connections: ['Weather Service', 'Market Data API', 'Price Prediction Model', 'Notification System'],
-      dependencies: ['TensorFlow 2.9.0', 'Market Analysis Library 3.2.1', 'Data Processing Pipeline 1.4']
-    },
-    {
-      id: 2,
-      name: 'Irrigation Controller',
+      name: 'Irrigation Agent',
       status: 'active',
       description: 'Monitors soil moisture levels and controls irrigation systems',
       type: 'irrigation',
@@ -448,106 +415,38 @@ const AgentsPage: React.FC = () => {
     },
     {
       id: 3,
-      name: 'Pest Detection Agent',
-      status: 'inactive',
-      description: 'Analyzes satellite and drone imagery to identify pest outbreaks',
+      name: 'Pest Management Agent',
+      status: 'active',
+      description: 'Analyzes weather patterns and environmental data to predict and manage pest outbreaks',
       type: 'monitoring',
-      lastActive: '3 hours ago',
-      performance: 78,
+      lastActive: '2 minutes ago',
+      performance: 91,
       metrics: {
-        tasksCompleted: 89,
-        averageExecutionTime: 5.7,
-        successRate: 0.85,
-        requestsHandled: 98,
-        errorRate: 0.15,
-        uptime: 92.5
+        tasksCompleted: 189,
+        averageExecutionTime: 2.7,
+        successRate: 0.93,
+        requestsHandled: 198,
+        errorRate: 0.07,
+        uptime: 98.5
       },
-      cpu: 0,
-      memory: 15,
-      version: '1.2.4',
+      cpu: 18,
+      memory: 245,
+      version: '1.9.2',
       vegetationIndices: {
         vari: 0.15,
         tcari: 1.2
       },
       logs: [
-        { timestamp: '2025-08-15T11:42:15', message: 'Agent stopped: Scheduled maintenance', level: 'info' },
-        { timestamp: '2025-08-15T11:40:33', message: 'Backing up detection model parameters', level: 'info' },
-        { timestamp: '2025-08-15T11:32:08', message: 'Warning: Image processing taking longer than expected', level: 'warning' },
-        { timestamp: '2025-08-15T10:15:22', message: 'Satellite imagery reception delayed', level: 'warning' },
-        { timestamp: '2025-08-15T09:05:10', message: 'Daily system check: Performance degradation detected', level: 'warning' }
+        { timestamp: '2025-08-15T14:40:15', message: 'Pest risk assessment completed for Field B5', level: 'info' },
+        { timestamp: '2025-08-15T14:38:33', message: 'Weather-based outbreak prediction updated', level: 'info' },
+        { timestamp: '2025-08-15T14:35:08', message: 'Environmental risk indicators analyzed', level: 'success' },
+        { timestamp: '2025-08-15T14:32:22', message: 'Treatment recommendations generated for aphid control', level: 'success' }
       ],
-      connections: ['Satellite Imagery Provider', 'Drone Fleet Control', 'Image Processing Pipeline', 'Alert System'],
-      dependencies: ['TensorFlow 2.8.0', 'OpenCV 4.5.5', 'Imagery Analysis Toolkit 2.3.4']
+      connections: ['Weather Service', 'Environmental Monitoring', 'Pest Database', 'Treatment Repository'],
+      dependencies: ['Pest Prediction ML 2.8.0', 'Environmental Analysis 4.5.5', 'Treatment Optimizer 2.3.4']
     },
     {
       id: 4,
-      name: 'Harvest Prediction Agent',
-      status: 'active',
-      description: 'Predicts optimal harvest times based on weather and crop data',
-      type: 'planning',
-      lastActive: '1 hour ago',
-      performance: 94,
-      metrics: {
-        tasksCompleted: 208,
-        averageExecutionTime: 3.2,
-        successRate: 0.96,
-        requestsHandled: 312,
-        errorRate: 0.04,
-        uptime: 99.5
-      },
-      cpu: 22,
-      memory: 356,
-      version: '2.2.1',
-      vegetationIndices: {
-        ndvi: 0.65,
-        nbr: 0.12,
-        cmr: 2.1
-      },
-      logs: [
-        { timestamp: '2025-08-15T13:20:15', message: 'Updated harvest schedule for Fields B3-B8', level: 'info' },
-        { timestamp: '2025-08-15T13:18:00', message: 'Applied weather forecast adjustments to prediction model', level: 'info' },
-        { timestamp: '2025-08-15T13:15:45', message: 'Received updated weather forecast data', level: 'info' },
-        { timestamp: '2025-08-15T12:10:22', message: 'Crop maturity estimates updated successfully', level: 'success' }
-      ],
-      connections: ['Weather Forecast Service', 'Crop Database', 'Field Sensor Network', 'Logistics Planning System'],
-      dependencies: ['Agricultural ML Framework 3.0', 'Predictive Analytics Suite 2.5.1', 'Time Series Analysis 4.2']
-    },
-    {
-      id: 5,
-      name: 'Input Materials Agent',
-      status: 'maintenance',
-      description: 'Manages and orders farm input materials based on needs and pricing',
-      type: 'logistics',
-      lastActive: '1 day ago',
-      performance: 81,
-      metrics: {
-        tasksCompleted: 162,
-        averageExecutionTime: 2.8,
-        successRate: 0.89,
-        requestsHandled: 210,
-        errorRate: 0.11,
-        uptime: 94.2
-      },
-      cpu: 5,
-      memory: 72,
-      version: '1.8.3',
-      vegetationIndices: {
-        ndvi: 0.42,
-        vari: 0.08,
-        tcari: 1.6
-      },
-      logs: [
-        { timestamp: '2025-08-14T10:42:15', message: 'Maintenance mode activated: Database optimization', level: 'info' },
-        { timestamp: '2025-08-14T10:40:33', message: 'Backing up transaction history', level: 'info' },
-        { timestamp: '2025-08-14T10:35:18', message: 'Warning: Supply chain data inconsistency detected', level: 'warning' },
-        { timestamp: '2025-08-14T09:25:45', message: 'Error: Failed to connect to supplier API endpoint', level: 'error' },
-        { timestamp: '2025-08-14T08:15:22', message: 'Scheduled maintenance announced for 10:30 AM', level: 'info' }
-      ],
-      connections: ['Inventory System', 'Supplier Network API', 'Procurement Database', 'Cost Analysis Engine'],
-      dependencies: ['Supply Chain Manager 2.4', 'Inventory Control System 3.1.5', 'Financial Analytics 1.9']
-    },
-    {
-      id: 6,
       name: 'Finance Policy Agent',
       status: 'active',
       description: 'Manages financial policies, loan eligibility, and risk assessment',
@@ -577,6 +476,106 @@ const AgentsPage: React.FC = () => {
       ],
       connections: ['Credit Bureau API', 'Satellite Data Service', 'Risk Assessment Engine', 'Banking Integration'],
       dependencies: ['Financial Risk Framework 3.2', 'Credit Scoring ML 2.1', 'Environmental Analytics 1.8']
+    },
+    {
+      id: 5,
+      name: 'Market Timing Agent',
+      status: 'active',
+      description: 'Analyzes market trends and suggests optimal timing for crop sales',
+      type: 'market_timing',
+      lastActive: '2 minutes ago',
+      performance: 92,
+      metrics: {
+        tasksCompleted: 156,
+        averageExecutionTime: 2.3,
+        successRate: 0.98,
+        requestsHandled: 230,
+        errorRate: 0.02,
+        uptime: 99.8
+      },
+      cpu: 18,
+      memory: 245,
+      version: '1.3.2',
+      vegetationIndices: {
+        ndvi: 0.72,
+        evi: 0.58
+      },
+      logs: [
+        { timestamp: '2025-08-15T14:32:15', message: 'Market analysis completed successfully', level: 'info' },
+        { timestamp: '2025-08-15T14:30:00', message: 'Fetched latest market data from external API', level: 'info' },
+        { timestamp: '2025-08-15T14:28:45', message: 'Scheduled task: Market analysis initiated', level: 'info' },
+        { timestamp: '2025-08-15T13:15:22', message: 'Connection restored to pricing service', level: 'success' },
+        { timestamp: '2025-08-15T13:12:10', message: 'Warning: Slow response from pricing service', level: 'warning' }
+      ],
+      connections: ['Weather Service', 'Market Data API', 'Price Prediction Model', 'Notification System'],
+      dependencies: ['TensorFlow 2.9.0', 'Market Analysis Library 3.2.1', 'Data Processing Pipeline 1.4']
+    },
+    {
+      id: 6,
+      name: 'Harvest Planning Agent',
+      status: 'active',
+      description: 'Optimizes harvest timing and schedules based on crop maturity and weather conditions',
+      type: 'planning',
+      lastActive: '1 hour ago',
+      performance: 94,
+      metrics: {
+        tasksCompleted: 208,
+        averageExecutionTime: 3.2,
+        successRate: 0.96,
+        requestsHandled: 312,
+        errorRate: 0.04,
+        uptime: 99.5
+      },
+      cpu: 22,
+      memory: 356,
+      version: '2.2.1',
+      vegetationIndices: {
+        ndvi: 0.65,
+        nbr: 0.12,
+        cmr: 2.1
+      },
+      logs: [
+        { timestamp: '2025-08-15T13:20:15', message: 'Updated harvest schedule for Fields B3-B8', level: 'info' },
+        { timestamp: '2025-08-15T13:18:00', message: 'Applied weather forecast adjustments to harvest timing', level: 'info' },
+        { timestamp: '2025-08-15T13:15:45', message: 'Crop maturity monitoring completed for wheat fields', level: 'success' },
+        { timestamp: '2025-08-15T12:10:22', message: 'Optimal harvest window identified: Sept 15-18', level: 'success' }
+      ],
+      connections: ['Weather Forecast Service', 'Crop Maturity Sensors', 'Harvest Equipment Network', 'Quality Assessment System'],
+      dependencies: ['Harvest Planning ML 3.0', 'Weather Integration API 2.5.1', 'Crop Monitoring Suite 4.2']
+    },
+    {
+      id: 7,
+      name: 'Input Materials Agent',
+      status: 'active',
+      description: 'Recommends optimal fertilizers, seeds, and agricultural inputs based on crop needs',
+      type: 'logistics',
+      lastActive: '10 minutes ago',
+      performance: 88,
+      metrics: {
+        tasksCompleted: 187,
+        averageExecutionTime: 2.8,
+        successRate: 0.91,
+        requestsHandled: 245,
+        errorRate: 0.09,
+        uptime: 97.2
+      },
+      cpu: 16,
+      memory: 198,
+      version: '1.9.3',
+      vegetationIndices: {
+        ndvi: 0.58,
+        vari: 0.12,
+        tcari: 1.4
+      },
+      logs: [
+        { timestamp: '2025-08-15T14:25:15', message: 'Fertilizer recommendation updated for Field D4', level: 'info' },
+        { timestamp: '2025-08-15T14:20:33', message: 'Soil analysis integration completed successfully', level: 'success' },
+        { timestamp: '2025-08-15T14:18:18', message: 'Cost-effective nutrient plan generated', level: 'info' },
+        { timestamp: '2025-08-15T14:15:45', message: 'Seasonal input material requirements calculated', level: 'success' },
+        { timestamp: '2025-08-15T14:10:22', message: 'Supplier inventory status synchronized', level: 'info' }
+      ],
+      connections: ['Soil Analysis System', 'Supplier Network API', 'Nutrient Database', 'Cost Optimization Engine'],
+      dependencies: ['Fertilizer Recommendation ML 2.4', 'Soil Analysis Framework 3.1.5', 'Cost Analytics 1.9']
     }
   ];
 

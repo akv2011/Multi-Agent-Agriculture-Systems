@@ -58,12 +58,20 @@ class AgricultureIntegrationService:
             except Exception as e:  # pragma: no cover - defensive import
                 logger.error(f"Failed to import InputMaterialsAgent: {e}")
                 InputMaterialsAgent = None  # type: ignore
+                
+            # Added: Harvest planning agent for optimal harvest timing
+            try:
+                from ..agents.harvest_planning_agent import HarvestPlanningAgent
+            except Exception as e:  # pragma: no cover - defensive import
+                logger.error(f"Failed to import HarvestPlanningAgent: {e}")
+                HarvestPlanningAgent = None  # type: ignore
 
             # Initialize specialist agents
             crop_agent = CropSelectionAgent()
             pest_agent = PestManagementAgent()
             irrigation_agent = IrrigationAgent()
             input_materials_agent = InputMaterialsAgent() if 'InputMaterialsAgent' in locals() and InputMaterialsAgent else None
+            harvest_planning_agent = HarvestPlanningAgent() if 'HarvestPlanningAgent' in locals() and HarvestPlanningAgent else None
 
             # Register specialist agents with their domains
             self.register_specialist_agent(
@@ -93,6 +101,17 @@ class AgricultureIntegrationService:
                 logger.info("InputMaterialsAgent registered for INPUT_MATERIALS domain")
             else:
                 logger.warning("InputMaterialsAgent not registered (import or init failed)")
+            
+            # Added: register harvest planning agent if available
+            if harvest_planning_agent:
+                self.register_specialist_agent(
+                    "harvest_planning_agent",
+                    harvest_planning_agent,
+                    [QueryDomain.HARVEST_PLANNING]
+                )
+                logger.info("HarvestPlanningAgent registered for HARVEST_PLANNING domain")
+            else:
+                logger.warning("HarvestPlanningAgent not registered (import or init failed)")
             
             logger.info(f"Agriculture router and {len(self.specialist_agents)} specialist agents initialized")
             
