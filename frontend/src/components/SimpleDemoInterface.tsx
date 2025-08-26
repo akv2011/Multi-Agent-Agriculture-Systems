@@ -77,6 +77,7 @@ const SimpleDemoInterface: React.FC = () => {
   const [currentMarker, setCurrentMarker] = useState<L.Marker | null>(null); // kept for potential future use
   const [selectedPoint, setSelectedPoint] = useState<L.LatLng | null>(null);
   const [selectedCoords, setSelectedCoords] = useState<string>('Click on map to select analysis point');
+  const [selectedAddress, setSelectedAddress] = useState<string>('');
   const [analysisDate, setAnalysisDate] = useState<string>('');
   const [satelliteSource, setSatelliteSource] = useState<string>('sentinel2');
   const [cloudCoverage, setCloudCoverage] = useState<string>('20');
@@ -108,7 +109,7 @@ const SimpleDemoInterface: React.FC = () => {
     setAnalysisDate(thirtyDaysAgo.toISOString().split('T')[0]);
   };
 
-  const selectAnalysisPoint = (latlng: L.LatLng, mapInstance?: L.Map) => {
+  const selectAnalysisPoint = async (latlng: L.LatLng, mapInstance?: L.Map) => {
     const activeMap = mapInstance || map;
     if (!activeMap) return;
 
@@ -121,19 +122,31 @@ const SimpleDemoInterface: React.FC = () => {
       }
     });
 
+    // Show loading state while fetching address
+    setSelectedCoords('Getting address...');
+    setSelectedAddress('');
+
+    // Get address from coordinates
+    const address = await getAddressFromCoordinates(latlng.lat, latlng.lng);
+    setSelectedAddress(address);
+
     // Add new marker
     const newMarker = L.marker(latlng).addTo(activeMap);
     newMarker.bindPopup(`
       <b>Analysis Point</b><br>
-      Lat: ${latlng.lat.toFixed(5)}<br>
-      Lng: ${latlng.lng.toFixed(5)}<br>
-      <button onclick="window.analyzeCurrentPoint()" style="background: #27ae60; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">Analyze This Point</button>
+      <div style="max-width: 200px; word-wrap: break-word;">
+        <strong>Address:</strong><br>
+        ${address}<br><br>
+        <small>Coordinates: ${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}</small>
+      </div>
+      <br>
+      <button onclick="window.analyzeCurrentPoint()" style="background: #27ae60; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; margin-top: 5px;">Analyze This Point</button>
     `).openPopup();
 
     setCurrentMarker(newMarker);
 
-    // Update coordinates display
-    setSelectedCoords(`Selected: ${latlng.lat.toFixed(5)}°N, ${latlng.lng.toFixed(5)}°E`);
+    // Update display to show address instead of just coordinates
+    setSelectedCoords(`Selected: ${address}`);
   };
 
   const analyzeSelectedPoint = React.useCallback(async (point?: L.LatLng) => {
@@ -185,8 +198,9 @@ const SimpleDemoInterface: React.FC = () => {
       await new Promise(resolve => setTimeout(resolve, 500));
       setAnalysisProgress('');
 
-      // Set a query based on the analysis
-      setCurrentQuery(`Analyze agricultural conditions at coordinates ${targetPoint.lat.toFixed(5)}, ${targetPoint.lng.toFixed(5)}`);
+      // Set a query based on the analysis - use address if available, otherwise coordinates
+      const locationDesc = selectedAddress || `coordinates ${targetPoint.lat.toFixed(5)}, ${targetPoint.lng.toFixed(5)}`;
+      setCurrentQuery(`Analyze agricultural conditions at ${locationDesc}`);
 
     } catch (error) {
       console.error('Analysis error:', error);
@@ -195,7 +209,7 @@ const SimpleDemoInterface: React.FC = () => {
     } finally {
       setIsAnalyzing(false);
     }
-  }, [selectedPoint, analysisDate, satelliteSource]);
+  }, [selectedPoint, analysisDate, satelliteSource, selectedAddress]);
 
   // Make analyzeCurrentPoint available globally for popup button
   useEffect(() => {
@@ -404,6 +418,63 @@ const SimpleDemoInterface: React.FC = () => {
     setCurrentQuery(query.query);
   };
 
+  // Reverse geocoding function to get address from coordinates
+  const getAddressFromCoordinates = async (lat: number, lng: number): Promise<string> => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`
+      );
+      
+      if (!response.ok) {
+        throw new Error('Geocoding service unavailable');
+      }
+      
+      const data = await response.json();
+      
+      if (data && data.display_name) {
+        // Parse address components for better formatting
+        const address = data.address || {};
+        const addressParts = [];
+        
+        // Add specific address components in order of preference
+        if (address.house_number && address.road) {
+          addressParts.push(`${address.house_number} ${address.road}`);
+        } else if (address.road) {
+          addressParts.push(address.road);
+        }
+        
+        if (address.neighbourhood || address.suburb) {
+          addressParts.push(address.neighbourhood || address.suburb);
+        }
+        
+        if (address.village || address.town || address.city) {
+          addressParts.push(address.village || address.town || address.city);
+        }
+        
+        if (address.state_district && address.state_district !== (address.village || address.town || address.city)) {
+          addressParts.push(address.state_district);
+        }
+        
+        if (address.state) {
+          addressParts.push(address.state);
+        }
+        
+        if (address.country) {
+          addressParts.push(address.country);
+        }
+        
+        // If we have structured address parts, use them; otherwise use display_name
+        return addressParts.length > 0 ? addressParts.join(', ') : data.display_name;
+      } else {
+        throw new Error('No address found');
+      }
+    } catch (error) {
+      console.error('Reverse geocoding error:', error);
+      // Fallback to coordinates if geocoding fails
+      return `${lat.toFixed(5)}°N, ${lng.toFixed(5)}°E`;
+    }
+  };
+
   return (
     <div className="simple-demo">
       <div className="demo-header">
@@ -454,18 +525,31 @@ const SimpleDemoInterface: React.FC = () => {
               />
               <div style={{
                 background: '#e3f2fd',
-                padding: '8px',
+                padding: '12px',
                 borderRadius: '5px',
                 margin: '10px 0',
-                fontFamily: 'monospace',
+                fontFamily: 'Arial, sans-serif',
                 fontSize: '0.9rem'
               }}>
+                <strong>📍 Location:</strong><br />
                 {selectedCoords}
+              </div>
+              <div style={{
+                background: '#f9f9f9',
+                padding: '12px',
+                borderRadius: '5px',
+                margin: '10px 0',
+                fontFamily: 'Arial, sans-serif',
+                fontSize: '0.9rem',
+                border: '1px solid #ddd'
+              }}>
+                <strong>📍 Address:</strong><br />
+                {selectedAddress || 'Click on map to see address at selected location'}
               </div>
             </div>
 
             {/* Analysis Controls */}
-            <div style={{
+            <div className="analysis-controls" style={{
               background: 'white',
               borderRadius: '10px',
               padding: '15px',
@@ -487,7 +571,9 @@ const SimpleDemoInterface: React.FC = () => {
                     padding: '8px',
                     border: '1px solid #ddd',
                     borderRadius: '5px',
-                    fontSize: '0.9rem'
+                    fontSize: '0.9rem',
+                    color: '#333333',
+                    backgroundColor: '#ffffff'
                   }}
                 />
               </div>
@@ -504,7 +590,9 @@ const SimpleDemoInterface: React.FC = () => {
                     padding: '8px',
                     border: '1px solid #ddd',
                     borderRadius: '5px',
-                    fontSize: '0.9rem'
+                    fontSize: '0.9rem',
+                    color: '#333333',
+                    backgroundColor: '#ffffff'
                   }}
                 >
                   <option value="sentinel2">Sentinel-2 (10m)</option>
@@ -525,7 +613,9 @@ const SimpleDemoInterface: React.FC = () => {
                     padding: '8px',
                     border: '1px solid #ddd',
                     borderRadius: '5px',
-                    fontSize: '0.9rem'
+                    fontSize: '0.9rem',
+                    color: '#333333',
+                    backgroundColor: '#ffffff'
                   }}
                 >
                   <option value="10">&lt; 10% (Best)</option>
@@ -597,6 +687,19 @@ const SimpleDemoInterface: React.FC = () => {
             placeholder="Type your agricultural question here..."
             rows={3}
             className="query-textarea"
+            style={{
+              color: '#2c3e50',
+              backgroundColor: '#ffffff',
+              border: '2px solid #cbd5e0',
+              borderRadius: '12px',
+              padding: '15px',
+              fontSize: '1rem',
+              width: '100%',
+              minHeight: '100px',
+              fontWeight: '500',
+              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
+              transition: 'all 0.3s ease'
+            }}
           />
           {/* Added image upload */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '8px', flexWrap: 'wrap' }}>
