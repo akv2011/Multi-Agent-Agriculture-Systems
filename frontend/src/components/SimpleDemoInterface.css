@@ -148,18 +148,48 @@
 .query-textarea {
   width: 100%;
   padding: 15px;
-  border: 2px solid #e9ecef;
-  border-radius: 10px;
+  border: 2px solid #cbd5e0;
+  border-radius: 12px;
   font-size: 1rem;
   font-family: inherit;
   resize: vertical;
   min-height: 100px;
+  background-color: #ffffff !important;
+  color: #2c3e50 !important;
+  font-weight: 500;
+  line-height: 1.5;
+  /* Force override of any inherited styles */
+  text-shadow: none !important;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.query-textarea::placeholder {
+  color: #6c757d !important;
+  opacity: 1;
+  font-weight: 400;
 }
 
 .query-textarea:focus {
   outline: none;
   border-color: #4CAF50;
-  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.15), 0 4px 12px rgba(0, 0, 0, 0.1);
+  background-color: #ffffff !important;
+  color: #2c3e50 !important;
+  transform: translateY(-1px);
+}
+
+.query-textarea:hover:not(:focus) {
+  border-color: #a0aec0;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Additional specific override to ensure text is visible */
+textarea.query-textarea,
+textarea.query-textarea:focus,
+textarea.query-textarea:active {
+  color: #2c3e50 !important;
+  background-color: #ffffff !important;
 }
 
 .submit-button {
@@ -247,6 +277,76 @@
 .response-text em {
   font-style: italic;
   color: #34495e;
+}
+
+/* Analysis Controls Form Elements */
+.analysis-controls {
+  background: white !important;
+}
+
+.analysis-controls input[type="date"],
+.analysis-controls select {
+  color: #333333 !important;
+  background-color: #ffffff !important;
+  border: 1px solid #ddd !important;
+}
+
+.analysis-controls input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0) !important;
+  cursor: pointer;
+  color: #000000 !important;
+  background-color: transparent;
+}
+
+.analysis-controls select option {
+  color: #333333 !important;
+  background-color: #ffffff !important;
+}
+
+.analysis-controls label {
+  color: #555 !important;
+}
+
+.analysis-controls h5 {
+  color: #333 !important;
+}
+
+/* Fallback for all form elements to ensure visibility */
+input[type="date"],
+select {
+  color: #333333 !important;
+  background-color: #ffffff !important;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  filter: invert(0) !important;
+  color: #000000 !important;
+  background-color: transparent;
+}
+
+/* More specific targeting for analysis date input */
+.analysis-date-input::-webkit-calendar-picker-indicator {
+  filter: invert(0) !important;
+  cursor: pointer !important;
+  color: #000000 !important;
+  background-color: transparent !important;
+  opacity: 1 !important;
+  width: 16px !important;
+  height: 16px !important;
+  display: block !important;
+  visibility: visible !important;
+  position: relative !important;
+  z-index: 10 !important;
+  margin-left: auto !important;
+}
+
+.analysis-date-input::-moz-calendar-picker-indicator {
+  cursor: pointer !important;
+  color: #000000 !important;
+  background-color: transparent !important;
+  opacity: 1 !important;
+  visibility: visible !important;
 }
 
 /* Responsive design */
@@ -421,4 +521,10 @@
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
+}
+
+/* Loading spinner animation */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }

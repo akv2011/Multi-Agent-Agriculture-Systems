@@ -2,6 +2,7 @@
 Irrigation Scheduling Agent
 Specialized agent for calculating crop water requirements and creating optimal irrigation schedules.
 Uses meteorological data, soil characteristics, and crop growth stages.
+Enhanced with AgriSens ML models for precise water management.
 """
 
 import logging
@@ -18,6 +19,11 @@ from ..core.models import AgentCapability
 from ..core.agriculture_models import (
     AgricultureQuery, AgentResponse, CropType, SoilType, SeasonType,
     WeatherData, Location, FarmProfile, QueryDomain
+)
+# AgriSens Model Integration
+from ..models.agrisens_irrigation_scheduling import (
+    get_irrigation_model, IrrigationModel, calculate_crop_water_requirement,
+    get_soil_moisture_depletion, optimize_irrigation_schedule
 )
 
 logger = logging.getLogger(__name__)
@@ -279,15 +285,16 @@ class IrrigationAgent(BaseWorkerAgent):
     async def process_query(self, query: AgricultureQuery) -> AgentResponse:
         """
         Process irrigation scheduling related queries with satellite data integration.
+        Uses AgriSens ML model for enhanced irrigation scheduling.
         
         Args:
             query: Agriculture query object
             
         Returns:
-            AgentResponse with irrigation recommendations enhanced by satellite data
+            AgentResponse with irrigation recommendations enhanced by satellite data and ML model
         """
         try:
-            logger.info(f"Processing irrigation query with satellite integration: {query.query_text}")
+            logger.info(f"Processing irrigation query with AgriSens ML model and satellite integration: {query.query_text}")
             
             # Extract irrigation context from query
             context = self._extract_irrigation_context(query)
@@ -311,27 +318,65 @@ class IrrigationAgent(BaseWorkerAgent):
             if satellite_data:
                 context = self._enhance_context_with_satellite_data(context, satellite_data)
             
-            # Calculate water requirements with satellite insights
-            water_requirements = await self._calculate_water_requirements(context, satellite_data)
+            # Initialize AgriSens Irrigation Model
+            irrigation_model = get_irrigation_model()
+            logger.info(f"[AGRISENS] Using AgriSens irrigation scheduling model for enhanced recommendations")
             
-            # Generate irrigation schedule with satellite data
-            irrigation_schedule = await self._generate_irrigation_schedule(context, water_requirements, satellite_data)
+            # Convert context to format expected by the ML model
+            crop_data = {
+                "crop_type": str(context.get("crop_type", "wheat")).lower(),
+                "growth_stage": str(context.get("current_stage", "mid_season")).lower(),
+                "field_size": float(context.get("farm_size", 1.0)),
+                "irrigation_method": str(context.get("irrigation_method", "sprinkler")).lower(),
+                "root_depth": float(context.get("root_depth", 0.5))  # default 0.5m if not provided
+            }
             
-            # Calculate water budget
+            soil_data = {
+                "soil_type": str(context.get("soil_type", "loam")).lower(),
+            }
+            
+            # Prepare weather data
+            weather_data = {}
+            for i in range(7):
+                weather_data[f"day_{i+1}"] = {
+                    "et0": 5.0,  # Default reference ET
+                    "rainfall": 0.0  # Default no rainfall
+                }
+                
+            if "weather" in context and isinstance(context["weather"], dict):
+                for i, forecast in enumerate(context["weather"].get("forecast", [])):
+                    if i < 7:
+                        weather_data[f"day_{i+1}"]["rainfall"] = forecast.get("precipitation", 0)
+                        # Estimate ET0 based on temperature
+                        temp = forecast.get("temperature", 25)
+                        weather_data[f"day_{i+1}"]["et0"] = 3.0 + (temp / 10)  # Simple estimation
+            
+            # Get ML-based irrigation recommendations
+            agrisens_irrigation_plan = irrigation_model.generate_satellite_enhanced_irrigation_plan(
+                crop_data=crop_data,
+                soil_data=soil_data,
+                weather_data=weather_data,
+                satellite_data=satellite_data
+            )
+            logger.info(f"[AGRISENS] Generated irrigation plan: {len(agrisens_irrigation_plan['schedule'])} days scheduled")
+            
+            # Update our internal data with ML model outputs
+            water_requirements = await self._calculate_water_requirements(context, satellite_data, agrisens_irrigation_plan)
+            irrigation_schedule = await self._generate_irrigation_schedule(context, water_requirements, satellite_data, agrisens_irrigation_plan)
             water_budget = await self._calculate_water_budget(context, water_requirements)
+            method_recommendation = await self._recommend_irrigation_method(context, satellite_data, agrisens_irrigation_plan)
             
-            # Recommend irrigation method
-            method_recommendation = await self._recommend_irrigation_method(context, satellite_data)
-            
-            # Calculate confidence including satellite data
+            # Calculate confidence including satellite data and ML model
             confidence = self._calculate_confidence(context, satellite_data)
+            # Increase confidence because we're using ML model
+            confidence = min(confidence + 0.15, 1.0)
             
-            # Include satellite summary in sources
-            sources = ["fao_irrigation_guidelines", "crop_coefficient_database", "soil_moisture_models"]
+            # Include satellite summary and ML model in sources
+            sources = ["fao_irrigation_guidelines", "crop_coefficient_database", "soil_moisture_models", "agrisens_irrigation_ml_model"]
             if satellite_data:
                 sources.append("satellite_soil_moisture")
             
-            # Format response with satellite insights
+            # Format response with satellite insights and ML model data
             response_data = {
                 "water_requirements": [req.__dict__ for req in water_requirements],
                 "irrigation_schedule": [sched.__dict__ for sched in irrigation_schedule],
@@ -339,8 +384,9 @@ class IrrigationAgent(BaseWorkerAgent):
                 "method_recommendation": method_recommendation,
                 "context_analysis": context,
                 "satellite_insights": satellite_data,
+                "agrisens_model_output": agrisens_irrigation_plan,
                 "confidence_score": confidence,
-                "efficiency_tips": self._generate_efficiency_tips(context, satellite_data)
+                "efficiency_tips": self._generate_efficiency_tips(context, satellite_data, agrisens_irrigation_plan)
             }
             
             return AgentResponse(
@@ -541,56 +587,161 @@ class IrrigationAgent(BaseWorkerAgent):
         
         return max(int(adjusted_frequency), 2)  # Minimum 2 days
     
-    async def _generate_irrigation_schedule(self, context: Dict[str, Any], requirements: List[CropWaterRequirement]) -> List[IrrigationSchedule]:
-        """Generate detailed irrigation schedule"""
+    async def _generate_irrigation_schedule(self, context: Dict[str, Any], water_requirements: List[CropWaterRequirement], 
+                                  satellite_data: Optional[Dict] = None, agrisens_model_output: Optional[Dict] = None) -> List[IrrigationSchedule]:
+        """
+        Generate detailed irrigation schedule using AgriSens ML model when available
+        
+        Args:
+            context: Query context
+            water_requirements: List of water requirements
+            satellite_data: Optional satellite data
+            agrisens_model_output: Optional ML model output
+            
+        Returns:
+            List of irrigation schedule recommendations
+        """
         schedule = []
         
-        if not requirements:
-            return schedule
-        
-        # Start from current date or planting date
-        start_date = context.get("planting_date", datetime.now())
-        current_date = start_date
-        
-        for req in requirements:
-            stage_start = current_date
+        # If we have AgriSens model output, use it for more accurate scheduling
+        if agrisens_model_output and "schedule" in agrisens_model_output:
+            logger.info("[AGRISENS] Using ML model irrigation schedule")
+            model_schedule = agrisens_model_output.get("schedule", [])
             
-            # Calculate number of irrigations for this stage
-            num_irrigations = max(1, req.stage_duration // req.irrigation_frequency)
-            water_per_irrigation = req.total_water_need / num_irrigations
+            # Start from current date
+            start_date = datetime.now()
             
-            for i in range(num_irrigations):
-                irrigation_date = stage_start + timedelta(days=i * req.irrigation_frequency)
+            # Determine irrigation method
+            method_str = agrisens_model_output.get("irrigation_method", "sprinkler")
+            method = IrrigationMethod.SPRINKLER  # Default
+            for m in IrrigationMethod:
+                if m.value == method_str:
+                    method = m
+                    break
+            
+            # Process each day in the ML model schedule
+            for i, day in enumerate(model_schedule):
+                # Skip days without irrigation
+                if not day.get("irrigate", False):
+                    continue
+                    
+                irrigation_date = start_date + timedelta(days=i)
+                irrigation_mm = day.get("irrigation_mm", 0)
+                water_volume = day.get("water_volume_m3", 0)
                 
-                # Determine irrigation method
-                method = context.get("irrigation_method", IrrigationMethod.FURROW)
-                
-                # Calculate duration based on method efficiency
-                method_data = self.irrigation_methods.get(method, {})
-                efficiency = method_data.get("efficiency", 0.5)
-                actual_water_needed = water_per_irrigation / efficiency
+                # Determine priority based on depletion level
+                depletion = day.get("depletion_mm", 0)
+                raw = agrisens_model_output.get("readily_available_water_mm", 60)
+                priority = "medium"
+                if depletion / raw > 0.8:
+                    priority = "high"
+                elif depletion / raw < 0.5:
+                    priority = "low"
                 
                 # Calculate duration (simplified)
+                method_data = self.irrigation_methods.get(method, {})
                 application_rate = 10  # mm/hour (varies by method)
-                duration = actual_water_needed / application_rate
+                duration = irrigation_mm / application_rate
                 
-                # Determine priority based on crop stage
-                priority = "high" if req.stage in [CropStage.MID_SEASON, CropStage.INITIAL] else "medium"
-                
+                # Create irrigation schedule entry
                 irrigation = IrrigationSchedule(
                     date=irrigation_date,
-                    water_amount=water_per_irrigation,
+                    water_amount=irrigation_mm,
+                    water_volume_m3=water_volume,
                     duration_hours=duration,
                     method=method,
-                    crop_stage=req.stage,
-                    reason=f"Stage: {req.stage.value}, ET: {req.daily_et:.1f}mm/day",
+                    crop_stage=context.get("current_stage", "mid_season"),
+                    reason=f"Soil moisture depletion: {depletion:.1f}mm, ET: {day.get('etc_mm', 0):.1f}mm/day",
                     priority=priority,
-                    weather_adjustment="Monitor weather 2 days before"
+                    weather_adjustment="Monitor rainfall forecast" if day.get("rainfall_mm", 0) > 0 else None,
+                    satellite_adjustment=True if satellite_data else False
                 )
                 schedule.append(irrigation)
             
-            # Move to next stage
-            current_date += timedelta(days=req.stage_duration)
+            return schedule[:10]  # Return next 10 irrigations
+            
+        # If no ML model output available, fall back to basic scheduling
+        if not water_requirements:
+            return schedule
+        
+        # Start from current date or planting date
+        start_date = datetime.now()
+        if context.get("planting_date"):
+            if isinstance(context["planting_date"], datetime):
+                start_date = context["planting_date"]
+            elif isinstance(context["planting_date"], str):
+                try:
+                    start_date = datetime.strptime(context["planting_date"], "%Y-%m-%d")
+                except ValueError:
+                    pass
+        
+        current_date = start_date
+        
+        # Get crop water requirement
+        req = water_requirements[0]
+        
+        # Determine growth stage
+        stage_str = context.get("current_stage", "mid_season")
+        stage = None
+        for s in CropStage:
+            if s.value == stage_str:
+                stage = s
+                break
+        if not stage:
+            stage = CropStage.MID_SEASON
+        
+        # Calculate daily ET (simplified)
+        daily_et = req.daily_requirement_mm
+        
+        # Calculate irrigation frequency based on soil, stage and ET
+        irrigation_frequency = self._calculate_irrigation_frequency(context, stage, daily_et)
+        
+        # Generate schedule for next 30 days
+        for i in range(0, 30, irrigation_frequency):
+            irrigation_date = current_date + timedelta(days=i)
+            
+            # Determine irrigation method
+            method_str = context.get("irrigation_method", "furrow")
+            method = IrrigationMethod.FURROW
+            for m in IrrigationMethod:
+                if m.value == method_str:
+                    method = m
+                    break
+            
+            # Calculate water amount for this irrigation
+            water_amount = daily_et * irrigation_frequency
+            
+            # Calculate water volume in cubic meters
+            water_volume = water_amount * 10  # 1 mm over 1 ha = 10 m3
+            if context.get("farm_size"):
+                water_volume *= float(context["farm_size"])
+            
+            # Adjust based on method efficiency
+            method_data = self.irrigation_methods.get(method, {})
+            efficiency = method_data.get("efficiency", 0.5)
+            water_volume = water_volume / efficiency
+            
+            # Calculate duration (simplified)
+            application_rate = 10  # mm/hour (varies by method)
+            duration = water_amount / application_rate
+            
+            # Determine priority based on crop stage
+            priority = "high" if stage in [CropStage.MID_SEASON, CropStage.INITIAL] else "medium"
+            
+            # Create irrigation schedule entry
+            irrigation = IrrigationSchedule(
+                date=irrigation_date,
+                water_amount=water_amount,
+                water_volume_m3=water_volume,
+                duration_hours=duration,
+                method=method,
+                crop_stage=stage,
+                reason=f"Stage: {stage.value}, ET: {daily_et:.1f}mm/day",
+                priority=priority,
+                weather_adjustment="Monitor weather 2 days before",
+                satellite_adjustment=True if satellite_data else False
+            )
+            schedule.append(irrigation)
         
         return schedule[:10]  # Return next 10 irrigations
     
@@ -971,12 +1122,52 @@ class IrrigationAgent(BaseWorkerAgent):
         
         return schedule
     
-    async def _recommend_irrigation_method(self, context: Dict, satellite_data: Optional[Dict] = None) -> Dict:
-        """Recommend irrigation method with satellite insights"""
+    async def _recommend_irrigation_method(self, context: Dict, satellite_data: Optional[Dict] = None, 
+                               agrisens_model_output: Optional[Dict] = None) -> Dict:
+        """
+        Recommend irrigation method with satellite insights and AgriSens ML model
+        
+        Args:
+            context: Query context
+            satellite_data: Optional satellite data
+            agrisens_model_output: Optional ML model output
+            
+        Returns:
+            Irrigation method recommendations
+        """
+        # Get base recommendation
         base_recommendation = await self._recommend_base_irrigation_method(context)
         
+        # Enhanced recommendations from AgriSens ML model
+        if agrisens_model_output:
+            # Use recommendations from the model if available
+            if "recommendations" in agrisens_model_output:
+                method_recs = [rec for rec in agrisens_model_output["recommendations"] 
+                              if "irrigation system" in rec.lower() or "irrigation method" in rec.lower()]
+                
+                if method_recs:
+                    base_recommendation["model_recommendation"] = method_recs[0]
+            
+            # Water savings potential from the model
+            if "water_savings_potential" in agrisens_model_output:
+                base_recommendation["water_savings_potential"] = f"{agrisens_model_output['water_savings_potential']}%"
+                
+            # Use current irrigation method from model
+            if "irrigation_method" in agrisens_model_output:
+                base_recommendation["current_method"] = agrisens_model_output["irrigation_method"]
+        
+        # Add satellite-based method recommendations
         if satellite_data:
-            soil_moisture = satellite_data.get("soil_moisture", 0.0)
+            soil_moisture = 0.5  # Default value
+            
+            # Extract soil moisture from satellite data
+            if isinstance(satellite_data, dict):
+                if "soil_moisture" in satellite_data:
+                    sm_data = satellite_data["soil_moisture"]
+                    if isinstance(sm_data, dict) and "values" in sm_data:
+                        sm_values = sm_data["values"]
+                        if sm_values:
+                            soil_moisture = sum(sm_values) / len(sm_values) / 100.0  # Convert to 0-1 scale
             
             # Add satellite-based method recommendations
             if soil_moisture < 0.3:
@@ -985,6 +1176,13 @@ class IrrigationAgent(BaseWorkerAgent):
                 base_recommendation["satellite_recommendation"] = "Monitor closely - may not need irrigation soon"
             else:
                 base_recommendation["satellite_recommendation"] = "Current method suitable based on soil moisture"
+        
+        # Integration of all recommendations
+        if "model_recommendation" in base_recommendation and "satellite_recommendation" in base_recommendation:
+            base_recommendation["integrated_recommendation"] = (
+                f"Based on ML model and satellite data: {base_recommendation['model_recommendation']} "
+                f"and {base_recommendation['satellite_recommendation']}"
+            )
         
         return base_recommendation
     
@@ -1010,16 +1208,34 @@ class IrrigationAgent(BaseWorkerAgent):
         
         return min(base_confidence, 1.0)
     
-    def _generate_efficiency_tips(self, context: Dict, satellite_data: Optional[Dict] = None) -> List[str]:
-        """Generate irrigation efficiency tips including satellite insights"""
+    def _generate_efficiency_tips(self, context: Dict, satellite_data: Optional[Dict] = None,
+                           agrisens_model_output: Optional[Dict] = None) -> List[str]:
+        """
+        Generate irrigation efficiency tips including satellite insights and ML model recommendations
+        
+        Args:
+            context: Query context
+            satellite_data: Optional satellite data
+            agrisens_model_output: Optional ML model output
+            
+        Returns:
+            List of efficiency tips
+        """
         tips = []
         
-        # Base efficiency tips
-        if context.get("irrigation_method") == IrrigationMethod.FLOOD:
-            tips.append("Consider drip irrigation to reduce water wastage by 30-50%")
+        # Include model-based recommendations if available
+        if agrisens_model_output and "recommendations" in agrisens_model_output:
+            model_recs = agrisens_model_output["recommendations"]
+            for rec in model_recs:
+                tips.append(f"[AgriSens Model] {rec}")
         
-        tips.append("Irrigate during early morning or evening to minimize evaporation")
-        tips.append("Monitor soil moisture regularly for optimal timing")
+        # Base efficiency tips if no model recommendations
+        if not tips:
+            if context.get("irrigation_method") == IrrigationMethod.FLOOD:
+                tips.append("Consider drip irrigation to reduce water wastage by 30-50%")
+            
+            tips.append("Irrigate during early morning or evening to minimize evaporation")
+            tips.append("Monitor soil moisture regularly for optimal timing")
         
         # Satellite-based tips
         if satellite_data:

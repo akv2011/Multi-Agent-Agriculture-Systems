@@ -27,43 +27,81 @@
 }
 
 .agent-item {
-  background-color: #2F3B4B;
+  background-color: var(--bg-card-dark, #2F3B4B);
   border-radius: 16px;
-  border: 1px solid #3a4658;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   padding: 1.25rem;
-  transition: all 0.2s ease;
+  transition: var(--card-transition, all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1));
   position: relative;
-  color: #ffffff;
+  color: var(--text-light, #ffffff);
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.agent-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 4px;
+  background-color: var(--primary-color, #DFBA47);
+  opacity: 0.3;
 }
 
 .agent-item:hover {
   background-color: #364356;
-  border-color: #DFBA47;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(47, 59, 75, 0.3);
+  border-color: var(--primary-color, #DFBA47);
+  transform: translateY(-3px) scale(1.01);
+  box-shadow: 0 8px 24px rgba(47, 59, 75, 0.4);
 }
 
 .agent-item.running {
-  border-left: 4px solid #0cbc87;
+  border-left: none;
+}
+
+.agent-item.running::before {
+  background-color: var(--status-active, #10b981);
+  opacity: 1;
 }
 
 .agent-item.idle {
-  border-left: 4px solid #ffa800;
+  border-left: none;
+}
+
+.agent-item.idle::before {
+  background-color: var(--status-idle, #f59e0b);
+  opacity: 1;
 }
 
 .agent-item.busy {
-  border-left: 4px solid #6a5af9;
+  border-left: none;
+}
+
+.agent-item.busy::before {
+  background-color: var(--status-busy, #3b82f6);
+  opacity: 1;
 }
 
 .agent-item.error {
-  border-left: 4px solid #d6293e;
-  background-color: #3a2b30;
+  border-left: none;
+  background-color: rgba(239, 68, 68, 0.05);
+}
+
+.agent-item.error::before {
+  background-color: var(--status-error, #ef4444);
+  opacity: 1;
 }
 
 .agent-item.offline {
-  border-left: 4px solid #8c8c8c;
+  border-left: none;
   opacity: 0.8;
-  background-color: #2a303a;
+  background-color: rgba(107, 114, 128, 0.1);
+}
+
+.agent-item.offline::before {
+  background-color: var(--status-offline, #6B7280);
+  opacity: 0.7;
 }
 
 .agent-header {
@@ -75,19 +113,57 @@
 
 .agent-info {
   display: flex;
+  align-items: center;
+  gap: 0.875rem;
+}
+
+.agent-icon-wrapper {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(223, 186, 71, 0.1);
+  border: 1px solid rgba(223, 186, 71, 0.3);
+  border-radius: 12px;
+  padding: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.agent-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.agent-icon-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--primary-color, #DFBA47);
+  border-radius: 8px;
+  color: var(--bg-dark, #1E293B);
+  font-weight: 600;
+}
+
+.agent-text {
+  display: flex;
   flex-direction: column;
   gap: 0.375rem;
 }
 
 .agent-id {
   font-family: 'Inter', sans-serif;
-  color: #DFBA47;
+  color: var(--primary-color, #DFBA47);
   font-weight: 600;
   font-size: 0.85rem;
 }
 
 .agent-name {
-  color: #ffffff;
+  color: var(--text-light, #ffffff);
   font-weight: 600;
   font-size: 0.95rem;
 }
@@ -97,7 +173,9 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.25rem 0.75rem;
-  background-color: #3a4658;
+  background-color: rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(255, 255, 255, 0.05);
   border-radius: 20px;
   border: 1px solid #4d5a6c;
 }
@@ -149,7 +227,11 @@
   justify-content: space-between;
   margin-top: 0.75rem;
   padding-top: 0.75rem;
-  border-top: 1px solid #3a4658;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  border-top: none;
+  background-color: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.1);
 }
 
 .metric {
@@ -157,18 +239,34 @@
   flex-direction: column;
   align-items: center;
   gap: 0.25rem;
+  position: relative;
+  padding: 0 0.5rem;
+}
+
+.metric:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  right: -0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 70%;
+  width: 1px;
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .metric-value {
-  color: #DFBA47;
+  color: var(--primary-color, #DFBA47);
   font-weight: 700;
   font-size: 1.1rem;
   font-family: 'Inter', sans-serif;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .metric-label {
-  color: #a0a9b8;
+  color: var(--text-light, #ffffff);
+  opacity: 0.7;
   font-size: 0.7rem;
+  letter-spacing: 0.03em;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   font-weight: 500;

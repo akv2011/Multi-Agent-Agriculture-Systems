@@ -13,8 +13,38 @@ node_modules/
 .vscode
 .cursor/
 
-# Environment variables
+# Environment variables and secrets - SECURITY CRITICAL
 .env
+.env.*
+!.env.example
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+src/.env
+src/.env.*
+config/.env
+config/.env.*
+
+# Sensitive configuration files - BLOCK ALL
+*credentials*
+*secrets*
+*password*
+*apikey*
+*api_key*
+*token*
+*.key
+*.pem
+*.p12
+*.pfx
+secrets/
+credentials/
+keys/
+
+# Security and authentication files
+auth.json
+config.json
+service-account*.json
+firebase-adminsdk*.json
 
 # Editor directories and files
 .idea
@@ -35,6 +65,9 @@ __pycache__/
 *.pyd
 .Python
 
+# AgriSens directory
+AgriSens/
+
 # Task files
 # tasks.json
-# tasks/ 
+# tasks/

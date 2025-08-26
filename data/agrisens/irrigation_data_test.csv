@@ -1,0 +1,5 @@
+crop,soil_type,growth_stage,temperature,humidity,rainfall,soil_moisture,water_requirement
+wheat,loam,vegetative,28,65,5,30,8
+wheat,loam,flowering,30,60,0,25,12
+rice,clay,vegetative,32,80,10,40,15
+cotton,sandy,flowering,35,55,0,20,18
