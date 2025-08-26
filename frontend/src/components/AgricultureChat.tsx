@@ -19,13 +19,22 @@ interface AgentResponse {
   status: 'processing' | 'completed' | 'error';
 }
 
+import config from '../config';
+
 interface AgricultureChatProps {
   websocketUrl?: string;
   onConnectionStatusChange?: (connected: boolean) => void;
 }
 
+// Get WebSocket URL from config and apply proper path
+const getDefaultWebsocketUrl = () => {
+  // Construct WebSocket URL from base URL, replacing http/https with ws/wss
+  const wsBaseUrl = config.websocket.url.replace(/^(http|ws)s?:\/\/([^\/]+).*$/, 'ws://$2');
+  return `${wsBaseUrl}/ws/updates`;
+};
+
 const AgricultureChat: React.FC<AgricultureChatProps> = ({
-  websocketUrl = 'ws://localhost:8000/ws/updates',
+  websocketUrl = getDefaultWebsocketUrl(),
   onConnectionStatusChange
 }) => {
   const [messages, setMessages] = useState<Message[]>([]);

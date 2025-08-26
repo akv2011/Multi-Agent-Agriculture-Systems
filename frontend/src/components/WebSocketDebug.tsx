@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import config from '../config';
 
 interface WebSocketDebugProps {
   className?: string;
@@ -22,7 +23,9 @@ const WebSocketDebug: React.FC<WebSocketDebugProps> = ({ className = '' }) => {
       return;
     }
 
-    const url = 'ws://localhost:8000/ws/updates';
+    // Construct WebSocket URL from base URL, replacing http/https with ws/wss
+    const wsBaseUrl = config.websocket.url.replace(/^(http|ws)s?:\/\/([^\/]+).*$/, 'ws://$2');
+    const url = `${wsBaseUrl}/ws/updates`;
     addLog(`Connecting to: ${url}`);
     setStatus('Connecting...');
 

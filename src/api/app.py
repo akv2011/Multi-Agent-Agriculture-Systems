@@ -16,47 +16,48 @@ from datetime import datetime
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, project_root)
 
+# Import configuration
+from src.config import settings, get_config
+from src.config.frontend import setup_cors
+
 # Import routers
 from .routers.agriculture import router as agriculture_router
 from .routers.demo import router as demo_router
+from .config_routes import router as config_router
 
 # Setup logging
 logging.basicConfig(
-    level=logging.INFO,
+    level=getattr(logging, settings.LOG_LEVEL),
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
 
 # Create FastAPI app
 app = FastAPI(
-    title="Multi-Agent Agriculture Systems API",
-    description="Satellite-Enhanced AI Agricultural Advisory System",
-    version="1.0.0",
+    title=settings.APP_NAME,
+    description=settings.APP_DESCRIPTION,
+    version=settings.APP_VERSION,
     docs_url="/docs",
     redoc_url="/redoc"
 )
 
-# Add CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Configure appropriately for production
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Configure CORS using the new configuration system
+setup_cors(app)
 
 # Include routers
 app.include_router(agriculture_router)
 app.include_router(demo_router)
+app.include_router(config_router)
 
 @app.get("/")
 async def root():
     """Root endpoint with API information"""
     return {
-        "message": "🌾🛰️ Multi-Agent Agriculture Systems API",
+        "message": f"🌾🛰️ {settings.APP_NAME}",
         "status": "online",
-        "version": "1.0.0",
-        "description": "Satellite-Enhanced AI Agricultural Advisory System",
+        "version": settings.APP_VERSION,
+        "description": settings.APP_DESCRIPTION,
+        "environment": settings.ENVIRONMENT,
         "endpoints": {
             "agriculture": "/agriculture/*",
             "demo": "/demo/*",
@@ -112,8 +113,8 @@ async def server_error_handler(request, exc):
 if __name__ == "__main__":
     uvicorn.run(
         "app:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True,
-        log_level="info"
+        host=settings.HOST,
+        port=settings.PORT,
+        reload=settings.DEBUG,
+        log_level=settings.LOG_LEVEL.lower()
     )

@@ -1,0 +1,35 @@
+{
+    "region_name": "Karnataka",
+    "agriculture_data": {
+        "major_crops": ["Ragi", "Rice", "Jowar", "Coffee", "Sugarcane"],
+        "growing_seasons": {
+            "kharif": {
+                "start_month": 6,
+                "end_month": 10
+            },
+            "rabi": {
+                "start_month": 10,
+                "end_month": 2
+            },
+            "summer": {
+                "start_month": 2,
+                "end_month": 5
+            }
+        },
+        "irrigation_systems": ["Canal", "Tank", "Well", "Drip"],
+        "soil_types": ["Red", "Black", "Laterite", "Coastal Alluvial"],
+        "avg_rainfall": 1248,
+        "avg_temperature": {
+            "summer": 34,
+            "winter": 20
+        },
+        "agricultural_zones": ["Coastal", "Malnad", "Northern", "Southern"]
+    },
+    "market_centers": ["Bengaluru", "Mysuru", "Hubli", "Mangaluru"],
+    "government_schemes": [
+        "Krishi Bhagya",
+        "Raitha Belaku",
+        "Soil Health Card Scheme",
+        "Karnataka Crop Insurance"
+    ]
+}

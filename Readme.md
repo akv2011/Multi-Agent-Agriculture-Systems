@@ -52,6 +52,7 @@ A cutting-edge **multi-agent agricultural intelligence platform** that combines 
 - 🤖 **[Gemini AI Integration](docs/GEMINI_INTEGRATION_SUMMARY.md)** - Multilingual processing
 - 📊 **[Project Status](docs/PROJECT_STATUS_COMPREHENSIVE_SUMMARY.md)** - Current progress
 - 🚀 **[Market Timing Integration](docs/MARKET_TIMING_SATELLITE_INTEGRATION_SUMMARY.md)** - Latest features
+- ⚙️ **[Environment Configuration](docs/ENVIRONMENT_CONFIGURATION.md)** - Environment-based settings
 
 ---
 
@@ -346,7 +347,8 @@ Multi-Agent-Agriculture-Systems/
 - [🏗️ Technical Implementation Guide](docs/README.md)
 - [🛰️ Satellite System Overview](docs/SATELLITE_SYSTEM_SUMMARY.md)
 - [🤖 Gemini AI Integration](docs/GEMINI_MULTILINGUAL_IMPLEMENTATION_GUIDE.md)
-- [� Project Status & Progress](docs/PROJECT_STATUS_COMPREHENSIVE_SUMMARY.md)
+- [📊 Project Status & Progress](docs/PROJECT_STATUS_COMPREHENSIVE_SUMMARY.md)
+- [⚙️ Configuration System](docs/CONFIGURATION.md)
 
 ### **Agent Integration Summaries**
 - [✅ Market Timing Agent Integration](docs/MARKET_TIMING_SATELLITE_INTEGRATION_SUMMARY.md)

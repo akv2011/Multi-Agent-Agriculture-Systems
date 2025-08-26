@@ -1,0 +1,34 @@
+{
+    "region_name": "Maharashtra",
+    "agriculture_data": {
+        "major_crops": ["Cotton", "Jowar", "Bajra", "Sugarcane", "Groundnut", "Grapes"],
+        "growing_seasons": {
+            "kharif": {
+                "start_month": 6,
+                "end_month": 10
+            },
+            "rabi": {
+                "start_month": 10,
+                "end_month": 2
+            },
+            "summer": {
+                "start_month": 3,
+                "end_month": 5
+            }
+        },
+        "irrigation_systems": ["Canal", "Well", "Drip", "Lift Irrigation"],
+        "soil_types": ["Black Cotton", "Red", "Laterite", "Regur"],
+        "avg_rainfall": 1400,
+        "avg_temperature": {
+            "summer": 35,
+            "winter": 18
+        },
+        "agricultural_zones": ["Konkan", "Western Maharashtra", "Vidarbha", "Marathwada"]
+    },
+    "market_centers": ["Pune", "Nashik", "Nagpur", "Kolhapur", "Aurangabad"],
+    "government_schemes": [
+        "Jalyukt Shivar Abhiyan",
+        "Mahatma Jyotirao Phule Jan Arogya Yojana",
+        "Maharashtra Agribusiness Network Project"
+    ]
+}
