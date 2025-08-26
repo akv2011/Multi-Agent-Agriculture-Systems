@@ -1,4 +1,3 @@
-
 import asyncio
 import logging
 from typing import Dict, Any, Optional
@@ -218,6 +217,275 @@ class WebSocketIntegrationService:
         except Exception as e:
             logger.error(f"Error broadcasting system event {event_type}: {e}")
     
+    async def notify_priority_query(self, query_id: str, priority_data: Dict[str, Any]):
+        """Notify dashboard of high priority query processing"""
+        if not self.websocket_manager:
+            return
+            
+        try:
+            message = {
+                "type": "priority_query",
+                "event": "high_priority_query_received",
+                "query_id": query_id,
+                "priority": priority_data.get("priority", "high"),
+                "query_preview": priority_data.get("query", "")[:100] + "...",
+                "timestamp": priority_data.get("timestamp", datetime.now().isoformat()),
+                "alert_level": "warning"
+            }
+            
+            await self.websocket_manager.broadcast(message)
+            logger.info(f"Priority query notification sent: {query_id}")
+            
+        except Exception as e:
+            logger.error(f"Failed to notify priority query: {e}")
+
+    async def notify_system_metric_update(self, metric_data: Dict[str, Any]):
+        """Notify dashboard of system-wide metric updates"""
+        if not self.websocket_manager:
+            return
+            
+        try:
+            message = {
+                "type": "system_metrics",
+                "event": "metrics_updated",
+                "metrics": {
+                    "queries_processed": metric_data.get("queries_processed", 0),
+                    "avg_confidence": metric_data.get("avg_confidence", 0.0),
+                    "system_efficiency": metric_data.get("system_efficiency", 0.0),
+                    "active_agents": len(self.agent_states),
+                    "running_workflows": len(self.active_workflows)
+                },
+                "performance": {
+                    "cpu_usage": metric_data.get("cpu_usage", 0.0),
+                    "memory_usage": metric_data.get("memory_usage", 0.0),
+                    "response_time": metric_data.get("response_time", 0.0)
+                },
+                "timestamp": metric_data.get("timestamp", datetime.now().isoformat())
+            }
+            
+            await self.websocket_manager.broadcast(message)
+            logger.debug(f"System metrics update sent")
+            
+        except Exception as e:
+            logger.error(f"Failed to notify system metrics: {e}")
+
+    async def notify_feedback_received(self, feedback_data: Dict[str, Any]):
+        """Notify dashboard of user feedback"""
+        if not self.websocket_manager:
+            return
+            
+        try:
+            message = {
+                "type": "user_feedback",
+                "event": "feedback_received",
+                "query_id": feedback_data.get("query_id"),
+                "rating": feedback_data.get("rating", 0),
+                "sentiment": self._analyze_feedback_sentiment(feedback_data.get("comments", "")),
+                "timestamp": feedback_data.get("timestamp", datetime.now().isoformat())
+            }
+            
+            await self.websocket_manager.broadcast(message)
+            logger.info(f"Feedback notification sent for query: {feedback_data.get('query_id')}")
+            
+        except Exception as e:
+            logger.error(f"Failed to notify feedback: {e}")
+
+    async def notify_agent_performance_update(self, agent_id: str, performance_data: Dict[str, Any]):
+        """Notify dashboard of agent performance changes"""
+        if not self.websocket_manager:
+            return
+            
+        try:
+            # Update agent state
+            if agent_id not in self.agent_states:
+                self.agent_states[agent_id] = {}
+            
+            self.agent_states[agent_id].update({
+                "performance": performance_data,
+                "last_updated": datetime.now().isoformat()
+            })
+            
+            message = {
+                "type": "agent_performance",
+                "event": "performance_updated",
+                "agent_id": agent_id,
+                "performance": performance_data,
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            await self.websocket_manager.broadcast(message)
+            logger.debug(f"Agent performance update sent: {agent_id}")
+            
+        except Exception as e:
+            logger.error(f"Failed to notify agent performance: {e}")
+
+    async def notify_query_analytics(self, analytics_data: Dict[str, Any]):
+        """Notify dashboard of query analytics updates"""
+        if not self.websocket_manager:
+            return
+            
+        try:
+            message = {
+                "type": "query_analytics",
+                "event": "analytics_updated",
+                "analytics": {
+                    "hourly_trend": analytics_data.get("hourly_trend", []),
+                    "language_distribution": analytics_data.get("language_distribution", {}),
+                    "intent_classification": analytics_data.get("intent_classification", {}),
+                    "success_rates": analytics_data.get("success_rates", {}),
+                    "processing_times": analytics_data.get("processing_times", [])
+                },
+                "insights": analytics_data.get("insights", []),
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            await self.websocket_manager.broadcast(message)
+            logger.info("Query analytics update sent")
+            
+        except Exception as e:
+            logger.error(f"Failed to notify query analytics: {e}")
+
+    async def notify_workflow_step_update(self, workflow_id: str, step_number: int, step_name: str):
+        """Notify dashboard of workflow step progress"""
+        if not self.websocket_manager:
+            return
+            
+        try:
+            if workflow_id in self.active_workflows:
+                workflow = self.active_workflows[workflow_id]
+                workflow["steps_completed"] = step_number
+                workflow["current_step"] = step_name
+                
+                progress = (step_number / workflow["total_steps"]) * 100
+                
+                message = {
+                    "type": "workflow_update",
+                    "event": "step_completed",
+                    "workflow_id": workflow_id,
+                    "step_number": step_number,
+                    "step_name": step_name,
+                    "progress": progress,
+                    "status": "running",
+                    "timestamp": datetime.now().isoformat()
+                }
+                
+                await self.websocket_manager.broadcast(message)
+                logger.debug(f"Workflow step update sent: {workflow_id} - Step {step_number}")
+                
+        except Exception as e:
+            logger.error(f"Failed to notify workflow step: {e}")
+
+    async def notify_error_alert(self, error_data: Dict[str, Any]):
+        """Notify dashboard of system errors"""
+        if not self.websocket_manager:
+            return
+            
+        try:
+            severity = error_data.get("severity", "warning")
+            
+            message = {
+                "type": "error_alert",
+                "event": "system_error",
+                "severity": severity,
+                "component": error_data.get("component", "unknown"),
+                "error_message": error_data.get("message", "Unknown error"),
+                "error_code": error_data.get("code", "UNKNOWN"),
+                "affected_services": error_data.get("affected_services", []),
+                "resolution_steps": error_data.get("resolution_steps", []),
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            await self.websocket_manager.broadcast(message)
+            logger.warning(f"Error alert sent: {severity} - {error_data.get('message', 'Unknown')}")
+            
+        except Exception as e:
+            logger.error(f"Failed to notify error alert: {e}")
+
+    async def notify_agent_coordination_update(self, coordination_data: Dict[str, Any]):
+        """Notify dashboard of agent coordination activities"""
+        if not self.websocket_manager:
+            return
+            
+        try:
+            message = {
+                "type": "agent_coordination",
+                "event": "coordination_update",
+                "coordination": {
+                    "active_collaborations": coordination_data.get("active_collaborations", 0),
+                    "task_distribution": coordination_data.get("task_distribution", {}),
+                    "load_balancing": coordination_data.get("load_balancing", {}),
+                    "efficiency_score": coordination_data.get("efficiency_score", 0.0)
+                },
+                "participating_agents": coordination_data.get("participating_agents", []),
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            await self.websocket_manager.broadcast(message)
+            logger.debug("Agent coordination update sent")
+            
+        except Exception as e:
+            logger.error(f"Failed to notify agent coordination: {e}")
+
+    async def notify_statistics_update(self, stats_data: Dict[str, Any]):
+        """Notify dashboard of statistics updates"""
+        if not self.websocket_manager:
+            return
+            
+        try:
+            message = {
+                "type": "statistics_update",
+                "event": "dashboard_stats_updated",
+                "statistics": {
+                    "total_queries": stats_data.get("total_queries", 0),
+                    "success_rate": stats_data.get("success_rate", 0.0),
+                    "average_processing_time": stats_data.get("average_processing_time", 0.0),
+                    "active_workflows": stats_data.get("active_workflows", 0),
+                    "agent_utilization": stats_data.get("agent_utilization", {}),
+                    "system_load": stats_data.get("system_load", 0.0)
+                },
+                "trend_data": stats_data.get("trend_data", {}),
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            await self.websocket_manager.broadcast(message)
+            logger.debug("Statistics update notification sent")
+            
+        except Exception as e:
+            logger.error(f"Failed to notify statistics update: {e}")
+
+    async def notify_agent_status_update(self, agent_id: str, status: str, details: Dict[str, Any] = None):
+        """Notify dashboard of agent status changes"""
+        if not self.websocket_manager:
+            return
+            
+        try:
+            # Update internal agent tracking
+            if agent_id not in self.agent_states:
+                self.agent_states[agent_id] = {}
+            
+            previous_status = self.agent_states[agent_id].get("status", "unknown")
+            self.agent_states[agent_id].update({
+                "status": status,
+                "last_updated": datetime.now().isoformat(),
+                "details": details or {}
+            })
+            
+            message = {
+                "type": "agent_status",
+                "event": "agent_status_updated",
+                "agent_id": agent_id,
+                "status": status,
+                "previous_status": previous_status,
+                "details": details or {},
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            await self.websocket_manager.broadcast(message)
+            logger.debug(f"Agent status update sent: {agent_id} -> {status}")
+            
+        except Exception as e:
+            logger.error(f"Failed to notify agent status update: {e}")
+
     def _summarize_input(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
         summary = {}
         

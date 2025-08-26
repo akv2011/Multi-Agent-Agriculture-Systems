@@ -523,6 +523,155 @@ class AgricultureIntegrationService:
                 
         except Exception as e:
             logger.error(f"Failed to cleanup queries: {e}")
+    
+    async def process_query_with_agent(
+        self, 
+        agriculture_query: AgricultureQuery, 
+        agent_id: str
+    ) -> AgentResponse:
+        """
+        Process query with a specific agent, with fallback to AI agent if primary agent fails
+        """
+        try:
+            # First, try to process with the specified agent
+            if agent_id in self.specialist_agents:
+                response = await self._execute_single_agent(agent_id, agriculture_query)
+                if response and response.confidence_score > 0.3:  # Minimum confidence threshold
+                    return response
+                else:
+                    logger.warning(f"Agent {agent_id} returned low confidence or failed")
+            
+            # If primary agent not available or failed, try fallback strategies
+            if agent_id == "gemini_agriculture" or agent_id not in self.specialist_agents:
+                # Use Gemini AI agent for general queries or when specific agent unavailable
+                return await self._process_with_ai_agent(agriculture_query, agent_id)
+            
+            # If specific agent failed, try AI fallback
+            logger.info(f"Falling back to AI agent for query originally intended for {agent_id}")
+            return await self._process_with_ai_agent(agriculture_query, agent_id)
+            
+        except Exception as e:
+            logger.error(f"Error processing query with agent {agent_id}: {e}")
+            # Return fallback response
+            return AgentResponse(
+                agent_id=agent_id,
+                query_id=agriculture_query.query_id,
+                response_text=f"I encountered an issue processing your agricultural query. Please try rephrasing your question or consult with agricultural experts.",
+                confidence_score=0.1,
+                status="error",
+                recommendations=[],
+                metadata={"error": str(e), "fallback": True}
+            )
+    
+    async def _process_with_ai_agent(
+        self, 
+        agriculture_query: AgricultureQuery, 
+        original_agent_id: str
+    ) -> AgentResponse:
+        """
+        Process query using AI agent (Gemini) when specific agents are unavailable
+        """
+        try:
+            # Try to use Gemini Agriculture Agent
+            from src.agents.gemini_agriculture_agent import GeminiAgricultureAgent
+            
+            # Initialize AI agent if not already available
+            ai_agent = GeminiAgricultureAgent()
+            
+            # Process query with AI agent
+            ai_response = await ai_agent.process_query_async(agriculture_query)
+            
+            # Format the response properly
+            if ai_response and hasattr(ai_response, 'response_text'):
+                # Clean the response text of markdown formatting
+                cleaned_text = self._clean_ai_response(ai_response.response_text)
+                
+                return AgentResponse(
+                    agent_id="gemini_agriculture",
+                    query_id=agriculture_query.query_id,
+                    response_text=cleaned_text,
+                    confidence_score=ai_response.confidence_score if hasattr(ai_response, 'confidence_score') else 0.7,
+                    status="completed",
+                    recommendations=getattr(ai_response, 'recommendations', []),
+                    metadata={
+                        "source": "ai_fallback",
+                        "original_agent": original_agent_id,
+                        "ai_model": "gemini-2.5"
+                    }
+                )
+            else:
+                # Create fallback response
+                return self._create_fallback_response(agriculture_query, original_agent_id)
+                
+        except Exception as e:
+            logger.error(f"AI agent processing failed: {e}")
+            return self._create_fallback_response(agriculture_query, original_agent_id)
+    
+    def _clean_ai_response(self, response_text: str) -> str:
+        """
+        Clean AI response by removing markdown formatting and ensuring proper structure
+        """
+        if not response_text:
+            return "I apologize, but I couldn't generate a proper response for your query."
+        
+        # Remove markdown formatting
+        import re
+        
+        # Remove all asterisks used for bold/italic
+        cleaned = re.sub(r'\*{1,}', '', response_text)
+        
+        # Remove hash symbols used for headers
+        cleaned = re.sub(r'#{1,}\s*', '', cleaned)
+        
+        # Remove backticks
+        cleaned = re.sub(r'`{1,}', '', cleaned)
+        
+        # Clean up bullet points
+        cleaned = re.sub(r'^[\s]*[-\*\+•·]\s*', '• ', cleaned, flags=re.MULTILINE)
+        
+        # Fix excessive whitespace
+        cleaned = re.sub(r'\n\s*\n\s*\n', '\n\n', cleaned)
+        cleaned = re.sub(r'[ \t]+', ' ', cleaned)
+        
+        # Ensure proper sentence structure
+        cleaned = cleaned.strip()
+        if cleaned and not cleaned.endswith('.'):
+            cleaned += '.'
+        
+        return cleaned
+    
+    def _create_fallback_response(
+        self, 
+        agriculture_query: AgricultureQuery, 
+        original_agent_id: str
+    ) -> AgentResponse:
+        """
+        Create a fallback response when agents are unavailable
+        """
+        fallback_messages = {
+            "crop_selection": "For crop selection advice, I recommend consulting local agricultural extension services or experienced farmers in your area for the best guidance based on your specific soil and climate conditions.",
+            "pest_management": "For pest and disease management, please consult with local agricultural experts who can provide specific guidance based on current pest pressure in your region.",
+            "irrigation_optimization": "For irrigation planning, consider consulting with irrigation specialists who can assess your specific field conditions and water requirements.",
+            "market_timing": "For market analysis and timing, I recommend checking local agricultural market reports and consulting with agricultural commodity experts.",
+            "finance_policy": "For agricultural finance and policy information, please contact your local agricultural extension office or relevant government agricultural departments.",
+            "default": "I apologize, but I'm currently unable to process your specific agricultural query. Please try rephrasing your question or consult with local agricultural experts for personalized advice."
+        }
+        
+        message = fallback_messages.get(original_agent_id, fallback_messages["default"])
+        
+        return AgentResponse(
+            agent_id=original_agent_id,
+            query_id=agriculture_query.query_id,
+            response_text=message,
+            confidence_score=0.3,
+            status="completed",
+            recommendations=[
+                "Consult local agricultural extension services",
+                "Contact experienced farmers in your area",
+                "Check with relevant agricultural departments"
+            ],
+            metadata={"fallback": True, "type": "generic_advice"}
+        )
 
 
 # Global instance
