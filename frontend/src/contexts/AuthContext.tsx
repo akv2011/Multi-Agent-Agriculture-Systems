@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect } from 'react';
 import type { User, AuthContextType } from '../types/auth';
+import { validateDemoCredentials, isDemoMode } from '../utils/authUtils';
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -10,14 +11,6 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-
-  // Mock credentials with roles
-  const mockCredentials = {
-    admin: { password: 'admin123', role: 'Administrator' },
-    user: { password: 'user123', role: 'User' },
-    farmer: { password: 'farmer123', role: 'Farmer' },
-    agrisens: { password: 'agrisens2025', role: 'AgriSens Expert' }
-  };
 
   useEffect(() => {
     // Check if user is already logged in (from localStorage)
@@ -34,18 +27,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const login = (username: string, password: string): boolean => {
-    const credentials = mockCredentials[username as keyof typeof mockCredentials];
-    
-    if (credentials && credentials.password === password) {
-      const newUser: User = {
-        username,
-        role: credentials.role,
-        loginTime: new Date().toISOString()
-      };
+    // In demo mode, use environment-based credentials
+    if (isDemoMode()) {
+      const userRole = validateDemoCredentials(username, password);
       
-      setUser(newUser);
-      localStorage.setItem('agrisens_user', JSON.stringify(newUser));
-      return true;
+      if (userRole) {
+        const newUser: User = {
+          username,
+          role: userRole,
+          loginTime: new Date().toISOString()
+        };
+        
+        setUser(newUser);
+        localStorage.setItem('agrisens_user', JSON.stringify(newUser));
+        return true;
+      }
+    } else {
+      // In production mode, this should make an API call to your backend
+      // For now, reject all logins when not in demo mode
+      console.warn('Authentication attempted in non-demo mode. Backend authentication not implemented.');
     }
     
     return false;

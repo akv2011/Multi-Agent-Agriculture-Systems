@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './LoginPage.css';
+import { isDemoMode, validateDemoCredentials } from '../utils/authUtils';
 
 interface LoginPageProps {
   onLogin: (username: string, password: string) => void;
@@ -12,14 +13,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  // Mock credentials
-  const mockCredentials = {
-    admin: 'admin123',
-    user: 'user123',
-    farmer: 'farmer123',
-    agrisens: 'agrisens2025'
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -27,18 +20,28 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
 
     // Simulate API call delay
     setTimeout(() => {
-      if (mockCredentials[username as keyof typeof mockCredentials] === password) {
-        onLogin(username, password);
+      // Pre-validate credentials to show proper error messages
+      if (isDemoMode()) {
+        const isValid = validateDemoCredentials(username, password);
+        if (isValid) {
+          onLogin(username, password);
+        } else {
+          setError('Invalid username or password');
+        }
       } else {
-        setError('Invalid username or password');
+        setError('Demo mode is not enabled. Please configure proper authentication.');
       }
       setIsLoading(false);
     }, 1000);
   };
 
   const handleDemoLogin = () => {
-    setUsername('admin');
-    setPassword('admin123');
+    if (isDemoMode()) {
+      setUsername('admin');
+      setPassword('admin123'); // This is just for demo UI convenience
+    } else {
+      setError('Demo mode is not enabled');
+    }
   };
 
   return (
