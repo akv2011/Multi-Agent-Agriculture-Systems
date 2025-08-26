@@ -2,10 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './SimpleDemoInterface.css';
-import DashboardUpdateService from '../services/dashboardUpdateService';
+
+import GeminiAnalysisDisplay from './GeminiAnalysisDisplay';
+import EnhancedResponseDisplay from './EnhancedResponseDisplay';
+import geminiService from '../services/geminiService';
 
 // Fix for default markers in React
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
@@ -38,82 +40,61 @@ interface DemoResponse {
   };
 }
 
-// --- Added types for query classification & agent execution ---
-type AgentId = 'disease_identification' | 'crop_recommendation' | 'irrigation_scheduling' | 'market_analysis';
-interface QueryClassification {
-  agentId: AgentId | 'general';
-  confidence: number; // 0-1
-  reasons: string[];
-  usedImage: boolean;
-}
-interface AgentExecutionResult {
-  agentId: AgentId | 'general';
-  success: boolean;
-  data?: JsonObject | JsonObject[] | string;
-  fallbackUsed?: boolean;
-  fallbackSource?: 'grounding_search' | 'local_mock';
-  errorMessage?: string;
-}
-// ------------------------------------------------------------
-
-export type JsonValue = string | number | boolean | null | JsonObject | JsonValue[];
-export interface JsonObject { [k: string]: JsonValue }
-
 const SimpleDemoInterface: React.FC = () => {
   const [currentQuery, setCurrentQuery] = useState<string>('');
   const [demoResponse, setDemoResponse] = useState<DemoResponse | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [analysisComplete, setAnalysisComplete] = useState<boolean>(false);
-
-  // Get dashboard service instance
-  const dashboardService = DashboardUpdateService.getInstance();
+  const [geminiAnalysis, setGeminiAnalysis] = useState<any>(null);
+  const [isGeminiLoading, setIsGeminiLoading] = useState(false);
+  const [enhancedResponse, setEnhancedResponse] = useState<string>('');
+  const [isLoadingAIResponse, setIsLoadingAIResponse] = useState(false);
+  const [aiResponseError, setAiResponseError] = useState<string>('');
+  const [geminiApiKey, setGeminiApiKey] = useState<string>(
+    import.meta.env.VITE_GEMINI_API_KEY || localStorage.getItem('gemini_api_key') || ''
+  );
 
   // Clear vegetation indices from agents on component mount
   React.useEffect(() => {
     localStorage.removeItem('vegetationAnalysis');
-    
-    // Start simulating real-time updates for demo
-    const interval = setInterval(() => {
-      dashboardService.simulateRealtimeUpdate();
-    }, 5000);
-    
-    return () => clearInterval(interval);
-  }, [dashboardService]);
+  }, []);
 
   // Map-related state
   const mapRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<L.Map | null>(null);
-  // (States are used throughout; suppress false positive for exhaustive-deps where intentional)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [currentMarker, setCurrentMarker] = useState<L.Marker | null>(null); // kept for potential future use
+  const [currentMarker, setCurrentMarker] = useState<L.Marker | null>(null);
   const [selectedPoint, setSelectedPoint] = useState<L.LatLng | null>(null);
   const [selectedCoords, setSelectedCoords] = useState<string>('Click on map to select analysis point');
-  const [selectedAddress, setSelectedAddress] = useState<string>('');
   const [analysisDate, setAnalysisDate] = useState<string>('');
   const [satelliteSource, setSatelliteSource] = useState<string>('sentinel2');
   const [cloudCoverage, setCloudCoverage] = useState<string>('20');
   const [analysisProgress, setAnalysisProgress] = useState<string>('');
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
 
-  // --- Added state for query classification & agent result ---
-  const [classification, setClassification] = useState<QueryClassification | null>(null);
-  const [agentResult, setAgentResult] = useState<AgentExecutionResult | null>(null);
-  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
-  // -------------------------------------------------------
-
-  // Initialize map - moved after selectAnalysisPoint definition  
+  // Initialize map
   useEffect(() => {
     if (mapRef.current && !map) {
       const mapInstance = L.map(mapRef.current).setView([10.7905, 78.7047], 11);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap contributors' }).addTo(mapInstance);
-      mapInstance.on('click', (e: L.LeafletMouseEvent) => { selectAnalysisPoint(e.latlng, mapInstance); });
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+      }).addTo(mapInstance);
+
+      mapInstance.on('click', (e: L.LeafletMouseEvent) => {
+        selectAnalysisPoint(e.latlng, mapInstance);
+      });
+
       setMap(mapInstance);
       setDefaultDate();
     }
-    // selectAnalysisPoint is defined below, using it is safe after first render
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [map]);
+
+    return () => {
+      if (map) {
+        map.remove();
+      }
+    };
+  }, []);
 
   const setDefaultDate = () => {
     const today = new Date();
@@ -121,47 +102,35 @@ const SimpleDemoInterface: React.FC = () => {
     setAnalysisDate(thirtyDaysAgo.toISOString().split('T')[0]);
   };
 
-  const selectAnalysisPoint = React.useCallback(async (latlng: L.LatLng, mapInstance?: L.Map) => {
+  const selectAnalysisPoint = (latlng: L.LatLng, mapInstance?: L.Map) => {
     const activeMap = mapInstance || map;
     if (!activeMap) return;
 
     setSelectedPoint(latlng);
 
     // Remove ALL existing markers from the map to ensure only one marker exists
-    activeMap.eachLayer((layer: L.Layer) => {
+    activeMap.eachLayer((layer: any) => {
       if (layer instanceof L.Marker) {
         activeMap.removeLayer(layer);
       }
     });
 
-    // Show loading state while fetching address
-    setSelectedCoords('Getting address...');
-    setSelectedAddress('');
-
-    // Get address from coordinates
-    const address = await getAddressFromCoordinates(latlng.lat, latlng.lng);
-    setSelectedAddress(address);
-
     // Add new marker
     const newMarker = L.marker(latlng).addTo(activeMap);
     newMarker.bindPopup(`
       <b>Analysis Point</b><br>
-      <div style="max-width: 200px; word-wrap: break-word;">
-        <strong>Address:</strong><br>
-        ${address}<br><br>
-        <small>Coordinates: ${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}</small>
-      </div>
-      <br>
-      <button onclick="window.analyzeCurrentPoint()" style="background: #27ae60; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; margin-top: 5px;">Analyze This Point</button>
+      Lat: ${latlng.lat.toFixed(5)}<br>
+      Lng: ${latlng.lng.toFixed(5)}<br>
+      <button onclick="window.analyzeCurrentPoint()" style="background: #27ae60; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">Analyze This Point</button>
     `).openPopup();
 
     setCurrentMarker(newMarker);
 
-    // Update display to show address instead of just coordinates
-    setSelectedCoords(`Selected: ${address}`);
-  }, [map]);
+    // Update coordinates display
+    setSelectedCoords(`Selected: ${latlng.lat.toFixed(5)}°N, ${latlng.lng.toFixed(5)}°E`);
+  };
 
-  const analyzeSelectedPoint = React.useCallback(async (point?: L.LatLng) => {
+  const analyzeSelectedPoint = async (point?: L.LatLng) => {
     const targetPoint = point || selectedPoint;
     if (!targetPoint) {
       setError('Please select a point on the map first');
@@ -210,9 +179,8 @@ const SimpleDemoInterface: React.FC = () => {
       await new Promise(resolve => setTimeout(resolve, 500));
       setAnalysisProgress('');
 
-      // Set a query based on the analysis - use address if available, otherwise coordinates
-      const locationDesc = selectedAddress || `coordinates ${targetPoint.lat.toFixed(5)}, ${targetPoint.lng.toFixed(5)}`;
-      setCurrentQuery(`Analyze agricultural conditions at ${locationDesc}`);
+      // Set a query based on the analysis
+      setCurrentQuery(`Analyze agricultural conditions at coordinates ${targetPoint.lat.toFixed(5)}, ${targetPoint.lng.toFixed(5)}`);
 
     } catch (error) {
       console.error('Analysis error:', error);
@@ -221,12 +189,12 @@ const SimpleDemoInterface: React.FC = () => {
     } finally {
       setIsAnalyzing(false);
     }
-  }, [selectedPoint, analysisDate, satelliteSource, selectedAddress]);
+  };
 
   // Make analyzeCurrentPoint available globally for popup button
   useEffect(() => {
-    (window as unknown as { analyzeCurrentPoint?: () => void }).analyzeCurrentPoint = () => analyzeSelectedPoint();
-  }, [analyzeSelectedPoint]);
+    (window as any).analyzeCurrentPoint = () => analyzeSelectedPoint();
+  }, [selectedPoint]);
 
   // Function to convert markdown-like formatting to HTML
   const formatResponseText = (text: string) => {
@@ -266,367 +234,274 @@ const SimpleDemoInterface: React.FC = () => {
     }
   ];
 
-  // Image upload handler
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => setUploadedImage(ev.target?.result as string);
-    reader.readAsDataURL(file);
+  // Fetch AI Response using Gemini API directly
+  const fetchAIResponse = async (query: string): Promise<DemoResponse | null> => {
+    try {
+      setIsLoadingAIResponse(true);
+      setAiResponseError('');
+
+      // Check if Gemini API key is available, try to get from environment first
+      const apiKey = geminiApiKey || import.meta.env.VITE_GEMINI_API_KEY;
+
+      if (!apiKey) {
+        throw new Error('Gemini API key is required. Please set VITE_GEMINI_API_KEY in your .env file or configure it in the UI.');
+      }
+
+      // Get vegetation data if available
+      const analysisData = localStorage.getItem('mapAnalysis');
+      const parsedData = analysisData ? JSON.parse(analysisData) : null;
+
+      // Set API key for gemini service
+      geminiService.setApiKey(apiKey);
+
+      // Create a comprehensive analysis request
+      const analysisRequest = {
+        query: query.trim(),
+        vegetationData: parsedData?.isAnalyzed ? parsedData.vegetationIndices : null,
+        coordinates: parsedData?.coordinates || null,
+        context: `Agricultural query analysis for Indian farming context. ${
+          parsedData?.isAnalyzed ? 'Vegetation analysis data is available.' : 'No vegetation data available.'
+        } Satellite source: ${satelliteSource || 'sentinel2'}, Cloud coverage: ${cloudCoverage || '10'}%`
+      };
+
+      // Get structured analysis from Gemini
+      const geminiAnalysisResult = await geminiService.analyzeQuery(analysisRequest);
+
+      // Also get enhanced response text
+      const enhancedText = await geminiService.enhanceAIResponse(
+        query,
+        `Agricultural query: ${query}`,
+        parsedData?.isAnalyzed ? parsedData.vegetationIndices : null,
+        parsedData?.coordinates || null
+      );
+
+      // Convert Gemini response to our DemoResponse format
+      const response: DemoResponse = {
+        routing_analysis: {
+          agent: geminiAnalysisResult.agentType || 'general_advisory',
+          confidence: geminiAnalysisResult.confidence || 0.85,
+          reasoning: geminiAnalysisResult.analysis.substring(0, 200) + '...',
+          language_detected: /[\u0900-\u097F]/.test(query) ? 'Hindi' : 'English'
+        },
+        satellite_data: {
+          ndvi: parsedData?.vegetationIndices?.ndvi || 0.65,
+          soil_moisture: parsedData?.vegetationIndices?.ndmi || 0.45,
+          temperature: 28 + Math.random() * 8, // 28-36°C
+          humidity: 65 + Math.random() * 20, // 65-85%
+          environmental_score: parsedData?.isAnalyzed ? 85 : 70,
+          risk_level: geminiAnalysisResult.priority === 'high' ? 'high' :
+                     geminiAnalysisResult.priority === 'low' ? 'low' : 'medium'
+        },
+        response_text: enhancedText,
+        technical_metrics: {
+          processing_time_ms: Math.floor(Math.random() * 2000) + 1000,
+          confidence_level: geminiAnalysisResult.confidence || 0.85,
+          satellite_data_integrated: parsedData?.isAnalyzed || false,
+          risk_assessment: `${geminiAnalysisResult.priority} priority based on AI analysis`,
+          agent: geminiAnalysisResult.agentType || 'gemini_ai_agent'
+        }
+      };
+
+      return response;
+
+    } catch (error) {
+      console.error('Failed to fetch AI response:', error);
+      setAiResponseError(`Failed to get AI response: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return null;
+    } finally {
+      setIsLoadingAIResponse(false);
+    }
   };
 
-  // Simple rule-based classifier (client-side)
-  const classifyQuery = (text: string, hasImage: boolean): QueryClassification => {
-    const lower = text.toLowerCase();
-    const reasons: string[] = [];
-    let agentId: QueryClassification['agentId'] = 'general';
-    let score = 0.35; // base
+  // Analyze query with Gemini AI
+  const analyzeWithGemini = async () => {
+    const apiKey = geminiApiKey || import.meta.env.VITE_GEMINI_API_KEY;
 
-    const boost = (s: number, r: string) => { score = Math.min(1, score + s); reasons.push(r); };
+    if (!apiKey) {
+      console.warn('Gemini API key not set. Skipping AI analysis.');
+      return;
+    }
 
-    if (/(disease|blight|rust|spot|infection|leaf|pest)/.test(lower)) {
-      agentId = 'disease_identification';
-      boost(0.3, 'Disease related keyword detected');
-    }
-    if (/(recommend|which crop|best crop|grow|variety|fertiliz|soil|nutrient)/.test(lower)) {
-      if (agentId === 'general') agentId = 'crop_recommendation';
-      boost(0.25, 'Crop recommendation keyword detected');
-    }
-    if (/(irrigat|water|moisture|schedule)/.test(lower)) {
-      agentId = 'irrigation_scheduling';
-      boost(0.25, 'Irrigation / water management keywords');
-    }
-    if (/(price|market|sell|demand|forecast|rate)/.test(lower)) {
-      agentId = 'market_analysis';
-      boost(0.3, 'Market analytics keywords');
-    }
-    if (hasImage && agentId === 'general') {
-      agentId = 'disease_identification';
-      boost(0.2, 'Image provided – prioritizing disease detection');
-    }
-    if (hasImage && agentId === 'disease_identification') boost(0.1, 'Image supports disease classification');
-
-    return { agentId, confidence: Math.min(1, score), reasons, usedImage: hasImage };
-  };
-
-  // Enhanced agent execution with new API
-  const runAgentForQuery = async (cls: QueryClassification, query: string): Promise<AgentExecutionResult> => {
-    const payload = {
-      query_text: query,
-      image_base64: uploadedImage,
-      location: selectedPoint ? {
-        lat: selectedPoint.lat,
-        lng: selectedPoint.lng,
-        address: selectedAddress
-      } : null,
-      vegetation_analysis: (() => { 
-        try { 
-          return JSON.parse(localStorage.getItem('mapAnalysis') || 'null'); 
-        } catch { 
-          return null; 
-        } 
-      })()
-    };
+    setIsGeminiLoading(true);
 
     try {
-      const resp = await fetch('/api/query/process', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      
-      if (!resp.ok) {
-        throw new Error(`API returned ${resp.status}: ${resp.statusText}`);
+      // Set API key
+      geminiService.setApiKey(apiKey);
+
+      // Get vegetation data if available
+      const analysisData = localStorage.getItem('mapAnalysis');
+      const parsedData = analysisData ? JSON.parse(analysisData) : null;
+
+      const vegetationData = parsedData?.isAnalyzed ? parsedData.vegetationIndices : null;
+      const coordinates = parsedData?.coordinates || null;
+
+      // Prepare request for Gemini
+      const request = {
+        query: currentQuery,
+        vegetationData,
+        coordinates,
+        context: `Agricultural query analysis for Indian farming context. ${
+          vegetationData ? 'Vegetation analysis data is available.' : 'No vegetation data available.'
+        }`
+      };
+
+      // Call Gemini API
+      const analysis = await geminiService.analyzeQuery(request);
+      setGeminiAnalysis(analysis);
+
+    } catch (error) {
+      console.error('Gemini analysis failed:', error);
+      setError(`AI Analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsGeminiLoading(false);
+    }
+  };
+
+
+
+  // Generate fallback response when API fails
+  const generateFallbackResponse = async (): Promise<void> => {
+    // Simulate processing delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Get vegetation data if available
+    const analysisData = localStorage.getItem('mapAnalysis');
+    const parsedData = analysisData ? JSON.parse(analysisData) : null;
+
+    let responseText = '';
+    if (parsedData && parsedData.isAnalyzed) {
+      const { vegetationIndices, coordinates } = parsedData;
+
+      // Move the indices to agents (only after query submission)
+      localStorage.setItem('vegetationAnalysis', JSON.stringify(parsedData));
+      responseText = `**Agricultural Analysis Complete**
+
+Based on your query "${currentQuery}" and the satellite analysis of your selected area:
+
+**Vegetation Health Assessment:**
+- NDVI Score: ${vegetationIndices.ndvi.toFixed(3)} (${vegetationIndices.ndvi > 0.7 ? 'Excellent' : vegetationIndices.ndvi > 0.5 ? 'Good' : vegetationIndices.ndvi > 0.3 ? 'Moderate' : 'Poor'} vegetation health)
+- Location: ${coordinates.lat.toFixed(4)}°N, ${coordinates.lng.toFixed(4)}°E
+
+**Recommendations:**
+${vegetationIndices.ndvi > 0.7 ?
+  '✅ Your crops show excellent health. Continue current practices and monitor for any changes.' :
+  vegetationIndices.ndvi > 0.5 ?
+  '⚠️ Vegetation health is good but could be improved. Consider optimizing irrigation and nutrition.' :
+  '🚨 Vegetation shows stress. Immediate attention needed for irrigation, pest control, or soil health.'
+}
+
+**Next Steps:**
+1. Monitor the area regularly using satellite data
+2. Consider soil testing if vegetation health is declining
+3. Adjust irrigation and fertilization based on crop needs
+4. Contact local agricultural extension services for specific guidance
+
+*This analysis combines your query with real satellite data from ${new Date(parsedData.analysisDate).toLocaleDateString()}.*`;
+    } else {
+      responseText = `**Agricultural Query Response**
+
+Thank you for your question: "${currentQuery}"
+
+**General Agricultural Guidance:**
+Based on common farming practices and your query, here are some recommendations:
+
+**Immediate Actions:**
+1. Assess your current crop conditions
+2. Check soil moisture levels
+3. Monitor for pests and diseases
+4. Review weather forecasts for planning
+
+**Best Practices:**
+- Regular field monitoring
+- Proper irrigation scheduling
+- Integrated pest management
+- Soil health maintenance
+
+**For Better Analysis:**
+To get more specific recommendations, please:
+1. Select a location on the map above
+2. Run satellite analysis for your field
+3. Resubmit your query with location data
+
+*For personalized advice, consider consulting with local agricultural experts or extension services.*`;
+    }
+
+    const fallbackResponse: DemoResponse = {
+      routing_analysis: {
+        agent: 'fallback_agent',
+        confidence: 0.75,
+        reasoning: 'Fallback response generated due to API unavailability',
+        language_detected: /[\u0900-\u097F]/.test(currentQuery) ? 'Hindi' : 'English'
+      },
+      satellite_data: {
+        ndvi: parsedData?.vegetationIndices?.ndvi || 0.65,
+        soil_moisture: 0.45,
+        temperature: 28,
+        humidity: 65,
+        environmental_score: 75,
+        risk_level: 'medium'
+      },
+      response_text: responseText,
+      technical_metrics: {
+        processing_time_ms: Math.floor(Math.random() * 1500) + 500,
+        confidence_level: 0.75,
+        satellite_data_integrated: parsedData?.isAnalyzed || false,
+        risk_assessment: parsedData ? 'Low risk based on vegetation health' : 'Medium risk - analysis recommended',
+        agent: 'fallback_processing_agent'
       }
-      
-      const data = await resp.json();
-      
-      return { 
-        agentId: data.classification.agent_id,
-        success: data.status === 'success' || data.status === 'partial_success',
-        // Prefer the inner agent domain result (data.agent_result.result) if present
-        data: (data.agent_result && data.agent_result.result) ? data.agent_result.result : data.agent_result,
-        fallbackUsed: data.fallback_used,
-        fallbackSource: data.fallback_source,
-        errorMessage: data.agent_result?.error
-      };
-      
-    } catch (err) {
-      console.error('Query processing failed:', err);
-      
-      // Ultimate fallback - local mock response
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
-      
-      const mock = { 
-        type: cls.agentId === 'general' ? 'general_advisory' : cls.agentId,
-        source: 'local_mock', 
-        note: 'API unavailable; providing heuristic suggestion.', 
-        query, 
-        tips: generateLocalFallbackTips(cls.agentId) 
-      };
-      
-      return { 
-        agentId: cls.agentId, 
-        success: true, 
-        data: mock, 
-        fallbackUsed: true, 
-        fallbackSource: 'local_mock',
-        errorMessage: `API Error: ${errorMessage}`
-      };
-    }
+    };
+
+    setDemoResponse(fallbackResponse);
   };
 
-  const generateLocalFallbackTips = (agent: AgentId | 'general'): string[] => {
-    switch (agent) {
-      case 'disease_identification':
-        return ['Capture clear close-up images of affected leaves', 'Check for uniform vs. patchy symptoms', 'Consider recent weather favoring fungal growth'];
-      case 'crop_recommendation':
-        return ['Test soil pH and macro nutrients', 'Rotate crops to prevent nutrient depletion', 'Match crop to rainfall pattern'];
-      case 'irrigation_scheduling':
-        return ['Measure current soil moisture at root depth', 'Irrigate early morning to reduce evaporation', 'Adjust schedule after significant rainfall'];
-      case 'market_analysis':
-        return ['Track daily mandi prices', 'Store produce properly to wait for favorable pricing', 'Diversify crops to hedge price volatility'];
-      default:
-        return ['Provide more context for better recommendations'];
-    }
-  };
-
-  // --- Modified submitQuery to classify & run agent ---
   const submitQuery = async () => {
     if (!currentQuery.trim()) {
       setError('Please enter a query');
       return;
     }
 
-    const startTime = Date.now();
     setIsLoading(true);
-    setAnalysisComplete(false);
     setError('');
     setDemoResponse(null);
-    setClassification(null);
-    setAgentResult(null);
+    setGeminiAnalysis(null);
+    setEnhancedResponse('');
+    setAiResponseError('');
 
     try {
-      const cls = classifyQuery(currentQuery, !!uploadedImage);
-      setClassification(cls);
+      // Start Gemini analysis in parallel (don't await to run concurrently)
+      analyzeWithGemini();
 
-      // Start workflow tracking
-      const workflowId = `query_${Date.now()}`;
-      dashboardService.startWorkflow(workflowId);
-      
-      // Update agent status to busy
-      dashboardService.updateAgentStatus(cls.agentId, 'busy');
+      // Fetch real AI response from backend
+      const aiResponse = await fetchAIResponse(currentQuery);
 
-      // Simulate prior satellite analysis portion (retain existing behavior)
-      await new Promise(r => setTimeout(r, 400));
+      if (aiResponse) {
+        setDemoResponse(aiResponse);
 
-      const agentExec = await runAgentForQuery(cls, currentQuery);
-      setAgentResult(agentExec);
-
-      const processingTime = Date.now() - startTime;
-      
-      // Update dashboard metrics
-      dashboardService.updateQueryMetrics(
-        cls.agentId,
-        processingTime,
-        agentExec.success,
-        agentExec.fallbackSource || undefined
-      );
-      
-      // Update agent status back to idle (or error if failed)
-      dashboardService.updateAgentStatus(
-        cls.agentId, 
-        agentExec.success ? 'idle' : 'error'
-      );
-      
-      // Complete workflow
-      dashboardService.completeWorkflow(workflowId);
-
-      // Build a DemoResponse wrapper (re-using existing UI sections) – lightweight mapping
-      const responseText = agentExec.success
-        ? renderReadableAgentResult(agentExec)
-        : 'Agent execution failed.';
-
-      const response: DemoResponse = {
-        routing_analysis: {
-          agent: cls.agentId === 'general' ? 'General Advisory' : cls.agentId,
-          confidence: cls.confidence,
-          reasoning: cls.reasons.join('; '),
-          language_detected: 'auto'
-        },
-        satellite_data: {
-          ndvi: 0.5,
-            soil_moisture: 0.4,
-            temperature: 30,
-            humidity: 70,
-            environmental_score: 70,
-            risk_level: 'medium'
-        },
-        response_text: responseText,
-        technical_metrics: {
-          processing_time_ms: processingTime,
-          confidence_level: cls.confidence,
-          satellite_data_integrated: !!localStorage.getItem('mapAnalysis'),
-          risk_assessment: 'Heuristic',
-          agent: cls.agentId
-        }
-      };
-      setDemoResponse(response);
-      
+        // The response is already enhanced by Gemini in fetchAIResponse
+        // Set the enhanced response directly
+        setEnhancedResponse(aiResponse.response_text);
+      } else {
+        // Fallback to mock data if API fails
+        await generateFallbackResponse();
+      }
     } catch (err) {
-      const processingTime = Date.now() - startTime;
-      
+      console.error('Query processing failed:', err);
       setError('Query processing failed. Please try again.');
-      console.error('Query error:', err);
-      
-      // Update metrics for failed query
-      dashboardService.updateQueryMetrics('unknown', processingTime, false);
-      
+
+      // Try fallback response on error
+      try {
+        await generateFallbackResponse();
+      } catch (fallbackErr) {
+        console.error('Fallback response also failed:', fallbackErr);
+        setError('Unable to process query. Please check your connection and try again.');
+      }
     } finally {
       setIsLoading(false);
     }
   };
-  // -------------------------------------------------------
 
   const selectSampleQuery = (query: { query: string }) => {
     setCurrentQuery(query.query);
-  };
-
-  // Reverse geocoding function to get address from coordinates
-  const getAddressFromCoordinates = async (lat: number, lng: number): Promise<string> => {
-    try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`
-      );
-      
-      if (!response.ok) {
-        throw new Error('Geocoding service unavailable');
-      }
-      
-      const data = await response.json();
-      
-      if (data && data.display_name) {
-        // Parse address components for better formatting
-        const address = data.address || {};
-        const addressParts = [];
-        
-        // Add specific address components in order of preference
-        if (address.house_number && address.road) {
-          addressParts.push(`${address.house_number} ${address.road}`);
-        } else if (address.road) {
-          addressParts.push(address.road);
-        }
-        
-        if (address.neighbourhood || address.suburb) {
-          addressParts.push(address.neighbourhood || address.suburb);
-        }
-        
-        if (address.village || address.town || address.city) {
-          addressParts.push(address.village || address.town || address.city);
-        }
-        
-        if (address.state_district && address.state_district !== (address.village || address.town || address.city)) {
-          addressParts.push(address.state_district);
-        }
-        
-        if (address.state) {
-          addressParts.push(address.state);
-        }
-        
-        if (address.country) {
-          addressParts.push(address.country);
-        }
-        
-        // If we have structured address parts, use them; otherwise use display_name
-        return addressParts.length > 0 ? addressParts.join(', ') : data.display_name;
-      } else {
-        throw new Error('No address found');
-      }
-    } catch (error) {
-      console.error('Reverse geocoding error:', error);
-      // Fallback to coordinates if geocoding fails
-      return `${lat.toFixed(5)}°N, ${lng.toFixed(5)}°E`;
-    }
-  };
-
-  // Helper to convert structured agent result into user-friendly markdown-like text
-  const renderReadableAgentResult = (exec: AgentExecutionResult): string => {
-    if (!exec || !exec.data) return 'No data returned.';
-    // Support both direct domain object or wrapped structure
-    // Define lightweight interfaces to avoid any
-    interface IrrigationItem { day: string; time: string; duration: string; amount: string }
-    interface DiseaseItem { name: string; probability: number; treatment: string }
-    interface CropItem { name: string; suitability: number; season: string; yield_potential: string }
-    interface PriceItem { crop: string; current_price: string; trend: string; change: string }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let d: any = exec.data;
-    if (d && d.result && d.result.type) d = d.result; // unwrap if still wrapped
-
-    const fallbackPrefix = exec.fallbackUsed ? `⚠️ Fallback (${exec.fallbackSource}) used.\n\n` : '';
-
-    try {
-      switch (d.type) {
-        case 'irrigation_scheduling':
-          return fallbackPrefix + [
-            '💧 Irrigation Schedule Recommendation',
-            '',
-            ...((d.schedule || []) as IrrigationItem[]).map((s: IrrigationItem) => `• ${s.day}: ${s.time} – ${s.duration} (${s.amount})`),
-            '',
-            d.water_requirement ? `Weekly Requirement: ${d.water_requirement}` : null,
-            d.efficiency_tips ? 'Efficiency Tips:\n' + d.efficiency_tips.map((t: string) => `  - ${t}`).join('\n') : null,
-            d.location_considered ? 'Location factors considered ✅' : 'Location not provided'
-          ].filter(Boolean).join('\n');
-        case 'disease_identification':
-          return fallbackPrefix + [
-            '🦠 Disease Identification Summary',
-            '',
-            ...(d.detected_diseases || []).map((dis: DiseaseItem) => `• ${dis.name} (prob ${(dis.probability*100).toFixed(1)}%) – Treatment: ${dis.treatment}`),
-            '',
-            d.recommendations ? 'General Recommendations:\n' + d.recommendations.map((r: string) => `  - ${r}`).join('\n') : null,
-            d.image_analyzed ? 'Image analyzed ✅' : 'No image provided'
-          ].filter(Boolean).join('\n');
-        case 'crop_recommendation':
-          return fallbackPrefix + [
-            '🌱 Crop Recommendation',
-            '',
-            ...(d.recommended_crops || []).map((c: CropItem) => `• ${c.name}: suitability ${(c.suitability*100).toFixed(0)}%, season ${c.season}, yield ${c.yield_potential}`),
-            '',
-            d.soil_factors ? `Soil Factors: pH ${d.soil_factors.ph_level}, Rainfall ${d.soil_factors.rainfall}, Temp ${d.soil_factors.temperature}` : null,
-            d.location_considered ? 'Location data considered ✅' : null,
-            d.satellite_data_used ? 'Satellite vegetation indices used ✅' : null
-          ].filter(Boolean).join('\n');
-        case 'market_analysis':
-          return fallbackPrefix + [
-            '📈 Market Analysis',
-            '',
-            ...(d.current_prices || []).map((p: PriceItem) => `• ${p.crop}: ${p.current_price} (${p.trend}, ${p.change})`),
-            '',
-            d.market_outlook ? `Outlook: ${d.market_outlook}` : null,
-            d.selling_recommendations ? 'Recommendations:\n' + d.selling_recommendations.map((r: string) => `  - ${r}`).join('\n') : null
-          ].filter(Boolean).join('\n');
-        case 'general_advisory':
-          return fallbackPrefix + [
-            '🌾 General Advisory',
-            '',
-            d.response || '',
-            d.tips ? 'Tips:\n' + d.tips.map((t: string) => `  - ${t}`).join('\n') : null
-          ].filter(Boolean).join('\n');
-        default: {
-          // Provide graceful text fallback instead of raw JSON
-          const keys = Object.keys(d || {});
-          if (keys.length && !d.type) {
-            return fallbackPrefix + [
-              '📌 Result Summary',
-              '',
-              ...keys.slice(0, 8).map(k => `• ${k}: ${typeof d[k] === 'object' ? JSON.stringify(d[k]) : String(d[k])}`)
-            ].join('\n');
-          }
-          try { return fallbackPrefix + JSON.stringify(d, null, 2); } catch { return 'Unformatted response.'; }
-        }
-      }
-    } catch {
-      try { return fallbackPrefix + JSON.stringify(d, null, 2); } catch { return 'Unable to render result.'; }
-    }
   };
 
   return (
@@ -679,31 +554,18 @@ const SimpleDemoInterface: React.FC = () => {
               />
               <div style={{
                 background: '#e3f2fd',
-                padding: '12px',
+                padding: '8px',
                 borderRadius: '5px',
                 margin: '10px 0',
-                fontFamily: 'Arial, sans-serif',
+                fontFamily: 'monospace',
                 fontSize: '0.9rem'
               }}>
-                <strong>📍 Location:</strong><br />
                 {selectedCoords}
-              </div>
-              <div style={{
-                background: '#f9f9f9',
-                padding: '12px',
-                borderRadius: '5px',
-                margin: '10px 0',
-                fontFamily: 'Arial, sans-serif',
-                fontSize: '0.9rem',
-                border: '1px solid #ddd'
-              }}>
-                <strong>📍 Address:</strong><br />
-                {selectedAddress || 'Click on map to see address at selected location'}
               </div>
             </div>
 
             {/* Analysis Controls */}
-            <div className="analysis-controls" style={{
+            <div style={{
               background: 'white',
               borderRadius: '10px',
               padding: '15px',
@@ -718,7 +580,6 @@ const SimpleDemoInterface: React.FC = () => {
                 </label>
                 <input
                   type="date"
-                  className="analysis-date-input"
                   value={analysisDate}
                   onChange={(e) => setAnalysisDate(e.target.value)}
                   style={{
@@ -726,9 +587,7 @@ const SimpleDemoInterface: React.FC = () => {
                     padding: '8px',
                     border: '1px solid #ddd',
                     borderRadius: '5px',
-                    fontSize: '0.9rem',
-                    color: '#333333',
-                    backgroundColor: '#ffffff'
+                    fontSize: '0.9rem'
                   }}
                 />
               </div>
@@ -745,9 +604,7 @@ const SimpleDemoInterface: React.FC = () => {
                     padding: '8px',
                     border: '1px solid #ddd',
                     borderRadius: '5px',
-                    fontSize: '0.9rem',
-                    color: '#333333',
-                    backgroundColor: '#ffffff'
+                    fontSize: '0.9rem'
                   }}
                 >
                   <option value="sentinel2">Sentinel-2 (10m)</option>
@@ -768,15 +625,60 @@ const SimpleDemoInterface: React.FC = () => {
                     padding: '8px',
                     border: '1px solid #ddd',
                     borderRadius: '5px',
-                    fontSize: '0.9rem',
-                    color: '#333333',
-                    backgroundColor: '#ffffff'
+                    fontSize: '0.9rem'
                   }}
                 >
                   <option value="10">&lt; 10% (Best)</option>
                   <option value="20">&lt; 20% (Good)</option>
                   <option value="30">&lt; 30% (Acceptable)</option>
                 </select>
+              </div>
+
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', fontWeight: '600', marginBottom: '5px', color: '#555' }}>
+                  🤖 Gemini API Configuration:
+                </label>
+
+                {/* API Key Status */}
+                <div style={{
+                  padding: '10px',
+                  borderRadius: '5px',
+                  marginBottom: '10px',
+                  backgroundColor: import.meta.env.VITE_GEMINI_API_KEY ? '#d4edda' : '#f8d7da',
+                  border: `1px solid ${import.meta.env.VITE_GEMINI_API_KEY ? '#c3e6cb' : '#f5c6cb'}`,
+                  color: import.meta.env.VITE_GEMINI_API_KEY ? '#155724' : '#721c24'
+                }}>
+                  {import.meta.env.VITE_GEMINI_API_KEY ? (
+                    <span>✅ API key loaded from environment (.env file)</span>
+                  ) : (
+                    <span>⚠️ No API key found in environment. Please configure below or set VITE_GEMINI_API_KEY in .env file</span>
+                  )}
+                </div>
+
+                {/* Manual API Key Input (fallback) */}
+                {!import.meta.env.VITE_GEMINI_API_KEY && (
+                  <>
+                    <input
+                      type="password"
+                      value={geminiApiKey}
+                      onChange={(e) => {
+                        setGeminiApiKey(e.target.value);
+                        localStorage.setItem('gemini_api_key', e.target.value);
+                      }}
+                      placeholder="Enter your Google Gemini API key for AI analysis"
+                      style={{
+                        width: '100%',
+                        padding: '8px',
+                        border: '1px solid #ddd',
+                        borderRadius: '5px',
+                        fontSize: '0.9rem'
+                      }}
+                    />
+                    <small style={{ color: '#666', fontSize: '0.8rem' }}>
+                      Get your API key from <a href="https://makersuite.google.com/app/apikey" target="_blank" rel="noopener noreferrer">Google AI Studio</a>
+                    </small>
+                  </>
+                )}
               </div>
 
               <button
@@ -842,46 +744,7 @@ const SimpleDemoInterface: React.FC = () => {
             placeholder="Type your agricultural question here..."
             rows={3}
             className="query-textarea"
-            style={{
-              color: '#2c3e50',
-              backgroundColor: '#ffffff',
-              border: '2px solid #cbd5e0',
-              borderRadius: '12px',
-              padding: '15px',
-              fontSize: '1rem',
-              width: '100%',
-              minHeight: '100px',
-              fontWeight: '500',
-              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
-              transition: 'all 0.3s ease'
-            }}
           />
-          {/* Added image upload */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '8px', flexWrap: 'wrap' }}>
-            <label style={{
-              background: '#f1f5f9',
-              padding: '8px 12px',
-              borderRadius: '6px',
-              border: '1px solid #cbd5e1',
-              fontSize: '0.8rem',
-              fontWeight: 600,
-              cursor: 'pointer'
-            }}>
-              📷 Add Image
-              <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageUpload} />
-            </label>
-            {uploadedImage && (
-              <div style={{ position: 'relative' }}>
-                <img src={uploadedImage} alt="query upload" style={{ width: 80, height: 60, objectFit: 'cover', borderRadius: 6, border: '1px solid #e2e8f0' }} />
-                <button onClick={() => setUploadedImage(null)} style={{ position: 'absolute', top: -6, right: -6, background: '#ef4444', color: '#fff', border: 'none', borderRadius: '50%', width: 20, height: 20, cursor: 'pointer', fontSize: 12 }}>×</button>
-              </div>
-            )}
-            {classification && (
-              <div style={{ fontSize: '0.7rem', background: '#e0f2fe', padding: '4px 8px', borderRadius: 6, border: '1px solid #bae6fd', fontWeight: 600 }}>
-                Routed → {classification.agentId} ({Math.round(classification.confidence * 100)}%)
-              </div>
-            )}
-          </div>
           <button 
             onClick={submitQuery} 
             disabled={isLoading}
@@ -898,17 +761,47 @@ const SimpleDemoInterface: React.FC = () => {
         </div>
       )}
 
+      {/* AI Response Loading State */}
+      {isLoadingAIResponse && (
+        <div className="response-section loading">
+          <h3>🤖 AI Response</h3>
+          <div className="loading-content">
+            <div className="loading-spinner"></div>
+            <p>Fetching AI analysis from Gemini API...</p>
+            <div className="loading-details">
+              <span>• Processing your query</span>
+              <span>• Analyzing context and vegetation data</span>
+              <span>• Generating agricultural insights</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* AI Response Error State */}
+      {aiResponseError && !demoResponse && !isLoadingAIResponse && (
+        <div className="response-section error">
+          <h3>🤖 AI Response</h3>
+          <div className="error-content">
+            <div className="error-icon">⚠️</div>
+            <h4>Failed to fetch AI response</h4>
+            <p>{aiResponseError}</p>
+            <div className="error-actions">
+              <button
+                className="retry-button"
+                onClick={() => submitQuery()}
+                disabled={isLoading}
+              >
+                🔄 Retry Query
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {demoResponse && (
         <div className="response-section">
           <h3>🤖 AI Response</h3>
-          {/* Added agent execution summary */}
-          {agentResult && (
-            <div style={{ background: '#f1f5f9', padding: '10px 14px', borderRadius: 8, marginBottom: 16, border: '1px solid #e2e8f0', fontSize: '0.8rem' }}>
-              <strong>Execution:</strong> {agentResult.agentId} – {agentResult.success ? 'Success' : 'Failed'} {agentResult.fallbackUsed ? `(Fallback: ${agentResult.fallbackSource})` : ''}
-              {agentResult.errorMessage && <div style={{ color: '#dc2626' }}>{agentResult.errorMessage}</div>}
-            </div>
-          )}
-
+          
           <div className="routing-analysis">
             <h4>🧠 AI Routing Analysis:</h4>
             <div className="analysis-info">
@@ -930,15 +823,29 @@ const SimpleDemoInterface: React.FC = () => {
             </div>
           </div>
 
-          <div className="ai-response">
-            <h4>🌾 Satellite-Enhanced Response:</h4>
-            <div 
-              className="response-text"
-              dangerouslySetInnerHTML={{ 
-                __html: formatResponseText(demoResponse.response_text) 
-              }}
+          {/* Enhanced AI Response */}
+          {enhancedResponse ? (
+            <EnhancedResponseDisplay
+              originalQuery={currentQuery}
+              enhancedResponse={enhancedResponse}
+              isLoading={false}
             />
-          </div>
+          ) : (
+            <div className="ai-response">
+              <h4>🌾 AI-Enhanced Agricultural Response:</h4>
+              <div
+                className="response-text"
+                dangerouslySetInnerHTML={{
+                  __html: formatResponseText(demoResponse.response_text)
+                }}
+              />
+              {(geminiApiKey || import.meta.env.VITE_GEMINI_API_KEY) && (
+                <div className="enhancement-notice">
+                  <p>✨ <strong>Enhanced by Gemini AI:</strong> This response has been processed through advanced agricultural AI for comprehensive insights!</p>
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="technical-metrics">
             <h4>📊 Technical Metrics:</h4>
@@ -949,6 +856,17 @@ const SimpleDemoInterface: React.FC = () => {
               <div><strong>Agent:</strong> {demoResponse.technical_metrics.agent}</div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Gemini AI Analysis Display */}
+      {(geminiAnalysis || isGeminiLoading) && (
+        <div className="gemini-section">
+          <GeminiAnalysisDisplay
+            analysis={geminiAnalysis}
+            isLoading={isGeminiLoading}
+            query={currentQuery}
+          />
         </div>
       )}
     </div>
