@@ -63,11 +63,9 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=True,
-        extra="allow"
+        extra="allow",
+        validate_assignment=True
     )
-
-    class Config:
-        validate_assignment = True
         
     def get_api_url(self) -> str:
         """Get the full API URL."""

@@ -9,7 +9,8 @@ This module exports:
 4. Environment - Enum of available environments
 """
 
-from .settings import settings
+# from .temp_settings import settings  # Temporary fix
+from .settings import settings  # Original - fix Pydantic issues
 from .core import Settings, Environment, load_environment_settings
 from .service import get_config, config_service, ConfigService
 

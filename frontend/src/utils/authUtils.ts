@@ -31,17 +31,18 @@ const decodeCredentialHash = (hash: string): { username: string; password: strin
 
 /**
  * Get demo credentials from environment variables
- * Only used in development/demo mode
+ * Only used in development/demo mode with proper environment configuration
  */
 export const getDemoCredentials = (): DemoCredentials => {
   const credentials: DemoCredentials = {};
   
-  // Only load demo credentials if in demo mode
-  if (import.meta.env.VITE_DEMO_MODE !== 'true') {
+  // Only load demo credentials if explicitly enabled in environment
+  if (!isDemoMode()) {
+    console.warn('Demo mode not enabled - credentials not loaded');
     return credentials;
   }
 
-  // Load credentials from environment variables
+  // Load credentials from environment variables (base64 encoded for security)
   const envHashes = {
     admin: import.meta.env.VITE_DEMO_ADMIN_HASH,
     user: import.meta.env.VITE_DEMO_USER_HASH,
@@ -49,14 +50,21 @@ export const getDemoCredentials = (): DemoCredentials => {
     agrisens: import.meta.env.VITE_DEMO_AGRISENS_HASH
   };
 
+  let validCredentialsCount = 0;
+  
   Object.entries(envHashes).forEach(([username, hash]) => {
     if (hash) {
       const decoded = decodeCredentialHash(hash);
       if (decoded && decoded.username === username) {
         credentials[username] = decoded.password;
+        validCredentialsCount++;
       }
     }
   });
+
+  if (validCredentialsCount === 0) {
+    console.warn('No valid demo credentials found in environment variables');
+  }
 
   return credentials;
 };
