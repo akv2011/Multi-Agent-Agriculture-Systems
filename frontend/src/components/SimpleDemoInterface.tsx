@@ -564,6 +564,7 @@ const SimpleDemoInterface: React.FC = () => {
                 </label>
                 <input
                   type="date"
+                  className="analysis-date-input"
                   value={analysisDate}
                   onChange={(e) => setAnalysisDate(e.target.value)}
                   style={{

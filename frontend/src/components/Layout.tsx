@@ -1,5 +1,6 @@
 import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 import ChatBot from './ChatBot';
 import './Layout.css';
 
@@ -10,6 +11,13 @@ interface NavItem {
 }
 
 const Layout = () => {
+  const { user, logout } = useAuth();
+
+  const handleLogout = () => {
+    if (window.confirm('Are you sure you want to logout?')) {
+      logout();
+    }
+  };
 
   const navItems: NavItem[] = [
     { 
@@ -138,6 +146,27 @@ const Layout = () => {
             <div className="user-avatar">RB</div>
             <div className="user-avatar">+2</div>
           </div>
+        </div>
+
+        <div className="sidebar-footer">
+          <div className="user-profile">
+            <div className="user-avatar-large">{user?.username?.charAt(0).toUpperCase()}</div>
+            <div className="user-details">
+              <p className="username">{user?.username}</p>
+              <p className="user-role">{user?.role}</p>
+            </div>
+          </div>
+          <button 
+            onClick={handleLogout}
+            className="logout-button"
+            title="Logout"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <polyline points="16,17 21,12 16,7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <line x1="21" y1="12" x2="9" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
         </div>
       </nav>
 
