@@ -45,15 +45,13 @@ async def lifespan(app: FastAPI):
     logger.info(f"Using region: {config.get_region_name()}")
     
     # Initialize Redis connection with config
-    redis_host = config.get("REDIS_HOST")
-    redis_port = config.get("REDIS_PORT")
-    redis_db = config.get("REDIS_DB")
-    app.state.redis_manager = RedisConnectionManager(
-        host=redis_host,
-        port=redis_port,
-        db=redis_db
-    )
-    logger.info(f"Redis manager connected to {redis_host}:{redis_port}")
+    from src.redis_config import RedisConfig
+    redis_config = RedisConfig()
+    app.state.redis_manager = RedisConnectionManager(redis_config)
+    if redis_config.demo_mode:
+        logger.info("Redis manager running in demo mode with local storage")
+    else:
+        logger.info(f"Redis manager connected to {redis_config.redis_host}:{redis_config.redis_port}")
     
     # Initialize supervisor
     app.state.supervisor = SupervisorNode()

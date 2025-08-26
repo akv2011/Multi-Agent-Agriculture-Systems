@@ -12,6 +12,22 @@ class WebSocketIntegrationService:
         self.websocket_manager = websocket_manager
         self.active_workflows = {}
         self.agent_states = {}
+        self.handlers = {}
+        
+    def set_websocket_manager(self, manager):
+        self.websocket_manager = manager
+        
+    def register_handler(self, event_type: str, handler):
+        """Register an event handler for a specific event type"""
+        self.handlers[event_type] = handler
+        
+    async def handle_event(self, event_type: str, data: Dict[str, Any]):
+        """Handle an event by calling the registered handler"""
+        if event_type in self.handlers:
+            return await self.handlers[event_type](data)
+        else:
+            logger.warning(f"No handler registered for event type: {event_type}")
+            return None
         
     def set_websocket_manager(self, manager):
         self.websocket_manager = manager

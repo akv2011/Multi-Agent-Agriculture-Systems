@@ -6,6 +6,10 @@ import DashboardPage from "./components/DashboardPage";
 import WorkflowsPage from "./components/WorkflowsPage";
 import ReportsPage from "./components/ReportsPage";
 import StatisticsPage from "./components/StatisticsPage";
+import MarketplacePage from "./components/MarketplacePage";
+import BusinessIntelligencePage from "./components/BusinessIntelligencePage";
+import AddProductPage from "./components/AddProductPage";
+import FarmerProfilePage from "./components/FarmerProfilePage";
 import DemoPage from "./pages/DemoPage";
 import App from "./App";
 
@@ -41,6 +45,22 @@ const router = createBrowserRouter([
           {
             path: "statistics",
             element: <StatisticsPage />,
+          },
+          {
+            path: "marketplace",
+            element: <MarketplacePage />,
+          },
+          {
+            path: "marketplace/add-product",
+            element: <AddProductPage />,
+          },
+          {
+            path: "farmer-profiles",
+            element: <FarmerProfilePage />,
+          },
+          {
+            path: "business-intelligence",
+            element: <BusinessIntelligencePage />,
           },
           {
             path: "demo",

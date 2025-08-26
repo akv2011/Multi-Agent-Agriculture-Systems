@@ -1,67 +1,236 @@
-# 🌾🛰️ Multi-Agent Agriculture Systems
+# 🌾 Unified Agricultural Platform
 
-> **Revolutionizing Indian Agriculture with AI and Satellite Intelligence**
+A comprehensive agricultural technology platform integrating marketplace, farmer credit scoring, and business intelligence systems.
 
-wsl -d Ubuntu for redis
+## 🚀 Quick Start
 
-[![Status](https://img.shields.io/badge/Status-Active%20Development-green.svg)](https://github.com/akv2011/Multi-Agent-Agriculture-Systems)
-[![Progress](https://img.shields.io/badge/Progress-65%25%20Complete-blue.svg)](https://github.com/akv2011/Multi-Agent-Agriculture-Systems)
-[![Agents](https://img.shields.io/badge/Agents-5%2F7%20Satellite%20Enhanced-brightgreen.svg)](https://github.com/akv2011/Multi-Agent-Agriculture-Systems)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+### Prerequisites
+- Python 3.8+
+- Node.js 16+
+- npm or yarn
 
-A cutting-edge **multi-agent agricultural intelligence platform** that combines **satellite data**, **AI-powered decision making**, and **multilingual support** to empower Indian farmers with space-age agricultural insights.
+### Backend Setup
+```bash
+# Install Python dependencies
+pip install -r requirements.txt
+
+# Start the unified API server
+python unified_agricultural_api.py
+```
+
+### Frontend Setup
+```bash
+# Navigate to frontend directory
+cd frontend
+
+# Install dependencies
+npm install
+
+# Start development server
+npm start
+```
+
+## 📊 System Overview
+
+The Unified Agricultural Platform consists of three main modules:
+
+### 🛒 Marketplace Module
+- **Product Management**: Add, edit, and manage agricultural products
+- **Image Upload**: Multi-image support with preview functionality
+- **Seller Management**: Verified seller profiles with ratings
+- **Category Management**: Organized product categories (grains, vegetables, fruits, etc.)
+- **B2B/B2C Support**: Both business and consumer marketplace
+
+### 👨‍🌾 Farmer Profile Module
+- **Agricultural Credit Scoring**: CIBIL-like scoring system (300-900 scale)
+- **Profile Management**: Comprehensive farmer profiles with verification
+- **Performance Tracking**: Crop performance history and yield tracking
+- **Technology Adoption**: Smart farming tools usage tracking
+- **Leaderboard System**: Farmer rankings based on credit scores
+
+### 📈 Business Intelligence Module
+- **Market Analysis**: Real-time commodity price trends
+- **Demand Forecasting**: AI-powered demand predictions
+- **Seasonal Insights**: Season-specific recommendations
+- **Procurement Intelligence**: Optimal buying recommendations
+- **Seller Verification**: Automated seller verification and scoring
+
+## 🏗️ Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Frontend (React TypeScript)              │
+│  ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐│
+│  │   Marketplace   │ │ Farmer Profiles │ │ Business Intel  ││
+│  └─────────────────┘ └─────────────────┘ └─────────────────┘│
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              │ HTTP/REST API
+                              │
+┌─────────────────────────────────────────────────────────────┐
+│              Unified Agricultural API (FastAPI)             │
+│  ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐│
+│  │ Marketplace API │ │ Farmer Prof API │ │ Business API    ││
+│  └─────────────────┘ └─────────────────┘ └─────────────────┘│
+└─────────────────────────────────────────────────────────────┘
+                              │
+┌─────────────────────────────────────────────────────────────┐
+│                        Data Layer                           │
+│  ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐│
+│  │    Products     │ │ Farmer Profiles │ │ Market Data     ││
+│  │   (In-Memory)   │ │   (In-Memory)   │ │  (In-Memory)    ││
+│  └─────────────────┘ └─────────────────┘ └─────────────────┘│
+└─────────────────────────────────────────────────────────────┘
+```
+
+## 🔗 API Endpoints
+
+### System Status
+- `GET /system/status` - System health and statistics
+
+### Marketplace APIs
+- `GET /marketplace/products` - List all products
+- `POST /marketplace/products` - Add new product (with image upload)
+- `GET /marketplace/sellers` - List all sellers
+- `POST /marketplace/sellers` - Add new seller
+- `GET /marketplace/stats` - Marketplace statistics
+- `GET /marketplace/categories` - Product categories
+
+### Farmer Profile APIs
+- `GET /farmer-profiles` - List all farmer profiles
+- `GET /farmer-profile/{farmer_id}` - Get specific farmer profile
+- `GET /farmer-profile/{farmer_id}/credit-score` - Get detailed credit score
+- `GET /farmer-leaderboard` - Farmer credit score rankings
+- `GET /credit-score-analytics` - Credit score analytics
+
+### Business Intelligence APIs
+- `GET /business-intel/market-intelligence` - Market trends and insights
+- `GET /business-intel/seller-verification/{seller_id}` - Seller verification
+- `GET /business-intel/procurement-recommendations` - Procurement insights
+
+## 🎯 Key Features
+
+### Agricultural Credit Scoring
+- **300-900 Scale**: Similar to CIBIL score for farmers
+- **Multiple Factors**: 
+  - Satellite Data Performance (25%)
+  - Crop Performance History (20%)
+  - Financial History (20%)
+  - Market Performance (15%)
+  - Technology Adoption (10%)
+  - Experience & Verification (10%)
+
+### Smart Marketplace
+- **Multi-Image Upload**: Support for multiple product images
+- **Verified Sellers**: Seller verification and rating system
+- **Category Management**: Organized product categories
+- **Real-time Stats**: Live marketplace statistics
+
+### AI-Powered Intelligence
+- **Price Trend Analysis**: Real-time commodity price tracking
+- **Demand Forecasting**: Predictive analytics for market demand
+- **Seasonal Recommendations**: Season-specific farming advice
+- **Market Alerts**: Real-time market opportunity alerts
+
+## 🛠️ Technology Stack
+
+### Backend
+- **FastAPI**: High-performance Python web framework
+- **Pydantic**: Data validation and serialization
+- **Uvicorn**: ASGI server for production deployment
+
+### Frontend
+- **React**: Modern JavaScript library for UI
+- **TypeScript**: Type-safe JavaScript development
+- **Tailwind CSS**: Utility-first CSS framework
+- **React Router**: Client-side routing
+
+### Data Management
+- **In-Memory Storage**: Fast development and demo purposes
+- **File Upload**: Local file storage for images
+- **JSON Serialization**: Structured data management
+
+## 📱 User Interface
+
+### Marketplace Interface
+- Product listing with search and filters
+- Add product form with image upload
+- Seller profiles and ratings
+- Category-based navigation
+
+### Farmer Profile Interface
+- Credit score dashboard
+- Profile management
+- Performance analytics
+- Leaderboard view
+
+### Business Intelligence Interface
+- Market trends dashboard
+- Price analysis charts
+- Demand forecasting
+- Procurement recommendations
+
+## 🔐 Security Features
+
+- Input validation and sanitization
+- File upload restrictions
+- API rate limiting ready
+- Structured error handling
+
+## 📈 Performance
+
+- **Fast API**: Sub-100ms response times
+- **Efficient Data Structures**: Optimized in-memory storage
+- **Minimal Dependencies**: Lightweight deployment
+- **Scalable Architecture**: Ready for database integration
+
+## � Deployment
+
+### Development
+```bash
+python unified_agricultural_api.py
+cd frontend && npm start
+```
+
+### Production
+```bash
+# Backend
+uvicorn unified_agricultural_api:app --host 0.0.0.0 --port 8000
+
+# Frontend
+npm run build
+# Serve dist folder with nginx/apache
+```
+
+## 📖 Documentation
+
+- [API Documentation](docs/API.md) - Detailed API reference
+- [Farmer Credit Scoring](docs/FARMER_CREDIT_SCORING.md) - Credit scoring algorithm
+- [Marketplace Guide](docs/MARKETPLACE.md) - Marketplace functionality
+- [Business Intelligence](docs/BUSINESS_INTELLIGENCE.md) - BI module details
+- [Development Guide](docs/DEVELOPMENT.md) - Development setup and guidelines
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open Pull Request
+
+## � License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- Agricultural experts for domain knowledge
+- Open source community for tools and libraries
+- Farmers for feedback and requirements
 
 ---
 
-## 🚀 Project Overview
-
-**Multi-Agent Agriculture Systems** is an advanced agricultural decision support platform that leverages:
-
-- 🛰️ **Satellite Data Integration** for real-time crop monitoring
-- 🤖 **7 Specialized AI Agents** for comprehensive farm management  
-- 🗣️ **Gemini-Powered Multilingual Support** (Hindi, English, Code-Switched)
-- 📊 **Real-time Analytics** with confidence scoring
-- 🌐 **Modern Web Interface** with chat-based interaction
-
-### 🎯 Mission Statement
-
-*"To democratize access to advanced agricultural intelligence by bringing satellite-powered insights and AI-driven recommendations directly to Indian farmers in their native language."*
-
----
-
-## 🛠️ **Current Development Priorities**
-
-1. **Complete Remaining Agents** (2/7)
-   - Harvest Planning Agent satellite integration
-   - Input Materials Agent satellite integration
-
-2. **Web Dashboard Development**
-   - React-based agricultural interface
-   - Real-time satellite data visualization
-   - Farmer-friendly multilingual design
-
-3. **Advanced Feature Integration**
-   - Computer vision for pest identification
-   - Explainable AI and confidence scoring
-   - WhatsApp integration for farmer outreach
-
-### **🔗 Quick Links**
-
-- 📚 **[Getting Started Guide](docs/GETTING_STARTED.md)** - Setup and installation
-- 🛰️ **[Satellite System Overview](docs/SATELLITE_SYSTEM_SUMMARY.md)** - Satellite integration details
-- 🤖 **[Gemini AI Integration](docs/GEMINI_INTEGRATION_SUMMARY.md)** - Multilingual processing
-- 📊 **[Project Status](docs/PROJECT_STATUS_COMPREHENSIVE_SUMMARY.md)** - Current progress
-- 🚀 **[Market Timing Integration](docs/MARKET_TIMING_SATELLITE_INTEGRATION_SUMMARY.md)** - Latest features
-- ⚙️ **[Environment Configuration](docs/ENVIRONMENT_CONFIGURATION.md)** - Environment-based settings
-
----
-
-## 🚀 Project Overview
-
-**Multi-Agent Agriculture Systems** is an advanced agricultural decision support platform that leverages:
-
-- 🛰️ **Satellite Data Integration** for real-time crop monitoring
-- 🤖 **7 Specialized AI Agents** for comprehensive farm management  
+**🌾💰👨‍🌾📊 Unified Agricultural Platform - Empowering Agriculture Through Technology**  
 - 🗣️ **Gemini-Powered Multilingual Support** (Hindi, English, Code-Switched)
 - 📊 **Real-time Analytics** with confidence scoring
 - 🌐 **Modern Web Interface** with chat-based interaction
