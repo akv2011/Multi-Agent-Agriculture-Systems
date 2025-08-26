@@ -4,7 +4,6 @@ Uses pydantic-settings for environment-based configuration
 """
 
 from typing import List, Optional
-from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 import os
 from pathlib import Path
@@ -39,7 +38,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str = f"sqlite:///{BASE_DIR}/data/agriculture.db"
     
     # CORS Settings
-    CORS_ORIGINS: str = "http://localhost:3000,http://localhost:5173"  # Comma-separated list of allowed origins
+    CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:5173"]
     
     # Security
     API_KEY_HEADER: str = "X-API-Key"
@@ -74,15 +73,6 @@ class Settings(BaseSettings):
     
     # Logging
     LOG_LEVEL: str = "INFO"
-    
-    # Parse CORS_ORIGINS string to list
-    @field_validator("CORS_ORIGINS")
-    @classmethod
-    def parse_cors_origins(cls, v: str) -> List[str]:
-        if v == "*":
-            # For development only - allows all origins
-            return ["*"]
-        return [origin.strip() for origin in v.split(",") if origin.strip()]
     
     # Define env file configuration
     model_config = SettingsConfigDict(

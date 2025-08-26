@@ -37,8 +37,10 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
 
   const handleDemoLogin = () => {
     if (isDemoMode()) {
-      setUsername('admin');
-      setPassword('admin123'); // This is just for demo UI convenience
+      // Get demo username from environment
+      const demoUser = import.meta.env.VITE_DEMO_DEFAULT_USER || 'demo';
+      setUsername(demoUser);
+      setPassword(''); // Don't pre-fill passwords for security
     } else {
       setError('Demo mode is not enabled');
     }
@@ -160,27 +162,32 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         </form>
 
         <div className="login-demo">
-          <p className="demo-text">Demo Credentials:</p>
+          <p className="demo-text">Demo Mode Available</p>
           <div className="demo-credentials">
             <div className="demo-row">
-              <strong>Admin:</strong> admin / admin123
+              <strong>Note:</strong> Demo credentials are configured via environment variables
             </div>
             <div className="demo-row">
-              <strong>User:</strong> user / user123
+              <strong>Contact:</strong> Administrator for demo access credentials
             </div>
-            <div className="demo-row">
-              <strong>Farmer:</strong> farmer / farmer123
-            </div>
-            <div className="demo-row">
-              <strong>AgriSens:</strong> agrisens / agrisens2025
-            </div>
+            {isDemoMode() && (
+              <div className="demo-row">
+                <strong>Status:</strong> <span style={{color: '#4CAF50'}}>Demo mode enabled</span>
+              </div>
+            )}
+            {!isDemoMode() && (
+              <div className="demo-row">
+                <strong>Status:</strong> <span style={{color: '#ff9800'}}>Demo mode disabled</span>
+              </div>
+            )}
           </div>
           <button
             type="button"
             onClick={handleDemoLogin}
             className="demo-button"
+            disabled={!isDemoMode()}
           >
-            Quick Demo Login
+            {isDemoMode() ? 'Quick Demo Login' : 'Demo Mode Disabled'}
           </button>
         </div>
 
