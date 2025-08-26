@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 
 // Added strong typing for results
-type AgentId = 'disease_identification' | 'crop_recommendation' | 'irrigation_scheduling' | 'market_analysis';
+type AgentId = 'disease_identification' | 'crop_recommendation' | 'irrigation_scheduling' | 'market_analysis' | 'pest_management' | 'finance_policy' | 'harvest_planning';
 
 interface RecommendedCropResult {
   name: string;
@@ -77,13 +77,40 @@ interface MarketResult {
   demandForecast: string;
 }
 
-type AgentResults = DiseaseResult | CropRecommendationResult | IrrigationResult | MarketResult | null;
+interface PestManagementResult {
+  type: 'pest_management';
+  riskLevel: string;
+  pestType: string;
+  treatment: string;
+  preventiveMeasures: string[];
+}
+
+interface FinancePolicyResult {
+  type: 'finance_policy';
+  loanEligibility: string;
+  interestRate: string;
+  subsidies: string[];
+  riskAssessment: string;
+}
+
+interface HarvestPlanningResult {
+  type: 'harvest_planning';
+  optimalDate: string;
+  qualityPrediction: string;
+  marketRecommendation: string;
+  storageAdvice: string;
+}
+
+type AgentResults = DiseaseResult | CropRecommendationResult | IrrigationResult | MarketResult | PestManagementResult | FinancePolicyResult | HarvestPlanningResult | null;
 
 // Type guards for safe narrowing
 const isDiseaseResult = (r: AgentResults): r is DiseaseResult => !!r && r.type === 'disease_identification';
 const isCropRecommendationResult = (r: AgentResults): r is CropRecommendationResult => !!r && r.type === 'crop_recommendation';
 const isIrrigationResult = (r: AgentResults): r is IrrigationResult => !!r && r.type === 'irrigation_scheduling';
 const isMarketResult = (r: AgentResults): r is MarketResult => !!r && r.type === 'market_analysis';
+const isPestManagementResult = (r: AgentResults): r is PestManagementResult => !!r && r.type === 'pest_management';
+const isFinancePolicyResult = (r: AgentResults): r is FinancePolicyResult => !!r && r.type === 'finance_policy';
+const isHarvestPlanningResult = (r: AgentResults): r is HarvestPlanningResult => !!r && r.type === 'harvest_planning';
 
 interface AgentConfig {
   id: AgentId; // tightened type
@@ -388,6 +415,211 @@ const EnhancedAgentsPage: React.FC = () => {
           options: ['Chennai', 'Coimbatore', 'Madurai', 'Trichy', 'Salem', 'Tirunelveli']
         }
       ]
+    },
+    {
+      id: 'pest_management',
+      name: 'Pest Management',
+      nameML: 'பூச்சி மேலாண்மை',
+      nameHI: 'कीट प्रबंधन',
+      description: 'Weather-based pest outbreak prediction with environmental risk assessment and treatment recommendations',
+      descriptionML: 'சுற்றுச்சூழல் அபாய மதிப்பீடு மற்றும் சிகிச்சை பரிந்துரைகளுடன் வானிலை அடிப்படையிலான பூச்சி வெடிப்பு முன்னறிவிப்பு',
+      descriptionHI: 'पर्यावरणीय जोखिम आकलन और उपचार सिफारिशों के साथ मौसम-आधारित कीट प्रकोप भविष्यवाणी',
+      icon: <div className="relative">
+        <Shield className="w-8 h-8" />
+        <Activity className="w-4 h-4 absolute -top-1 -right-1 text-orange-300 animate-pulse" />
+        <div className="absolute -bottom-1 -left-1 w-2 h-2 bg-red-400 rounded-full animate-bounce"></div>
+      </div>,
+      color: 'bg-gradient-to-br from-orange-500 via-amber-500 to-yellow-600',
+      category: '🛡️ Pest Control',
+      modelType: 'hybrid',
+      parameters: [
+        {
+          id: 'crop_type',
+          name: 'Crop Type',
+          nameML: 'பயிர் வகை',
+          nameHI: 'फसल का प्रकार',
+          type: 'select',
+          required: true,
+          placeholder: 'Select crop type',
+          placeholderML: 'பயிர் வகையை தேர்ந்தெடுக்கவும்',
+          placeholderHI: 'फसल का प्रकार चुनें',
+          options: ['Rice', 'Wheat', 'Cotton', 'Tomato', 'Corn', 'Sugarcane', 'Potato']
+        },
+        {
+          id: 'temperature',
+          name: 'Temperature',
+          nameML: 'வெப்பநிலை',
+          nameHI: 'तापमान',
+          type: 'number',
+          required: true,
+          placeholder: 'Enter temperature (°C)',
+          placeholderML: 'வெப்பநிலையை உள்ளிடவும் (°C)',
+          placeholderHI: 'तापमान दर्ज करें (°C)',
+          min: 0,
+          max: 50,
+          unit: '°C'
+        },
+        {
+          id: 'humidity',
+          name: 'Humidity',
+          nameML: 'ஈரப்பதம்',
+          nameHI: 'आर्द्रता',
+          type: 'range',
+          required: true,
+          min: 0,
+          max: 100,
+          unit: '%'
+        },
+        {
+          id: 'season',
+          name: 'Season',
+          nameML: 'பருவம்',
+          nameHI: 'मौसम',
+          type: 'select',
+          required: true,
+          placeholder: 'Select season',
+          placeholderML: 'பருவத்தை தேர்ந்தெடுக்கவும்',
+          placeholderHI: 'मौसम चुनें',
+          options: ['Kharif', 'Rabi', 'Zaid', 'Summer', 'Monsoon']
+        }
+      ]
+    },
+    {
+      id: 'finance_policy',
+      name: 'Finance & Policy',
+      nameML: 'நிதி மற்றும் கொள்கை',
+      nameHI: 'वित्त और नीति',
+      description: 'Environmental risk assessment with weather-adjusted loans, subsidies, and insurance guidance',
+      descriptionML: 'வானிலை-சரிசெய்யப்பட்ட கடன்கள், மானியங்கள் மற்றும் காப்பீட்டு வழிகாட்டுதலுடன் சுற்றுச்சூழல் அபாய மதிப்பீடு',
+      descriptionHI: 'मौसम-समायोजित ऋण, सब्सिडी और बीमा मार्गदर्शन के साथ पर्यावरणीय जोखिम आकलन',
+      icon: <div className="relative">
+        <Database className="w-8 h-8" />
+        <CheckCircle className="w-4 h-4 absolute -top-1 -right-1 text-green-300 animate-pulse" />
+        <div className="absolute -bottom-1 -left-1 w-2 h-2 bg-blue-400 rounded-full animate-bounce"></div>
+      </div>,
+      color: 'bg-gradient-to-br from-indigo-500 via-blue-500 to-cyan-600',
+      category: '💰 Financial Services',
+      modelType: 'data',
+      parameters: [
+        {
+          id: 'farm_size',
+          name: 'Farm Size',
+          nameML: 'பண்ணை அளவு',
+          nameHI: 'खेत का आकार',
+          type: 'number',
+          required: true,
+          placeholder: 'Enter farm size (acres)',
+          placeholderML: 'பண்ணை அளவை உள்ளிடவும் (ஏக்கர்)',
+          placeholderHI: 'खेत का आकार दर्ज करें (एकड़)',
+          min: 0.1,
+          max: 1000,
+          unit: 'acres'
+        },
+        {
+          id: 'annual_income',
+          name: 'Annual Income',
+          nameML: 'வருடாந்த வருமானம்',
+          nameHI: 'वार्षिक आय',
+          type: 'number',
+          required: true,
+          placeholder: 'Enter annual income (₹)',
+          placeholderML: 'வருடாந்த வருமானத்தை உள்ளிடவும் (₹)',
+          placeholderHI: 'वार्षिक आय दर्ज करें (₹)',
+          min: 10000,
+          max: 10000000,
+          unit: '₹'
+        },
+        {
+          id: 'loan_amount',
+          name: 'Loan Amount Required',
+          nameML: 'தேவையான கடன் தொகை',
+          nameHI: 'आवश्यक ऋण राशि',
+          type: 'number',
+          required: true,
+          placeholder: 'Enter loan amount (₹)',
+          placeholderML: 'கடன் தொகையை உள்ளிடவும் (₹)',
+          placeholderHI: 'ऋण राशि दर्ज करें (₹)',
+          min: 10000,
+          max: 5000000,
+          unit: '₹'
+        },
+        {
+          id: 'credit_score',
+          name: 'Credit Score',
+          nameML: 'கடன் மதிப்பெண்',
+          nameHI: 'क्रेडिट स्कोर',
+          type: 'range',
+          required: true,
+          min: 300,
+          max: 900,
+          unit: ''
+        }
+      ]
+    },
+    {
+      id: 'harvest_planning',
+      name: 'Harvest Planning',
+      nameML: 'அறுவடை திட்டமிடல்',
+      nameHI: 'फसल कटाई योजना',
+      description: 'Crop maturity monitoring with harvest window optimization and quality forecasting',
+      descriptionML: 'அறுவடை சாளர உகப்பாக்கம் மற்றும் தர முன்னறிவிப்புடன் பயிர் முதிர்ச்சி கண்காணிப்பு',
+      descriptionHI: 'फसल कटाई विंडो अनुकूलन और गुणवत्ता पूर्वानुमान के साथ फसल परिपक्वता निगरानी',
+      icon: <div className="relative">
+        <Clock className="w-8 h-8" />
+        <Bot className="w-4 h-4 absolute -top-1 -right-1 text-amber-300 animate-pulse" />
+        <div className="absolute -bottom-1 -left-1 w-2 h-2 bg-green-400 rounded-full animate-bounce"></div>
+      </div>,
+      color: 'bg-gradient-to-br from-amber-500 via-yellow-500 to-orange-600',
+      category: '⏰ Harvest Timing',
+      modelType: 'hybrid',
+      parameters: [
+        {
+          id: 'crop_variety',
+          name: 'Crop Variety',
+          nameML: 'பயிர் வகை',
+          nameHI: 'फसल की किस्म',
+          type: 'select',
+          required: true,
+          placeholder: 'Select crop variety',
+          placeholderML: 'பயிர் வகையை தேர்ந்தெடுக்கவும்',
+          placeholderHI: 'फसल की किस्म चुनें',
+          options: ['Basmati Rice', 'IR-64 Rice', 'Wheat HD-2967', 'Cotton Bt', 'Sugarcane Co-86032']
+        },
+        {
+          id: 'planting_date',
+          name: 'Planting Date',
+          nameML: 'நடவு தேதி',
+          nameHI: 'रोपण तिथि',
+          type: 'date',
+          required: true,
+          placeholder: 'Select planting date',
+          placeholderML: 'நடவு தேதியை தேர்ந்தெடுக்கவும்',
+          placeholderHI: 'रोपण तिथि चुनें'
+        },
+        {
+          id: 'crop_maturity',
+          name: 'Current Maturity (%)',
+          nameML: 'தற்போதைய முதிர்ச்சி (%)',
+          nameHI: 'वर्तमान परिपक्वता (%)',
+          type: 'range',
+          required: true,
+          min: 0,
+          max: 100,
+          unit: '%'
+        },
+        {
+          id: 'weather_conditions',
+          name: 'Weather Conditions',
+          nameML: 'வானிலை நிலைமைகள்',
+          nameHI: 'मौसम की स्थिति',
+          type: 'select',
+          required: true,
+          placeholder: 'Select weather conditions',
+          placeholderML: 'வானிலை நிலைமைகளை தேர்ந்தெடுக்கவும்',
+          placeholderHI: 'मौसम की स्थिति चुनें',
+          options: ['Clear Sky', 'Partly Cloudy', 'Cloudy', 'Light Rain Expected', 'Heavy Rain Expected']
+        }
+      ]
     }
   ];
 
@@ -460,6 +692,47 @@ const EnhancedAgentsPage: React.FC = () => {
           notesML: 'தற்போதைய மண் ஈரப்பதம் மற்றும் வானிலை முன்னறிவிப்பைக் கருத்தில் கொண்டு உகந்த அட்டவணை।',
           notesHI: 'वर्तमान मिट्टी की नमी और मौसम पूर्वानुमान को ध्यान में रखते हुए इष्टतम कार्यक्रम।'
         } as IrrigationResult;
+      } else if (selectedAgent === 'market_analysis') {
+        mockResults = {
+          type: 'market_analysis',
+          marketPrice: '₹2,850/tonne',
+          priceChange: '+5.2%',
+          recommendation: 'Favorable time to sell',
+          demandForecast: 'High demand expected next week'
+        } as MarketResult;
+      } else if (selectedAgent === 'pest_management') {
+        mockResults = {
+          type: 'pest_management',
+          riskLevel: 'Medium',
+          pestType: 'Brown Plant Hopper',
+          treatment: 'Apply neem-based insecticide during evening hours',
+          preventiveMeasures: [
+            'Maintain proper field hygiene',
+            'Use resistant crop varieties',
+            'Monitor regularly for early detection',
+            'Ensure balanced fertilization'
+          ]
+        } as PestManagementResult;
+      } else if (selectedAgent === 'finance_policy') {
+        mockResults = {
+          type: 'finance_policy',
+          loanEligibility: 'Approved',
+          interestRate: '7.2% p.a.',
+          riskAssessment: 'Low Risk',
+          subsidies: [
+            'PM-KISAN: ₹6,000/year',
+            'Crop Insurance: 50% premium subsidy',
+            'Equipment Subsidy: Up to ₹50,000'
+          ]
+        } as FinancePolicyResult;
+      } else if (selectedAgent === 'harvest_planning') {
+        mockResults = {
+          type: 'harvest_planning',
+          optimalDate: 'March 15-20, 2025',
+          qualityPrediction: 'Premium Grade',
+          marketRecommendation: 'Wait for 2 weeks for better prices',
+          storageAdvice: 'Use proper ventilation and moisture control'
+        } as HarvestPlanningResult;
       } else {
         mockResults = {
           type: 'market_analysis',
@@ -848,6 +1121,105 @@ const EnhancedAgentsPage: React.FC = () => {
                           <div className="mt-4 pt-4 border-t border-purple-200">
                             <p className="text-purple-700 font-medium">{results.recommendation}</p>
                             <p className="text-sm text-purple-600 mt-1">{results.demandForecast}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Pest Management Results */}
+                    {selectedAgent === 'pest_management' && isPestManagementResult(results) && (
+                      <div className="space-y-4">
+                        <div className="bg-orange-50 border-l-4 border-orange-400 rounded-lg p-5 shadow-sm">
+                          <div className="flex items-center mb-3">
+                            <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center mr-3">
+                              <span className="text-white text-sm font-bold">🛡️</span>
+                            </div>
+                            <h3 className="font-bold text-orange-800 text-lg">
+                              {language === 'tamil' ? 'பூச்சி அபாய மதிப்பீடு' : language === 'hindi' ? 'कीट जोखिम आकलन' : 'Pest Risk Assessment'}
+                            </h3>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <p className="text-sm text-orange-600 font-medium">Risk Level</p>
+                              <p className="text-xl font-bold text-orange-800">{results.riskLevel}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-orange-600 font-medium">Pest Type</p>
+                              <p className="text-lg font-semibold text-orange-700">{results.pestType}</p>
+                            </div>
+                          </div>
+                          <div className="mt-4 pt-4 border-t border-orange-200">
+                            <p className="text-orange-700 font-medium mb-2">Treatment: {results.treatment}</p>
+                            <div className="space-y-1">
+                              {results.preventiveMeasures.map((measure, index) => (
+                                <p key={index} className="text-sm text-orange-600">• {measure}</p>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Finance Policy Results */}
+                    {selectedAgent === 'finance_policy' && isFinancePolicyResult(results) && (
+                      <div className="space-y-4">
+                        <div className="bg-blue-50 border-l-4 border-blue-400 rounded-lg p-5 shadow-sm">
+                          <div className="flex items-center mb-3">
+                            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center mr-3">
+                              <span className="text-white text-sm font-bold">💰</span>
+                            </div>
+                            <h3 className="font-bold text-blue-800 text-lg">
+                              {language === 'tamil' ? 'நிதி மதிப்பீடு' : language === 'hindi' ? 'वित्तीय मूल्यांकन' : 'Financial Assessment'}
+                            </h3>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <p className="text-sm text-blue-600 font-medium">Loan Eligibility</p>
+                              <p className="text-xl font-bold text-blue-800">{results.loanEligibility}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-blue-600 font-medium">Interest Rate</p>
+                              <p className="text-lg font-semibold text-blue-700">{results.interestRate}</p>
+                            </div>
+                          </div>
+                          <div className="mt-4 pt-4 border-t border-blue-200">
+                            <p className="text-blue-700 font-medium mb-2">Risk Assessment: {results.riskAssessment}</p>
+                            <div className="space-y-1">
+                              <p className="text-sm text-blue-600 font-medium">Available Subsidies:</p>
+                              {results.subsidies.map((subsidy, index) => (
+                                <p key={index} className="text-sm text-blue-600">• {subsidy}</p>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Harvest Planning Results */}
+                    {selectedAgent === 'harvest_planning' && isHarvestPlanningResult(results) && (
+                      <div className="space-y-4">
+                        <div className="bg-amber-50 border-l-4 border-amber-400 rounded-lg p-5 shadow-sm">
+                          <div className="flex items-center mb-3">
+                            <div className="w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center mr-3">
+                              <span className="text-white text-sm font-bold">⏰</span>
+                            </div>
+                            <h3 className="font-bold text-amber-800 text-lg">
+                              {language === 'tamil' ? 'அறுவடை திட்டம்' : language === 'hindi' ? 'फसल कटाई योजना' : 'Harvest Plan'}
+                            </h3>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <p className="text-sm text-amber-600 font-medium">Optimal Date</p>
+                              <p className="text-xl font-bold text-amber-800">{results.optimalDate}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-amber-600 font-medium">Quality Prediction</p>
+                              <p className="text-lg font-semibold text-amber-700">{results.qualityPrediction}</p>
+                            </div>
+                          </div>
+                          <div className="mt-4 pt-4 border-t border-amber-200">
+                            <p className="text-amber-700 font-medium mb-2">Market Recommendation: {results.marketRecommendation}</p>
+                            <p className="text-sm text-amber-600">Storage Advice: {results.storageAdvice}</p>
                           </div>
                         </div>
                       </div>
