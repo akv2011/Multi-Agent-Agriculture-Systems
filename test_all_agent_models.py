@@ -172,16 +172,16 @@ class AgentModelTester:
             print(f"❌ Irrigation Agent: {str(e)}")
     
     async def test_fertilizer_agent(self):
-        """Test Fertilizer Recommendation Agent"""
-        print("\n🧪 Testing Fertilizer Recommendation Agent...")
+        """Test Input Materials Agent (fertilizer and input recommendations)"""
+        print("\n🧪 Testing Input Materials Agent...")
         try:
-            from src.agents.fertilizer_recommendation_agent import FertilizerRecommendationAgent
+            from src.agents.input_materials_agent import InputMaterialsAgent
             
-            agent = FertilizerRecommendationAgent()
+            agent = InputMaterialsAgent()
             
             query = AgricultureQuery(
-                text="What fertilizer should I use for my rice crop based on soil test?",
-                domain=QueryDomain.FERTILIZER_SOIL_MANAGEMENT,
+                text="What fertilizer and input materials should I use for my rice crop based on soil test?",
+                domain=QueryDomain.INPUT_MATERIALS,
                 location=self.sample_location,
                 farm_profile=self.sample_farm,
                 context={
@@ -198,22 +198,22 @@ class AgentModelTester:
             
             response = await agent.process_query(query)
             
-            self.test_results["fertilizer"] = {
+            self.test_results["input_materials"] = {
                 "status": "✅ PASS",
                 "has_model": True,
                 "response_length": len(response.content),
                 "confidence": response.confidence
             }
-            print(f"✅ Fertilizer Agent: Working (confidence: {response.confidence})")
+            print(f"✅ Input Materials Agent: Working (confidence: {response.confidence})")
             print(f"   Response preview: {response.content[:100]}...")
             
         except Exception as e:
-            self.test_results["fertilizer"] = {
+            self.test_results["input_materials"] = {
                 "status": "❌ FAIL",
                 "error": str(e),
                 "traceback": traceback.format_exc()
             }
-            print(f"❌ Fertilizer Agent: {str(e)}")
+            print(f"❌ Input Materials Agent: {str(e)}")
     
     async def test_market_timing_agent(self):
         """Test Market Timing Agent"""
@@ -343,7 +343,7 @@ class AgentModelTester:
         await self.test_crop_selection_agent()
         await self.test_disease_identification_agent()
         await self.test_irrigation_agent()
-        await self.test_fertilizer_agent()
+        await self.test_fertilizer_agent()  # Tests Input Materials Agent
         await self.test_market_timing_agent()
         await self.test_harvest_planning_agent()
         await self.test_weather_forecast_agent()

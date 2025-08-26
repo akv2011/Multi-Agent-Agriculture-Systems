@@ -121,7 +121,7 @@ const Layout = () => {
           <div className="stat-item">
             <span className="stat-icon">🤖</span>
             <span className="stat-label">Active Agents:</span>
-            <span className="stat-value" style={{color: '#FFD700', fontWeight: '700', fontSize: '1.9rem', textShadow: '0 0 2px rgba(255,215,0,0.8)'}}>5</span>
+            <span className="stat-value" style={{color: '#FFD700', fontWeight: '700', fontSize: '1.9rem', textShadow: '0 0 2px rgba(255,215,0,0.8)'}}>6</span>
           </div>
           <div className="stat-item">
             <span className="stat-icon">⚡</span>
