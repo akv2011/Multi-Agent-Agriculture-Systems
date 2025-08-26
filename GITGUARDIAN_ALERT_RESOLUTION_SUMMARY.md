@@ -42,6 +42,32 @@ These were temporary demo credentials used during development that were accident
 
 ---
 
+## 🔥 LATEST CRITICAL FINDINGS - Additional Security Issues Resolved
+
+### Additional Hardcoded Secrets Found and Fixed
+
+#### Issue 5: Additional Hardcoded API Keys
+Found multiple additional hardcoded Google Gemini API keys in the codebase:
+
+- **`scripts/setup/final_gemini_test.py`** - Key: `AIzaSyACHvqkA6UHMcZwSnhSuB50lhrnJzxOAjg`  
+- **`src/agents/gemini_agriculture_agent_v2.py`** - Key: `AIzaSyACHvqkA6UHMcZwSnhSuB50lhrnJzxOAjg`
+- **`development/archive/tests/test_gemini_working.py`** - Key: `AIzaSyACHvqkA6UHMcZwSnhSuB50lhrnJzxOAjg`
+- **`development/archive/tests/test_multilingual_simple.py`** - Key: `AIzaSyDiBn5VAhysDvK87Qu3mkpHdc2jS7H2t4I`
+
+**Status:** ✅ ALL RESOLVED - Replaced with environment variable loading
+
+#### Issue 6: Frontend Hardcoded Password  
+- **`frontend/src/components/AuthDebug.tsx`** - Displayed `admin:admin123` in UI
+**Status:** ✅ RESOLVED - Removed hardcoded credentials from display
+
+### Critical Action Required: API Key Rotation
+The following API keys were exposed and must be **IMMEDIATELY ROTATED**:
+1. `AIzaSyAzEjb-Ca5NSIPLEqYUWs_I8x3OdmrF0h4` (frontend/.env)
+2. `AIzaSyACHvqkA6UHMcZwSnhSuB50lhrnJzxOAjg` (multiple files)  
+3. `AIzaSyDiBn5VAhysDvK87Qu3mkpHdc2jS7H2t4I` (test file)
+
+---
+
 ## 🔍 Current Security State
 
 ### **Code Security Validation**

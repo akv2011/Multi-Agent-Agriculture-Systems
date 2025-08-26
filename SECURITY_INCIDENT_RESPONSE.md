@@ -196,6 +196,30 @@ For security incidents or questions:
 
 ---
 
+## 🔄 Latest Update - Pull Request #5 Security Issues
+
+### Additional Security Issues Found and Resolved
+
+#### Issue 3: Hardcoded Password in AuthDebug Component  
+- **File:** `frontend/src/components/AuthDebug.tsx`  
+- **Problem:** Component displayed hardcoded demo password `admin123` in UI  
+- **Solution:** Removed hardcoded password, replaced with environment variable instructions  
+- **Status:** ✅ RESOLVED  
+
+#### Issue 4: Exposed Gemini API Key  
+- **File:** `frontend/.env`  
+- **Problem:** Real Google Gemini API key `AIzaSyAzEjb-Ca5NSIPLEqYUWs_I8x3OdmrF0h4` committed to repository  
+- **Solution:** Replaced with placeholder, enhanced .env.example with security guidelines  
+- **Status:** ✅ RESOLVED  
+- **Action Required:** Rotate/revoke the exposed API key  
+
+### Files Modified in This Update
+- ✅ `frontend/src/components/AuthDebug.tsx` - Removed hardcoded credentials display
+- ✅ `frontend/.env` - Sanitized API key with placeholder  
+- ✅ `frontend/.env.example` - Enhanced security documentation
+
+---
+
 **Resolution Status:** ✅ **INCIDENT RESOLVED**  
 **Security Level:** 🛡️ **SECURE**  
 **Next Review:** 3 months from resolution date

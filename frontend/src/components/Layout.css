@@ -11,7 +11,7 @@
 
 /* Sidebar styling */
 .sidebar {
-  width: var(--sidebar-width, 260px);
+  width: 300px;
   background-color: var(--sidebar-bg, #2F3B4B);
   color: var(--text-light, #FFFFFF);
   padding: 1.5rem 1rem;
@@ -126,89 +126,136 @@
 .system-stats {
   margin-top: auto;
   padding-top: 1.5rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.05));
+  border-radius: 12px;
+  padding: 1.5rem 1rem;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(165deg, #0e1216 0%, #141b22 40%, #1d2731 100%) !important;
+  box-shadow: 0 4px 18px -4px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04) inset;
 }
+
+/* === Revert overly dark backgrounds; keep number styling === */
+.system-stats {
+  background: transparent !important; /* remove solid black gradient */
+  box-shadow: none !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+}
+
+.system-stats .stat-item {
+  background: rgba(255,255,255,0.03) !important; /* subtle */
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  box-shadow: none !important;
+}
+.system-stats .stat-item:hover {
+  background: rgba(255,255,255,0.08) !important;
+  border-color: rgba(255,255,255,0.15) !important;
+}
+/* Optional: hide labels/icons if you truly want ONLY numbers visible - comment out if not desired */
+/*
+.system-stats .stat-label, .system-stats .stat-icon { display: none !important; }
+.system-stats .stat-item { justify-content: flex-end; }
+*/
+/* === End revert === */
 
 .stat-item {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   margin-bottom: 0.75rem;
-  font-size: 0.8rem;
-  padding: 0.5rem;
-  border-radius: 6px;
+  font-size: 0.85rem;
+  padding: 1rem 0.75rem;
+  border-radius: 8px;
   transition: all 0.2s ease;
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(145deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01)) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  box-shadow: 0 2px 6px -2px rgba(0,0,0,0.8), 0 0 0 1px rgba(0,0,0,0.6) inset;
+  backdrop-filter: blur(4px);
 }
 
 .stat-item:hover {
-  background-color: rgba(255, 255, 255, 0.05);
+  background: linear-gradient(145deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02)) !important;
+  border-color: rgba(255,255,255,0.14) !important;
+  box-shadow: 0 4px 10px -2px rgba(0,0,0,0.85), 0 0 0 1px rgba(0,0,0,0.7) inset;
 }
 
 .stat-icon {
-  margin-right: 0.5rem;
+  margin-right: 0.75rem;
   opacity: 0.9;
   font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  color: #D4AF37;
+}
+
+.stat-icon svg {
+  width: 16px;
+  height: 16px;
+  color: #D4AF37;
+  filter: none;
 }
 
 .stat-label {
-  flex: 1;
-  opacity: 0.9;
-  color: #E2E8F0;
+  flex: none;
+  opacity: 1;
+  color: #F8FAFC;
+  font-weight: 500;
+  font-size: 0.85rem;
+  letter-spacing: 0.2px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
+/* Base stat-value styles */
 .stat-value {
-  font-weight: 600 !important;
-  color: #DFBA47 !important;
+  font-weight: 900 !important;
   background: none !important;
   padding: 0;
-  min-width: 1.5rem;
-  text-align: left;
-  font-size: 0.9rem !important;
+  min-width: 2rem;
+  text-align: right;
+  font-size: 1.5rem !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8) !important;
+  filter: none !important;
+  letter-spacing: 1px;
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  font-feature-settings: 'tnum' 1;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  text-decoration: none !important;
+  border: none !important;
+  outline: none !important;
+  opacity: 1 !important;
 }
 
-.stat-value.connected {
-  color: #10b981 !important;
-  background: none !important;
-  font-weight: 700 !important;
+/* High contrast color palette */
+:root {
+  --stat-number-yellow: #FFD700; /* bright gold yellow */
+  --stat-ready-green: #16C172; /* vivid green */
 }
 
-.stat-value.disconnected {
-  color: #ef4444 !important;
-  background: none !important;
-  font-weight: 700 !important;
+/* Override specific colors for each stat to uniform yellow per request */
+.stat-active-workflows,
+.stat-total-workflows,
+.stat-connected-clients,
+.stat-active-agents {
+  color: var(--stat-number-yellow) !important;
+  text-shadow: 0 0 3px rgba(0,0,0,0.9), 0 0 6px rgba(0,0,0,0.6) !important;
 }
 
-/* Additional specificity for sidebar stat values to ensure they override any global styles */
-.sidebar .stat-value {
-  color: #DFBA47 !important;
-  font-weight: 600 !important;
-  font-size: 0.9rem !important;
+/* System status Ready high contrast green */
+.stat-system-status.connected {
+  color: var(--stat-ready-green) !important;
+  text-shadow: 0 0 3px rgba(0,0,0,0.85), 0 0 6px rgba(0,0,0,0.55) !important;
+  font-weight: 900 !important;
+  letter-spacing: 1px;
 }
 
-.sidebar .stat-value.connected {
-  color: #10b981 !important;
-  font-weight: 700 !important;
-}
-
-.sidebar .stat-value.disconnected {
-  color: #ef4444 !important;
-  font-weight: 700 !important;
-}
-
-/* Even more specific targeting */
-.dashboard .sidebar .system-stats .stat-item .stat-value {
-  color: #DFBA47 !important;
-  font-weight: 600 !important;
-}
-
-.dashboard .sidebar .system-stats .stat-item .stat-value.connected {
-  color: #10b981 !important;
-  font-weight: 700 !important;
-}
-
-.dashboard .sidebar .system-stats .stat-item .stat-value.disconnected {
-  color: #ef4444 !important;
-  font-weight: 700 !important;
-}
+/* Remove old conflicting color rules */
 
 /* Connected users section */
 .connected-users {
@@ -323,6 +370,94 @@
   flex-direction: column;
   overflow-x: hidden;
   overflow-y: auto;
+}
+
+/* Professional Stat Card Refinement (Overrides) */
+.system-stats {
+  background: transparent !important;
+  padding: 0.75rem 0.5rem !important;
+  border: none !important;
+}
+
+.system-stats .stat-item {
+  background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02)) !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+  border-radius: 14px !important;
+  backdrop-filter: blur(6px);
+  padding: 0.9rem 1rem !important;
+  margin-bottom: 1rem !important;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 2px 4px -1px rgba(0,0,0,0.4), 0 4px 10px -2px rgba(0,0,0,0.35);
+  transition: border-color .25s, transform .25s, box-shadow .25s;
+}
+.system-stats .stat-item:last-child { margin-bottom: 0 !important; }
+.system-stats .stat-item:hover {
+  border-color: rgba(255,255,255,0.22) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px -4px rgba(0,0,0,0.5), 0 2px 4px -1px rgba(0,0,0,0.55);
+}
+
+.system-stats .stat-icon {
+  width: 26px !important;
+  height: 26px !important;
+  border-radius: 8px;
+  background: rgba(255,214,10,0.08);
+  border: 1px solid rgba(255,214,10,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 0.75rem !important;
+  color: #FFD60A !important;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.4) inset;
+}
+.system-stats .stat-icon svg { color: #FFD60A !important; opacity: 0.95; }
+
+.system-stats .stat-label {
+  font-size: 0.78rem !important;
+  line-height: 1.05rem;
+  font-weight: 600 !important;
+  letter-spacing: .4px;
+  color: #E6EBF1 !important;
+  opacity: 0.9 !important;
+  text-shadow: none !important;
+}
+
+/* Reset any gradient / clip styles from earlier */
+.sidebar .stat-active-workflows,
+.sidebar .stat-total-workflows,
+.sidebar .stat-connected-clients,
+.sidebar .stat-active-agents,
+.sidebar .stat-system-status.connected,
+.sidebar .stat-system-status.disconnected {
+  background: none !important;
+  -webkit-background-clip: border-box !important;
+  background-clip: border-box !important;
+  -webkit-text-fill-color: initial !important;
+}
+
+/* Unified number styling */
+.system-stats .stat-value {
+  margin-left: auto !important;
+  font-size: 1.55rem !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+  letter-spacing: 0.5px !important;
+  font-variant-numeric: tabular-nums;
+  color: #FFD60A !important; /* Bright yellow */
+  text-shadow: 0 1px 2px rgba(0,0,0,0.6), 0 2px 4px rgba(0,0,0,0.35) !important;
+  filter: none !important;
+  opacity: 1 !important;
+}
+
+/* Specific status colors */
+.system-stats .stat-system-status.connected { color: #21C55D !important; text-shadow: 0 1px 2px rgba(0,0,0,.55), 0 0 6px rgba(33,197,93,.35) !important; }
+.system-stats .stat-system-status.disconnected { color: #F44336 !important; }
+
+/* Improve focus accessibility */
+.system-stats .stat-item:focus-within {
+  outline: 2px solid #FFD60A;
+  outline-offset: 2px;
 }
 
 /* Responsive design */

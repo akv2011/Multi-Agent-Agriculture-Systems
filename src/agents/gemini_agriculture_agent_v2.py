@@ -12,7 +12,9 @@ import json
 import re
 
 # Set API key from environment or direct assignment
-GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY', 'AIzaSyACHvqkA6UHMcZwSnhSuB50lhrnJzxOAjg')
+GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY') or os.getenv('GEMINI_API_KEY')
+if not GOOGLE_API_KEY:
+    raise ValueError("GOOGLE_API_KEY or GEMINI_API_KEY environment variable must be set")
 os.environ['GOOGLE_API_KEY'] = GOOGLE_API_KEY
 
 # Gemini AI imports
