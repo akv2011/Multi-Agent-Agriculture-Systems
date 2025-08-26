@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { 
-  Sprout, 
   Droplets, 
-  Bug, 
   TrendingUp,
   Camera,
   Database,
@@ -29,6 +27,7 @@ type AgentId = 'disease_identification' | 'crop_recommendation' | 'irrigation_sc
 interface RecommendedCropResult {
   name: string;
   nameML: string;
+  nameHI: string;
   suitability: number;
   expectedYield: string;
 }
@@ -44,10 +43,12 @@ interface DiseaseResult {
   type: 'disease_identification';
   disease: string;
   diseaseML: string;
+  diseaseHI: string;
   confidence: number;
   severity: string;
   treatment: string;
   treatmentML: string;
+  treatmentHI: string;
 }
 
 interface CropRecommendationResult {
@@ -55,6 +56,7 @@ interface CropRecommendationResult {
   recommendedCrops: RecommendedCropResult[];
   reason: string;
   reasonML: string;
+  reasonHI: string;
 }
 
 interface IrrigationResult {
@@ -64,6 +66,7 @@ interface IrrigationResult {
   efficiency: string;
   notes: string;
   notesML: string;
+  notesHI: string;
 }
 
 interface MarketResult {
@@ -86,8 +89,10 @@ interface AgentConfig {
   id: AgentId; // tightened type
   name: string;
   nameML: string;
+  nameHI: string;
   description: string;
   descriptionML: string;
+  descriptionHI: string;
   icon: React.ReactNode;
   color: string;
   category: string;
@@ -96,10 +101,12 @@ interface AgentConfig {
     id: string;
     name: string;
     nameML: string;
+    nameHI: string;
     type: string;
     required: boolean;
     placeholder?: string;
     placeholderML?: string;
+    placeholderHI?: string;
     options?: string[];
     min?: number;
     max?: number;
@@ -113,15 +120,17 @@ const EnhancedAgentsPage: React.FC = () => {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState<AgentResults>(null);
-  const [language, setLanguage] = useState<'english' | 'tamil'>('english');
+  const [language, setLanguage] = useState<'english' | 'tamil' | 'hindi'>('english');
 
   const agentConfigs: AgentConfig[] = [
     {
       id: 'disease_identification',
       name: 'Plant Disease Detection',
       nameML: 'தாவர நோய் கண்டறிதல்',
+      nameHI: 'पौधे की बीमारी की पहचान',
       description: 'Advanced AI-powered plant disease identification with precise treatment recommendations',
       descriptionML: 'துல்லியமான சிகிச்சை பரிந்துரைகளுடன் மேம்பட்ட AI-சக்தி தாவர நோய் கண்டறிதல்',
+      descriptionHI: 'सटीक उपचार सिफारिशों के साथ उन्नत AI-संचालित पौधे की बीमारी की पहचान',
       icon: <div className="relative">
         <Microscope className="w-8 h-8" />
         <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-400 rounded-full animate-pulse"></div>
@@ -135,19 +144,23 @@ const EnhancedAgentsPage: React.FC = () => {
           id: 'plant_image',
           name: 'Plant Image',
           nameML: 'தாவர படம்',
+          nameHI: 'पौधे की छवि',
           type: 'file',
           required: true,
           placeholder: 'Upload a clear image of the affected plant',
-          placeholderML: 'பாதிக்கப்பட்ட தாவரத்தின் தெளிவான படத்தை பதிவேற்றவும்'
+          placeholderML: 'பாதிக்கப்பட்ட தாவரத்தின் தெளிவான படத்தை பதிவேற்றவும்',
+          placeholderHI: 'प्रभावित पौधे की स्पष्ट छवि अपलोड करें'
         },
         {
           id: 'plant_type',
           name: 'Plant Type',
           nameML: 'தாவர வகை',
+          nameHI: 'पौधे का प्रकार',
           type: 'select',
           required: true,
           placeholder: 'Select plant type',
           placeholderML: 'தாவர வகையை தேர்ந்தெடுக்கவும்',
+          placeholderHI: 'पौधे का प्रकार चुनें',
           options: ['Rice', 'Wheat', 'Tomato', 'Potato', 'Corn', 'Cotton', 'Sugarcane']
         }
       ]
@@ -156,8 +169,10 @@ const EnhancedAgentsPage: React.FC = () => {
       id: 'crop_recommendation',
       name: 'Smart Crop Recommendation',
       nameML: 'ஸ்மார்ட் பயிர் பரிந்துரை',
+      nameHI: 'स्मार्ट फसल सिफारिश',
       description: 'AI-driven optimal crop selection based on soil composition and environmental factors',
       descriptionML: 'மண் கலவை மற்றும் சுற்றுச்சூழல் காரணிகளின் அடிப்படையில் AI-உந்துதல் உகந்த பயிர் தேர்வு',
+      descriptionHI: 'मिट्टी की संरचना और पर्यावरणीय कारकों के आधार पर AI-संचालित इष्टतम फसल चयन',
       icon: <div className="relative">
         <Leaf className="w-8 h-8" />
         <Sparkles className="w-4 h-4 absolute -top-1 -right-1 text-yellow-300 animate-bounce" />
@@ -171,10 +186,12 @@ const EnhancedAgentsPage: React.FC = () => {
           id: 'nitrogen',
           name: 'Nitrogen Content',
           nameML: 'நைட்ரஜன் உள்ளடக்கம்',
+          nameHI: 'नाइट्रोजन सामग्री',
           type: 'number',
           required: true,
           placeholder: 'Enter nitrogen level (mg/kg)',
           placeholderML: 'நைட்ரஜன் அளவை உள்ளிடவும் (mg/kg)',
+          placeholderHI: 'नाइट्रोजन स्तर दर्ज करें (mg/kg)',
           min: 0,
           max: 300,
           unit: 'mg/kg'
@@ -183,10 +200,12 @@ const EnhancedAgentsPage: React.FC = () => {
           id: 'phosphorus',
           name: 'Phosphorus Content',
           nameML: 'பாஸ்பரஸ் உள்ளடக்கம்',
+          nameHI: 'फास्फोरस सामग्री',
           type: 'number',
           required: true,
           placeholder: 'Enter phosphorus level (mg/kg)',
           placeholderML: 'பாஸ்பரஸ் அளவை உள்ளிடவும் (mg/kg)',
+          placeholderHI: 'फास्फोरस स्तर दर्ज करें (mg/kg)',
           min: 0,
           max: 200,
           unit: 'mg/kg'
@@ -195,10 +214,12 @@ const EnhancedAgentsPage: React.FC = () => {
           id: 'potassium',
           name: 'Potassium Content',
           nameML: 'பொட்டாசியம் உள்ளடக்கம்',
+          nameHI: 'पोटेशियम सामग्री',
           type: 'number',
           required: true,
           placeholder: 'Enter potassium level (mg/kg)',
           placeholderML: 'பொட்டாசியம் அளவை உள்ளிடவும் (mg/kg)',
+          placeholderHI: 'पोटेशियम स्तर दर्ज करें (mg/kg)',
           min: 0,
           max: 400,
           unit: 'mg/kg'
@@ -207,6 +228,7 @@ const EnhancedAgentsPage: React.FC = () => {
           id: 'ph',
           name: 'Soil pH',
           nameML: 'மண் pH',
+          nameHI: 'मिट्टी pH',
           type: 'range',
           required: true,
           min: 3.5,
@@ -217,10 +239,12 @@ const EnhancedAgentsPage: React.FC = () => {
           id: 'rainfall',
           name: 'Annual Rainfall',
           nameML: 'வருடாந்த மழைப்பொழிவு',
+          nameHI: 'वार्षिक वर्षा',
           type: 'number',
           required: true,
           placeholder: 'Enter annual rainfall (mm)',
           placeholderML: 'வருடாந்த மழைப்பொழிவை உள்ளிடவும் (mm)',
+          placeholderHI: 'वार्षिक वर्षा दर्ज करें (mm)',
           min: 0,
           max: 3000,
           unit: 'mm'
@@ -229,10 +253,12 @@ const EnhancedAgentsPage: React.FC = () => {
           id: 'temperature',
           name: 'Average Temperature',
           nameML: 'சராசரி வெப்பநிலை',
+          nameHI: 'औसत तापमान',
           type: 'number',
           required: true,
           placeholder: 'Enter average temperature (°C)',
           placeholderML: 'சராசரி வெப்பநிலையை உள்ளிடவும் (°C)',
+          placeholderHI: 'औसत तापमान दर्ज करें (°C)',
           min: -10,
           max: 50,
           unit: '°C'
@@ -243,8 +269,10 @@ const EnhancedAgentsPage: React.FC = () => {
       id: 'irrigation_scheduling',
       name: 'Intelligent Irrigation',
       nameML: 'அறிவுள்ள நீர்ப்பாசனம்',
+      nameHI: 'बुद्धिमान सिंचाई',
       description: 'Water-efficient irrigation scheduling with weather prediction and soil analysis',
       descriptionML: 'வானிலை முன்னறிவிப்பு மற்றும் மண் பகுப்பாய்வுடன் நீர்-திறமையான நீர்ப்பாசன திட்டமிடல்',
+      descriptionHI: 'मौसम पूर्वानुमान और मिट्टी विश्लेषण के साथ जल-कुशल सिंचाई निर्धारण',
       icon: <div className="relative">
         <Droplets className="w-8 h-8" />
         <Brain className="w-4 h-4 absolute -bottom-1 -right-1 text-blue-300 animate-pulse" />
@@ -258,20 +286,24 @@ const EnhancedAgentsPage: React.FC = () => {
           id: 'crop_type',
           name: 'Crop Type',
           nameML: 'பயிர் வகை',
+          nameHI: 'फसल का प्रकार',
           type: 'select',
           required: true,
           placeholder: 'Select crop type',
           placeholderML: 'பயிர் வகையை தேர்ந்தெடுக்கவும்',
+          placeholderHI: 'फसल का प्रकार चुनें',
           options: ['Rice', 'Wheat', 'Corn', 'Tomato', 'Cotton', 'Sugarcane']
         },
         {
           id: 'field_size',
           name: 'Field Size',
           nameML: 'வயல் அளவு',
+          nameHI: 'खेत का आकार',
           type: 'number',
           required: true,
           placeholder: 'Enter field size (hectares)',
           placeholderML: 'வயல் அளவை உள்ளிடவும் (ஹெக்டேர்)',
+          placeholderHI: 'खेत का आकार दर्ज करें (हेक्टेयर)',
           min: 0.1,
           max: 1000,
           unit: 'hectares'
@@ -280,6 +312,7 @@ const EnhancedAgentsPage: React.FC = () => {
           id: 'soil_moisture',
           name: 'Current Soil Moisture',
           nameML: 'தற்போதைய மண் ஈரப்பதம்',
+          nameHI: 'वर्तमान मिट्टी की नमी',
           type: 'range',
           required: true,
           min: 0,
@@ -290,6 +323,7 @@ const EnhancedAgentsPage: React.FC = () => {
           id: 'weather_forecast',
           name: 'Rain Probability (7 days)',
           nameML: 'மழை நிகழ்தகவு (7 நாட்கள்)',
+          nameHI: 'बारिश की संभावना (7 दिन)',
           type: 'range',
           required: true,
           min: 0,
@@ -302,8 +336,10 @@ const EnhancedAgentsPage: React.FC = () => {
       id: 'market_analysis',
       name: 'Market Intelligence',
       nameML: 'சந்தை புத்திசாலித்தனம்',
+      nameHI: 'बाजार बुद्धिमत्ता',
       description: 'Real-time market analysis with price predictions and demand forecasting',
       descriptionML: 'விலை முன்னறிவிப்புகள் மற்றும் தேவை முன்னறிவிப்புடன் நிகழ்நேர சந்தை பகுப்பாய்வு',
+      descriptionHI: 'मूल्य भविष्यवाणियों और मांग पूर्वानुमान के साथ वास्तविक समय बाजार विश्लेषण',
       icon: <div className="relative">
         <BarChart3 className="w-8 h-8" />
         <Target className="w-4 h-4 absolute -top-1 -right-1 text-purple-300 animate-bounce" />
@@ -317,20 +353,24 @@ const EnhancedAgentsPage: React.FC = () => {
           id: 'crop_name',
           name: 'Crop Name',
           nameML: 'பயிர் பெயர்',
+          nameHI: 'फसल का नाम',
           type: 'select',
           required: true,
           placeholder: 'Select crop for analysis',
           placeholderML: 'பகுப்பாய்வுக்கு பயிரை தேர்ந்தெடுக்கவும்',
+          placeholderHI: 'विश्लेषण के लिए फसल चुनें',
           options: ['Rice', 'Wheat', 'Tomato', 'Onion', 'Potato', 'Cotton', 'Sugarcane']
         },
         {
           id: 'quantity',
           name: 'Expected Quantity',
           nameML: 'எதிர்பார்க்கப்படும் அளவு',
+          nameHI: 'अपेक्षित मात्रा',
           type: 'number',
           required: true,
           placeholder: 'Enter quantity (tonnes)',
           placeholderML: 'அளவை உள்ளிடவும் (டன்கள்)',
+          placeholderHI: 'मात्रा दर्ज करें (टन)',
           min: 0.1,
           max: 10000,
           unit: 'tonnes'
@@ -339,10 +379,12 @@ const EnhancedAgentsPage: React.FC = () => {
           id: 'location',
           name: 'Market Location',
           nameML: 'சந்தை இடம்',
+          nameHI: 'बाजार स्थान',
           type: 'select',
           required: true,
           placeholder: 'Select market location',
           placeholderML: 'சந்தை இடத்தை தேர்ந்தெடுக்கவும்',
+          placeholderHI: 'बाजार स्थान चुनें',
           options: ['Chennai', 'Coimbatore', 'Madurai', 'Trichy', 'Salem', 'Tirunelveli']
         }
       ]
@@ -385,21 +427,24 @@ const EnhancedAgentsPage: React.FC = () => {
           type: 'disease_identification',
           disease: 'Late Blight',
           diseaseML: 'தாமத கருகல்',
+          diseaseHI: 'देर से झुलसा रोग',
           confidence: 0.87,
           severity: 'Moderate',
           treatment: 'Apply copper-based fungicide. Remove affected leaves. Ensure good air circulation.',
-          treatmentML: 'தாமிர அடிப்படையிலான பூஞ்சைக் கொல்லியை பயன்படுத்தவும். பாதிக்கப்பட்ட இலைகளை அகற்றவும். நல்ல காற்று சுழற்சியை உறுதி செய்யவும்।'
+          treatmentML: 'தாமிர அடிப்படையிலான பூஞ்சைக் கொல்லியை பயன்படுத்தவும். பாதிக்கப்பட்ட இலைகளை அகற்றவும். நல்ல காற்று சுழற்சியை உறுதி செய்யவும்।',
+          treatmentHI: 'कॉपर-आधारित फंगिसाइड लगाएं। प्रभावित पत्तियों को हटाएं। अच्छा हवा संचार सुनिश्चित करें।'
         } as DiseaseResult;
       } else if (selectedAgent === 'crop_recommendation') {
         mockResults = {
           type: 'crop_recommendation',
           recommendedCrops: [
-            { name: 'Rice', nameML: 'அரிசி', suitability: 0.92, expectedYield: '4.5 tonnes/hectare' },
-            { name: 'Sugarcane', nameML: 'கரும்பு', suitability: 0.85, expectedYield: '85 tonnes/hectare' },
-            { name: 'Cotton', nameML: 'பருத்தி', suitability: 0.78, expectedYield: '2.8 tonnes/hectare' }
+            { name: 'Rice', nameML: 'அரிசி', nameHI: 'चावल', suitability: 0.92, expectedYield: '4.5 tonnes/hectare' },
+            { name: 'Sugarcane', nameML: 'கரும்பு', nameHI: 'गन्ना', suitability: 0.85, expectedYield: '85 tonnes/hectare' },
+            { name: 'Cotton', nameML: 'பருத்தி', nameHI: 'कपास', suitability: 0.78, expectedYield: '2.8 tonnes/hectare' }
           ],
           reason: 'Based on soil nutrient levels and climate conditions, rice shows highest compatibility.',
-          reasonML: 'மண் ஊட்டச்சத்து நிலைகள் மற்றும் காலநிலை நிலைமைகளின் அடிப்படையில், அரிசி அதிக இணக்கத்தை காட்டுகிறது।'
+          reasonML: 'மண் ஊட்டச்சத்து நிலைகள் மற்றும் காலநிலை நிலைமைகளின் அடிப்படையில், அரிசி அதிக இணக்கத்தை காட்டுகிறது।',
+          reasonHI: 'मिट्टी के पोषक तत्व स्तर और जलवायु परिस्थितियों के आधार पर, चावल सबसे अधिक संगतता दिखाता है।'
         } as CropRecommendationResult;
       } else if (selectedAgent === 'irrigation_scheduling') {
         mockResults = {
@@ -412,7 +457,8 @@ const EnhancedAgentsPage: React.FC = () => {
           weeklyTotal: '6.8L/m²',
           efficiency: '92%',
           notes: 'Optimal schedule considering current soil moisture and weather forecast.',
-          notesML: 'தற்போதைய மண் ஈரப்பதம் மற்றும் வானிலை முன்னறிவிப்பைக் கருத்தில் கொண்டு உகந்த அட்டவணை।'
+          notesML: 'தற்போதைய மண் ஈரப்பதம் மற்றும் வானிலை முன்னறிவிப்பைக் கருத்தில் கொண்டு உகந்த அட்டவணை।',
+          notesHI: 'वर्तमान मिट्टी की नमी और मौसम पूर्वानुमान को ध्यान में रखते हुए इष्टतम कार्यक्रम।'
         } as IrrigationResult;
       } else {
         mockResults = {
@@ -451,20 +497,21 @@ const EnhancedAgentsPage: React.FC = () => {
               >
                 <ArrowLeft className="w-5 h-5 mr-2" />
                 <span className="font-medium">
-                  {language === 'tamil' ? 'பின்செல்' : 'Back to Agents'}
+                  {language === 'tamil' ? 'பின்செல்' : language === 'hindi' ? 'एजेंटों पर वापस जाएं' : 'Back to Agents'}
                 </span>
               </button>
               <div className="flex items-center space-x-4">
                 <label className="text-sm font-medium text-gray-700">
-                  {language === 'tamil' ? 'மொழி:' : 'Language:'}
+                  {language === 'tamil' ? 'மொழி:' : language === 'hindi' ? 'भाषा:' : 'Language:'}
                 </label>
                 <select
                   value={language}
-                  onChange={(e) => setLanguage(e.target.value as 'english' | 'tamil')}
+                  onChange={(e) => setLanguage(e.target.value as 'english' | 'tamil' | 'hindi')}
                   className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm"
                 >
                   <option value="english">English</option>
                   <option value="tamil">தமிழ்</option>
+                  <option value="hindi">हिंदी</option>
                 </select>
               </div>
             </div>
@@ -475,10 +522,10 @@ const EnhancedAgentsPage: React.FC = () => {
               </div>
               <div className="flex-1">
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                  {language === 'tamil' ? selectedAgentConfig.nameML : selectedAgentConfig.name}
+                  {language === 'tamil' ? selectedAgentConfig.nameML : language === 'hindi' ? selectedAgentConfig.nameHI : selectedAgentConfig.name}
                 </h1>
                 <p className="text-gray-600 text-lg leading-relaxed">
-                  {language === 'tamil' ? selectedAgentConfig.descriptionML : selectedAgentConfig.description}
+                  {language === 'tamil' ? selectedAgentConfig.descriptionML : language === 'hindi' ? selectedAgentConfig.descriptionHI : selectedAgentConfig.description}
                 </p>
                 <div className="mt-3 flex items-center space-x-4">
                   <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
@@ -486,7 +533,7 @@ const EnhancedAgentsPage: React.FC = () => {
                   </span>
                   <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
                     <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                    {language === 'tamil' ? 'செயலில்' : 'Active'}
+                    {language === 'tamil' ? 'செயலில்' : language === 'hindi' ? 'सक्रिय' : 'Active'}
                   </span>
                 </div>
               </div>
@@ -499,10 +546,10 @@ const EnhancedAgentsPage: React.FC = () => {
               <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6">
                 <h2 className="text-xl font-bold text-white flex items-center">
                   <Database className="w-6 h-6 mr-3" />
-                  {language === 'tamil' ? 'உள்ளீடு அளவுருக்கள்' : 'Input Parameters'}
+                  {language === 'tamil' ? 'உள்ளீடு அளவுருக்கள்' : language === 'hindi' ? 'इनपुट पैरामीटर' : 'Input Parameters'}
                 </h2>
                 <p className="text-blue-100 mt-2">
-                  {language === 'tamil' ? 'தேவையான தகவல்களை நிரப்பவும்' : 'Fill in the required information'}
+                  {language === 'tamil' ? 'தேவையான தகவல்களை நிரப்பவும்' : language === 'hindi' ? 'आवश्यक जानकारी भरें' : 'Fill in the required information'}
                 </p>
               </div>
 
@@ -510,7 +557,7 @@ const EnhancedAgentsPage: React.FC = () => {
                 {selectedAgentConfig.parameters.map((param) => (
                   <div key={param.id} className="space-y-3">
                     <label className="block text-sm font-semibold text-gray-800">
-                      {language === 'tamil' ? param.nameML : param.name}
+                      {language === 'tamil' ? param.nameML : language === 'hindi' ? param.nameHI : param.name}
                       {param.required && <span className="text-red-500 ml-1">*</span>}
                       {param.unit && <span className="text-gray-500 ml-2 font-normal">({param.unit})</span>}
                     </label>
@@ -524,7 +571,7 @@ const EnhancedAgentsPage: React.FC = () => {
                               onClick={() => setUploadedImage(null)}
                               className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200"
                             >
-                              {language === 'tamil' ? 'அகற்று' : 'Remove'}
+                              {language === 'tamil' ? 'அகற்று' : language === 'hindi' ? 'हटाएं' : 'Remove'}
                             </button>
                           </div>
                         ) : (
@@ -532,7 +579,7 @@ const EnhancedAgentsPage: React.FC = () => {
                             <Camera className="w-12 h-12 mx-auto text-gray-400 mb-4" />
                             <label htmlFor={`upload-${param.id}`} className="cursor-pointer">
                               <span className="text-gray-600 hover:text-blue-600 transition-colors duration-200 font-medium">
-                                {language === 'tamil' ? param.placeholderML : param.placeholder}
+                                {language === 'tamil' ? param.placeholderML : language === 'hindi' ? param.placeholderHI : param.placeholder}
                               </span>
                               <input
                                 id={`upload-${param.id}`}
@@ -543,7 +590,7 @@ const EnhancedAgentsPage: React.FC = () => {
                               />
                             </label>
                             <p className="text-xs text-gray-500 mt-2">
-                              {language === 'tamil' ? 'JPG, PNG, WebP வரை 10MB' : 'JPG, PNG, WebP up to 10MB'}
+                              {language === 'tamil' ? 'JPG, PNG, WebP வரை 10MB' : language === 'hindi' ? 'JPG, PNG, WebP 10MB तक' : 'JPG, PNG, WebP up to 10MB'}
                             </p>
                           </div>
                         )}
@@ -555,7 +602,7 @@ const EnhancedAgentsPage: React.FC = () => {
                         className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm hover:border-gray-400 transition-colors duration-200"
                       >
                         <option value="" className="text-gray-500">
-                          {language === 'tamil' ? param.placeholderML : param.placeholder}
+                          {language === 'tamil' ? param.placeholderML : language === 'hindi' ? param.placeholderHI : param.placeholder}
                         </option>
                         {param.options?.map((option) => (
                           <option key={option} value={option} className="text-gray-900">{option}</option>
@@ -585,7 +632,7 @@ const EnhancedAgentsPage: React.FC = () => {
                         type={param.type}
                         value={formData[param.id] || ''}
                         onChange={(e) => handleParameterChange(param.id, param.type === 'number' ? parseFloat(e.target.value) : e.target.value)}
-                        placeholder={language === 'tamil' ? param.placeholderML : param.placeholder}
+                        placeholder={language === 'tamil' ? param.placeholderML : language === 'hindi' ? param.placeholderHI : param.placeholder}
                         min={param.min}
                         max={param.max}
                         className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm hover:border-gray-400 transition-colors duration-200 placeholder-gray-400"
@@ -605,12 +652,12 @@ const EnhancedAgentsPage: React.FC = () => {
                     {isLoading ? (
                       <>
                         <Loader2 className="w-6 h-6 animate-spin" />
-                        <span>{language === 'tamil' ? 'செயலாக்கம்...' : 'Processing...'}</span>
+                        <span>{language === 'tamil' ? 'செயலாக்கம்...' : language === 'hindi' ? 'प्रसंस्करण...' : 'Processing...'}</span>
                       </>
                     ) : (
                       <>
                         <Zap className="w-6 h-6" />
-                        <span>{language === 'tamil' ? 'முன்னறிவிப்பு' : 'Predict'}</span>
+                        <span>{language === 'tamil' ? 'முன்னறிவிp்பு' : language === 'hindi' ? 'पूर्वानुमान' : 'Predict'}</span>
                       </>
                     )}
                   </button>
@@ -618,7 +665,7 @@ const EnhancedAgentsPage: React.FC = () => {
                     onClick={resetForm}
                     className="px-6 py-3 border-2 border-gray-300 rounded-xl hover:bg-gray-50 transition-colors duration-200 font-medium text-gray-700 hover:border-gray-400"
                   >
-                    {language === 'tamil' ? 'மீட்டமை' : 'Reset'}
+                    {language === 'tamil' ? 'மீட்டமை' : language === 'hindi' ? 'रीसेट' : 'Reset'}
                   </button>
                 </div>
               </div>
@@ -629,10 +676,10 @@ const EnhancedAgentsPage: React.FC = () => {
               <div className="bg-gradient-to-r from-green-600 to-blue-600 p-6">
                 <h2 className="text-xl font-bold text-white flex items-center">
                   <Activity className="w-6 h-6 mr-3" />
-                  {language === 'tamil' ? 'முடிவுகள்' : 'Results'}
+                  {language === 'tamil' ? 'முடிவுகள்' : language === 'hindi' ? 'परिणाम' : 'Results'}
                 </h2>
                 <p className="text-green-100 mt-2">
-                  {language === 'tamil' ? 'AI பகுப்பாய்வு முடிவுகள்' : 'AI Analysis Results'}
+                  {language === 'tamil' ? 'AI பகுப्பாய्বு முடிवுகळ्' : language === 'hindi' ? 'AI विश्लेषण परिणाम' : 'AI Analysis Results'}
                 </p>
               </div>
 
@@ -641,10 +688,10 @@ const EnhancedAgentsPage: React.FC = () => {
                   <div className="text-center py-12 text-gray-500">
                     <Bot className="w-16 h-16 mx-auto mb-4 text-gray-300" />
                     <h3 className="text-lg font-semibold text-gray-700 mb-2">
-                      {language === 'tamil' ? 'முடிவுகளுக்காக காத்திருக்கிறது' : 'Waiting for Results'}
+                      {language === 'tamil' ? 'முடிவுகळ्ுக்காக காத्थிருக்கிரदு' : language === 'hindi' ? 'परिणामों की प्रतीक्षा में' : 'Waiting for Results'}
                     </h3>
                     <p className="text-gray-500">
-                      {language === 'tamil' ? 'முடிவுகளைப் பெற முன்னறிவிப்பு பொத்தானை அழுத்தவும்' : 'Click Predict to see AI-powered results'}
+                      {language === 'tamil' ? 'முடிவுகळैप् पেत मुन्नरिविप्पु पॊत्तानை अळुत्तவும्' : language === 'hindi' ? 'AI-संचालित परिणाम देखने के लिए पूर्वानुमान पर क्लिक करें' : 'Click Predict to see AI-powered results'}
                     </p>
                   </div>
                 )}
@@ -656,10 +703,10 @@ const EnhancedAgentsPage: React.FC = () => {
                       <div className="absolute inset-0 w-16 h-16 mx-auto border-4 border-blue-200 rounded-full"></div>
                     </div>
                     <h3 className="text-lg font-semibold text-gray-700 mb-2">
-                      {language === 'tamil' ? 'AI முகவர் பணியில்' : 'AI Agent Working'}
+                      {language === 'tamil' ? 'AI முகவர் பணியில்' : language === 'hindi' ? 'AI एजेंट काम कर रहा है' : 'AI Agent Working'}
                     </h3>
                     <p className="text-gray-600 mb-4">
-                      {language === 'tamil' ? 'உங்கள் தரவை பகுப்பாய்வு செய்கிறது...' : 'Analyzing your data...'}
+                      {language === 'tamil' ? 'உங்கள் தரவை பகுப்பாய்வு செய்கிறது...' : language === 'hindi' ? 'आपके डेटा का विश्लेषण कर रहा है...' : 'Analyzing your data...'}
                     </p>
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-md mx-auto">
                       <div className="flex items-center justify-center space-x-2">
@@ -682,15 +729,15 @@ const EnhancedAgentsPage: React.FC = () => {
                               <span className="text-white text-sm font-bold">🦠</span>
                             </div>
                             <h3 className="font-bold text-red-800 text-lg">
-                              {language === 'tamil' ? 'கண்டறியப்பட்ட நோய்' : 'Detected Disease'}
+                              {language === 'tamil' ? 'கண்டறியப்பட்ட நோய்' : language === 'hindi' ? 'पहचाना गया रोग' : 'Detected Disease'}
                             </h3>
                           </div>
                           <p className="text-red-700 font-semibold text-xl mb-2">
-                            {language === 'tamil' ? results.diseaseML : results.disease}
+                            {language === 'tamil' ? results.diseaseML : language === 'hindi' ? results.diseaseHI : results.disease}
                           </p>
                           <div className="flex items-center justify-between">
                             <span className="text-sm text-red-600 font-medium">
-                              {language === 'tamil' ? 'நம்பகத்தன்மை' : 'Confidence'}: {(results.confidence * 100).toFixed(1)}%
+                              {language === 'tamil' ? 'நம்பகத்தன்மை' : language === 'hindi' ? 'विश्वसनीयता' : 'Confidence'}: {(results.confidence * 100).toFixed(1)}%
                             </span>
                             <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-medium">
                               {results.severity}
@@ -703,11 +750,11 @@ const EnhancedAgentsPage: React.FC = () => {
                               <span className="text-white text-sm font-bold">💊</span>
                             </div>
                             <h3 className="font-bold text-blue-800 text-lg">
-                              {language === 'tamil' ? 'சிகிச்சை' : 'Treatment'}
+                              {language === 'tamil' ? 'சிகிச்சை' : language === 'hindi' ? 'उपचार' : 'Treatment'}
                             </h3>
                           </div>
                           <p className="text-blue-700 leading-relaxed">
-                            {language === 'tamil' ? results.treatmentML : results.treatment}
+                            {language === 'tamil' ? results.treatmentML : language === 'hindi' ? results.treatmentHI : results.treatment}
                           </p>
                         </div>
                       </div>
@@ -717,30 +764,30 @@ const EnhancedAgentsPage: React.FC = () => {
                     {selectedAgent === 'crop_recommendation' && isCropRecommendationResult(results) && (
                       <div className="space-y-3">
                         <h3 className="font-semibold text-green-800">
-                          {language === 'tamil' ? 'பரிந்துரைக்கப்பட்ட பயிர்கள்' : 'Recommended Crops'}
+                          {language === 'tamil' ? 'பரிந்துரைக்கப்பட்ட பயிர்கள்' : language === 'hindi' ? 'सुझाई गई फसलें' : 'Recommended Crops'}
                         </h3>
                         {Array.isArray(results.recommendedCrops) && results.recommendedCrops.length > 0 ? (
                           results.recommendedCrops.map((crop: RecommendedCropResult, index: number) => (
                             <div key={index} className="bg-green-50 border border-green-200 rounded-lg p-3">
                               <div className="flex justify-between items-center">
                                 <span className="font-medium text-green-800">
-                                  {language === 'tamil' ? crop.nameML : crop.name}
+                                  {language === 'tamil' ? crop.nameML : language === 'hindi' ? crop.nameHI : crop.name}
                                 </span>
-                                <span className="text-green-600">{(crop.suitability * 100).toFixed(0)}% {language === 'tamil' ? 'பொருத்தம்' : 'suitable'}</span>
+                                <span className="text-green-600">{(crop.suitability * 100).toFixed(0)}% {language === 'tamil' ? 'பொருத்தம்' : language === 'hindi' ? 'उपयुक्त' : 'suitable'}</span>
                               </div>
                               <p className="text-sm text-green-600">
-                                {language === 'tamil' ? 'எதிர்பார்க்கப்படும் விளைச்சல்' : 'Expected yield'}: {crop.expectedYield}
+                                {language === 'tamil' ? 'எதிர்பார்க்கப்படும் விளைச்சல்' : language === 'hindi' ? 'अपेक्षित उत्पादन' : 'Expected yield'}: {crop.expectedYield}
                               </p>
                             </div>
                           ))
                         ) : (
                           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-700">
-                            {language === 'tamil' ? 'பரிந்துரைகள் கிடைக்கவில்லை' : 'No crop recommendations available.'}
+                            {language === 'tamil' ? 'பரிந்துரைகள் கிடைக்கவில்லை' : language === 'hindi' ? 'कोई फसल सुझाव उपलब्ध नहीं' : 'No crop recommendations available.'}
                           </div>
                         )}
                         <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
                           <p className="text-gray-700 text-sm">
-                            {language === 'tamil' ? results.reasonML : results.reason}
+                            {language === 'tamil' ? results.reasonML : language === 'hindi' ? results.reasonHI : results.reason}
                           </p>
                         </div>
                       </div>
@@ -750,7 +797,7 @@ const EnhancedAgentsPage: React.FC = () => {
                     {selectedAgent === 'irrigation_scheduling' && isIrrigationResult(results) && (
                       <div className="space-y-3">
                         <h3 className="font-semibold text-blue-800">
-                          {language === 'tamil' ? 'நீர்ப்பாசன அட்டவணை' : 'Irrigation Schedule'}
+                          {language === 'tamil' ? 'நீர்ப்பாசன அட்டவணை' : language === 'hindi' ? 'सिंचाई कार्यक्रम' : 'Irrigation Schedule'}
                         </h3>
                         {results.schedule.map((item: IrrigationScheduleItem, index: number) => (
                           <div key={index} className="bg-blue-50 border border-blue-200 rounded-lg p-3">
@@ -765,13 +812,13 @@ const EnhancedAgentsPage: React.FC = () => {
                         ))}
                         <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
                           <p className="text-sm text-gray-700">
-                            <strong>{language === 'tamil' ? 'வார மொத்தம்' : 'Weekly Total'}:</strong> {results.weeklyTotal}
+                            <strong>{language === 'tamil' ? 'வார மொத்தம்' : language === 'hindi' ? 'साप्ताहिक कुल' : 'Weekly Total'}:</strong> {results.weeklyTotal}
                           </p>
                           <p className="text-sm text-gray-700">
-                            <strong>{language === 'tamil' ? 'திறன்' : 'Efficiency'}:</strong> {results.efficiency}
+                            <strong>{language === 'tamil' ? 'திறன்' : language === 'hindi' ? 'दक्षता' : 'Efficiency'}:</strong> {results.efficiency}
                           </p>
                           <p className="text-sm text-gray-600 mt-2">
-                            {language === 'tamil' ? results.notesML : results.notes}
+                            {language === 'tamil' ? results.notesML : language === 'hindi' ? results.notesHI : results.notes}
                           </p>
                         </div>
                       </div>
@@ -781,16 +828,20 @@ const EnhancedAgentsPage: React.FC = () => {
                     {selectedAgent === 'market_analysis' && isMarketResult(results) && (
                       <div className="space-y-3">
                         <h3 className="font-semibold text-purple-800">
-                          {language === 'tamil' ? 'சந்தை பகுப்பாய்வு' : 'Market Analysis'}
+                          {language === 'tamil' ? 'சந்தை பகுப்பாய்வு' : language === 'hindi' ? 'बाजार विश्लेषण' : 'Market Analysis'}
                         </h3>
                         <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
                           <div className="grid grid-cols-2 gap-4">
                             <div>
-                              <p className="text-sm text-purple-600 font-medium">Current Price</p>
+                              <p className="text-sm text-purple-600 font-medium">
+                                {language === 'tamil' ? 'தற்போதைய விலை' : language === 'hindi' ? 'वर्तमान मूल्य' : 'Current Price'}
+                              </p>
                               <p className="text-2xl font-bold text-purple-800">{results.marketPrice}</p>
                             </div>
                             <div>
-                              <p className="text-sm text-purple-600 font-medium">Price Change</p>
+                              <p className="text-sm text-purple-600 font-medium">
+                                {language === 'tamil' ? 'விலை மாற்றम்' : language === 'hindi' ? 'मूल्य परिवर्तन' : 'Price Change'}
+                              </p>
                               <p className="text-xl font-bold text-green-600">{results.priceChange}</p>
                             </div>
                           </div>
@@ -825,12 +876,14 @@ const EnhancedAgentsPage: React.FC = () => {
           </div>
           
           <h1 className="text-5xl font-extrabold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent mb-4 scale-in">
-            {language === 'tamil' ? 'AI விவசாய முகவர்கள்' : 'AI Agricultural Agents'}
+            {language === 'tamil' ? 'AI விவசாய முகவர்கள்' : language === 'hindi' ? 'AI कृषि एजेंट' : 'AI Agricultural Agents'}
           </h1>
           
           <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed slide-in-left">
             {language === 'tamil' 
               ? 'அதிநவீன AI தொழில்நுட்பத்துடன் உங்கள் விவசாய தேவைகளுக்கு சிறப்பு முகவர்களை தேர்ந்தெடுத்து இயக்கவும்'
+              : language === 'hindi'
+              ? 'अपनी कृषि आवश्यकताओं के लिए विशेष एजेंटों के साथ उन्नत AI तकनीक की शक्ति का उपयोग करें'
               : 'Harness the power of advanced AI technology with specialized agents tailored for your agricultural needs'
             }
           </p>
@@ -841,16 +894,17 @@ const EnhancedAgentsPage: React.FC = () => {
               <div className="flex items-center space-x-2">
                 <div className="w-3 h-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-pulse"></div>
                 <label className="text-sm font-semibold text-gray-700 group-hover:text-gray-900 transition-colors duration-300">
-                  {language === 'tamil' ? 'மொழி:' : 'Language:'}
+                  {language === 'tamil' ? 'மொழி:' : language === 'hindi' ? 'भाषा:' : 'Language:'}
                 </label>
               </div>
               <select
                 value={language}
-                onChange={(e) => setLanguage(e.target.value as 'english' | 'tamil')}
+                onChange={(e) => setLanguage(e.target.value as 'english' | 'tamil' | 'hindi')}
                 className="border-0 bg-transparent text-sm font-medium focus:outline-none focus:ring-0 cursor-pointer text-gray-700 group-hover:text-gray-900 transition-colors duration-300"
               >
                 <option value="english">🇬🇧 English</option>
                 <option value="tamil">🇮🇳 தமிழ்</option>
+                <option value="hindi">🇮🇳 हिंदी</option>
               </select>
             </div>
           </div>
@@ -859,15 +913,15 @@ const EnhancedAgentsPage: React.FC = () => {
           <div className="flex items-center justify-center space-x-4 mt-6 fade-in-up">
             <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-green-100 text-green-800 hover:bg-green-200 transition-colors duration-300">
               <CheckCircle className="w-4 h-4 mr-2" />
-              {language === 'tamil' ? 'சான்றளிக்கப்பட்ட AI' : 'Certified AI'}
+              {language === 'tamil' ? 'சான்றளிக்கப்பட்ட AI' : language === 'hindi' ? 'प्रमाणित AI' : 'Certified AI'}
             </span>
             <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors duration-300">
               <Shield className="w-4 h-4 mr-2" />
-              {language === 'tamil' ? 'பாதுகாப்பான' : 'Secure'}
+              {language === 'tamil' ? 'பாதுகாப்பான' : language === 'hindi' ? 'सुरक्षित' : 'Secure'}
             </span>
             <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-purple-100 text-purple-800 hover:bg-purple-200 transition-colors duration-300">
               <Sparkles className="w-4 h-4 mr-2" />
-              {language === 'tamil' ? '24/7 கிடைக்கும்' : '24/7 Available'}
+              {language === 'tamil' ? '24/7 கிடைக்கும்' : language === 'hindi' ? '24/7 उपलब्ध' : '24/7 Available'}
             </span>
           </div>
         </div>
@@ -878,13 +932,13 @@ const EnhancedAgentsPage: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500 font-medium mb-1">
-                  {language === 'tamil' ? 'செயலில் முகவர்கள்' : 'Active Agents'}
+                  {language === 'tamil' ? 'செயலில் முகவர்கள்' : language === 'hindi' ? 'सक्रिय एजेंट' : 'Active Agents'}
                 </p>
                 <p className="text-3xl font-bold text-gray-900 group-hover:text-green-600 transition-colors duration-300">
                   {agentConfigs.length}
                 </p>
                 <p className="text-xs text-green-600 font-medium mt-1">
-                  ↗ {language === 'tamil' ? 'அனைத்தும் ஆன்லைன்' : 'All Online'}
+                  ↗ {language === 'tamil' ? 'அனைத்தும் ஆன்லைன்' : language === 'hindi' ? 'सभी ऑनलाइन' : 'All Online'}
                 </p>
               </div>
               <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center group-hover:bg-green-200 transition-colors duration-300 group-hover:scale-110 group-hover:rotate-3">
@@ -897,13 +951,13 @@ const EnhancedAgentsPage: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500 font-medium mb-1">
-                  {language === 'tamil' ? 'வெற்றி விகிதம்' : 'Success Rate'}
+                  {language === 'tamil' ? 'வெற்றி விகிதம்' : language === 'hindi' ? 'सफलता दर' : 'Success Rate'}
                 </p>
                 <p className="text-3xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors duration-300">
                   98.5%
                 </p>
                 <p className="text-xs text-blue-600 font-medium mt-1">
-                  ↗ +2.3% {language === 'tamil' ? 'இந்த மாதம்' : 'this month'}
+                  ↗ +2.3% {language === 'tamil' ? 'இந்த மாதம்' : language === 'hindi' ? 'इस महीने' : 'this month'}
                 </p>
               </div>
               <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center group-hover:bg-blue-200 transition-colors duration-300 group-hover:scale-110 group-hover:rotate-3">
@@ -916,13 +970,13 @@ const EnhancedAgentsPage: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500 font-medium mb-1">
-                  {language === 'tamil' ? 'பதில் நேரம்' : 'Response Time'}
+                  {language === 'tamil' ? 'பதில் நேரம்' : language === 'hindi' ? 'प्रतिक्रिया समय' : 'Response Time'}
                 </p>
                 <p className="text-3xl font-bold text-gray-900 group-hover:text-purple-600 transition-colors duration-300">
                   &lt; 3s
                 </p>
                 <p className="text-xs text-purple-600 font-medium mt-1">
-                  ↗ {language === 'tamil' ? 'சராசரி' : 'Average'}
+                  ↗ {language === 'tamil' ? 'சராசரி' : language === 'hindi' ? 'औसत' : 'Average'}
                 </p>
               </div>
               <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-200 transition-colors duration-300 group-hover:scale-110 group-hover:rotate-3">
@@ -935,13 +989,13 @@ const EnhancedAgentsPage: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500 font-medium mb-1">
-                  {language === 'tamil' ? 'பணியாளர்கள்' : 'Users Served'}
+                  {language === 'tamil' ? 'பணியாளர்கள்' : language === 'hindi' ? 'सेवा प्राप्त उपयोगकर्ता' : 'Users Served'}
                 </p>
                 <p className="text-3xl font-bold text-gray-900 group-hover:text-orange-600 transition-colors duration-300">
                   10K+
                 </p>
                 <p className="text-xs text-orange-600 font-medium mt-1">
-                  ↗ +1.2K {language === 'tamil' ? 'இந்த வாரம்' : 'this week'}
+                  ↗ +1.2K {language === 'tamil' ? 'இந்த வாரம்' : language === 'hindi' ? 'इस सप्ताह' : 'this week'}
                 </p>
               </div>
               <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center group-hover:bg-orange-200 transition-colors duration-300 group-hover:scale-110 group-hover:rotate-3">
@@ -995,14 +1049,14 @@ const EnhancedAgentsPage: React.FC = () => {
                     <div className="flex items-center justify-end">
                       <div className="w-2 h-2 bg-green-300 rounded-full animate-pulse mr-2"></div>
                       <span className="text-xs font-medium text-white/80">
-                        {language === 'tamil' ? 'செயலில்' : 'Active'}
+                        {language === 'tamil' ? 'செயலில்' : language === 'hindi' ? 'सक्रिय' : 'Active'}
                       </span>
                     </div>
                   </div>
                 </div>
                 
                 <h3 className="text-xl font-bold mb-2 leading-tight group-hover:text-white transition-colors duration-300">
-                  {language === 'tamil' ? agent.nameML : agent.name}
+                  {language === 'tamil' ? agent.nameML : language === 'hindi' ? agent.nameHI : agent.name}
                 </h3>
                 
                 <p className="text-sm font-medium text-white/90 group-hover:text-white transition-colors duration-300">
@@ -1013,7 +1067,7 @@ const EnhancedAgentsPage: React.FC = () => {
               {/* Content */}
               <div className="relative p-6">
                 <p className="text-gray-600 text-sm leading-relaxed mb-6 line-clamp-3 group-hover:text-gray-700 transition-colors duration-300">
-                  {language === 'tamil' ? agent.descriptionML : agent.description}
+                  {language === 'tamil' ? agent.descriptionML : language === 'hindi' ? agent.descriptionHI : agent.description}
                 </p>
 
                 {/* Enhanced Features with icons */}
@@ -1021,17 +1075,17 @@ const EnhancedAgentsPage: React.FC = () => {
                   <div className="flex items-center text-xs text-gray-500 group-hover:text-gray-600 transition-colors duration-300">
                     <div className="w-2 h-2 bg-green-400 rounded-full mr-3 animate-pulse"></div>
                     <CheckCircle className="w-3 h-3 mr-2 text-green-500" />
-                    {language === 'tamil' ? 'உயர் துல்லியம் (98.5%)' : 'High Accuracy (98.5%)'}
+                    {language === 'tamil' ? 'உயர் துல்லியம் (98.5%)' : language === 'hindi' ? 'उच्च सटीकता (98.5%)' : 'High Accuracy (98.5%)'}
                   </div>
                   <div className="flex items-center text-xs text-gray-500 group-hover:text-gray-600 transition-colors duration-300">
                     <div className="w-2 h-2 bg-blue-400 rounded-full mr-3 animate-pulse" style={{animationDelay: '0.2s'}}></div>
                     <Clock className="w-3 h-3 mr-2 text-blue-500" />
-                    {language === 'tamil' ? 'வேகமான செயலாக்கம் (&lt; 3s)' : 'Fast Processing (&lt; 3s)'}
+                    {language === 'tamil' ? 'வேகமான செயலாக்கம் (&lt; 3s)' : language === 'hindi' ? 'तेज़ प्रसंस्करण (< 3s)' : 'Fast Processing (&lt; 3s)'}
                   </div>
                   <div className="flex items-center text-xs text-gray-500 group-hover:text-gray-600 transition-colors duration-300">
                     <div className="w-2 h-2 bg-purple-400 rounded-full mr-3 animate-pulse" style={{animationDelay: '0.4s'}}></div>
                     <Brain className="w-3 h-3 mr-2 text-purple-500" />
-                    {language === 'tamil' ? 'AI சக்தி' : 'AI Powered'}
+                    {language === 'tamil' ? 'AI சக்தி' : language === 'hindi' ? 'AI संचालित' : 'AI Powered'}
                   </div>
                 </div>
 
@@ -1040,7 +1094,7 @@ const EnhancedAgentsPage: React.FC = () => {
                   {/* Shimmer effect */}
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 shimmer-effect"></div>
                   <Zap className="w-4 h-4 group-hover:text-yellow-300 transition-colors duration-300" />
-                  <span>{language === 'tamil' ? 'இயக்கு' : 'Launch Agent'}</span>
+                  <span>{language === 'tamil' ? 'இயக்கு' : language === 'hindi' ? 'एजेंट चलाएं' : 'Launch Agent'}</span>
                   <ArrowLeft className="w-4 h-4 rotate-180 group-hover:translate-x-1 transition-transform duration-300" />
                 </button>
               </div>
@@ -1058,11 +1112,13 @@ const EnhancedAgentsPage: React.FC = () => {
         <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 rounded-3xl p-8 text-white shadow-2xl">
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold mb-4">
-              {language === 'tamil' ? 'எப்படி பயன்படுத்துவது?' : 'How It Works'}
+              {language === 'tamil' ? 'எப்படி பயன்படுத்துவது?' : language === 'hindi' ? 'यह कैसे काम करता है?' : 'How It Works'}
             </h2>
-            <p className="text-blue-100 text-lg max-w-2xl mx-auto">
+            <p className="text-blue-100 text-lg max-w-2xl mx-auto leading-relaxed">
               {language === 'tamil' 
                 ? 'சில நிமிடங்களில் AI-சக்தி வேளாண் நுண்ணறிவுகளைப் பெறுங்கள்'
+                : language === 'hindi'
+                ? 'कुछ ही मिनटों में AI-संचालित कृषि अंतर्दृष्टि प्राप्त करें'
                 : 'Get AI-powered agricultural insights in just a few minutes'
               }
             </p>
@@ -1074,11 +1130,13 @@ const EnhancedAgentsPage: React.FC = () => {
                 <span className="text-2xl font-bold">1</span>
               </div>
               <h3 className="text-xl font-bold mb-3">
-                {language === 'tamil' ? 'முகவரை தேர்ந்தெடுக்கவும்' : 'Choose Your Agent'}
+                {language === 'tamil' ? 'முகவரை தேர்ந்தெடுக்கவும்' : language === 'hindi' ? 'अपना एजेंट चुनें' : 'Choose Your Agent'}
               </h3>
               <p className="text-blue-100 leading-relaxed">
                 {language === 'tamil' 
                   ? 'உங்கள் குறிப்பிட்ட தேவைக்கு ஏற்ற AI முகவரை தேர்ந்தெடுக்கவும்'
+                  : language === 'hindi'
+                  ? 'अपनी विशिष्ट कृषि आवश्यकता के अनुरूप AI एजेंट का चयन करें'
                   : 'Select the AI agent that matches your specific agricultural need'
                 }
               </p>
@@ -1089,11 +1147,13 @@ const EnhancedAgentsPage: React.FC = () => {
                 <span className="text-2xl font-bold">2</span>
               </div>
               <h3 className="text-xl font-bold mb-3">
-                {language === 'tamil' ? 'தரவை உள்ளிடவும்' : 'Input Your Data'}
+                {language === 'tamil' ? 'தரவை உள்ளிடவும்' : language === 'hindi' ? 'अपना डेटा दर्ज करें' : 'Input Your Data'}
               </h3>
               <p className="text-blue-100 leading-relaxed">
                 {language === 'tamil' 
                   ? 'படங்கள், மண் தரவுகள் அல்லது பயிர் தகவல்களை வழங்கவும்'
+                  : language === 'hindi'
+                  ? 'आवश्यकतानुसार चित्र, मिट्टी का डेटा या फसल की जानकारी प्रदान करें'
                   : 'Provide images, soil data, or crop information as required'
                 }
               </p>
@@ -1104,11 +1164,13 @@ const EnhancedAgentsPage: React.FC = () => {
                 <span className="text-2xl font-bold">3</span>
               </div>
               <h3 className="text-xl font-bold mb-3">
-                {language === 'tamil' ? 'நுண்ணறிவுகள் பெறுங்கள்' : 'Get Insights'}
+                {language === 'tamil' ? 'நுண்ணறிவுகள் பெறுங்கள்' : language === 'hindi' ? 'अंतर्दृष्टि प्राप्त करें' : 'Get Insights'}
               </h3>
               <p className="text-blue-100 leading-relaxed">
                 {language === 'tamil' 
                   ? 'உடனடியாக AI-இயங்கும் பரிந்துரைகள் மற்றும் தீர்வுகளைப் பெறுங்கள்'
+                  : language === 'hindi'
+                  ? 'तत्काल AI-संचालित सिफारिशें और समाधान प्राप्त करें'
                   : 'Receive instant AI-powered recommendations and solutions'
                 }
               </p>
@@ -1121,7 +1183,7 @@ const EnhancedAgentsPage: React.FC = () => {
           <div className="relative group">
             {/* Tooltip */}
             <div className="absolute bottom-16 right-0 bg-gray-900 text-white px-3 py-2 rounded-lg text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
-              {language === 'tamil' ? 'உதவி தேவையா?' : 'Need Help?'}
+              {language === 'tamil' ? 'உதவி தேவையா?' : language === 'hindi' ? 'मदद चाहिए?' : 'Need Help?'}
               <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
             </div>
             
