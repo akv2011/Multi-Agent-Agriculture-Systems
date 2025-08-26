@@ -72,3 +72,30 @@ AgriMitr/
 # Task files
 # tasks.json
 # tasks/
+
+# Ignore conflicting files from PR
+.gitignore
+LOGIN_CREDENTIALS.md
+development/archive/demo_scripts/agrisens_demo.py
+development/archive/demo_scripts/agrisens_demo_updated.py
+development/archive/demo_scripts/agrisens_query_examples.py
+development/archive/demo_scripts/demo_image_upload_frontend.py
+development/archive/demo_scripts/final_system_validation.py
+development/archive/demo_scripts/setup_agrisens_test_env.py
+development/archive/demo_scripts/start_disease_detection_demo.sh
+development/archive/old_docs/AGENT_MODEL_STATUS_REPORT.md
+development/archive/old_docs/AGRISENS_INTEGRATION_README.md
+development/archive/old_docs/AGRISENS_INTEGRATION_README_UPDATED.md
+development/archive/old_docs/IMAGE_UPLOAD_ENHANCEMENT_SUMMARY.md
+development/archive/test_files/check_agrisens_components.py
+development/archive/test_files/check_system_status.py
+development/archive/test_files/quick_agent_health_check.py
+development/archive/test_files/run_agrisens_integration_tests.py
+development/archive/test_files/run_agrisens_tests.py
+development/archive/test_files/test_agent_availability.py
+development/archive/test_files/test_agent_functionality_stub.py
+development/archive/test_files/test_agent_queries.py
+development/archive/test_files/test_agrisens_agents.py
+development/archive/test_files/test_agrisens_stubs.py
+development/archive/test_files/test_all_agent_models.py
+development/archive/test_files/test_irrigation_manually.py
