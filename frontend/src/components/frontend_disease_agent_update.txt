@@ -1,0 +1,52 @@
+// Frontend update for Disease Identification Agent Integration
+
+// In AgricultureDashboard.tsx, add the disease identification agent to the mock agents:
+
+{
+  id: 'disease_identification_agent',
+  name: 'Disease Identification Specialist',
+  status: 'available',
+  agent_type: 'worker',
+  domain: 'Disease Identification',
+  lastActivity: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+  metrics: {
+    queriesProcessed: 18,
+    averageResponseTime: 3.5,
+    accuracyRate: 0.93,
+    tasksCompleted: 16,
+    tasksFailed: 1
+  }
+}
+
+// In the DemoInterface.tsx or AgricultureChat.tsx, enhance the disease identification UI:
+
+// 1. Add more instructions about supported crops and diseases
+<div className="text-xs text-gray-600 mt-1">
+  Supports 38 diseases across 14 crops including Apple, Tomato, Wheat, and more
+</div>
+
+// 2. Add a sample response structure to show disease identification results:
+/*
+{
+  "disease": "Apple Cedar Apple Rust",
+  "confidence": 98.5,
+  "severity": "moderate",
+  "affected_area_percentage": 15.5,
+  "recommendations": {
+    "treatment": [
+      "Apply fungicide with active ingredient myclobutanil",
+      "Remove and destroy infected leaves",
+      "Improve air circulation around plants"
+    ],
+    "prevention": [
+      "Plant resistant varieties",
+      "Remove nearby juniper or cedar trees if possible",
+      "Apply preventive fungicide before spring rainy period"
+    ],
+    "organic_options": [
+      "Neem oil spray",
+      "Copper-based fungicides"
+    ]
+  }
+}
+*/

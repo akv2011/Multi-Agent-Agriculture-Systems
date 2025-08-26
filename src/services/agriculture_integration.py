@@ -52,12 +52,19 @@ class AgricultureIntegrationService:
             from ..agents.crop_selection_agent import CropSelectionAgent
             from ..agents.pest_management_agent import PestManagementAgent
             from ..agents.irrigation_agent import IrrigationAgent
-            
+            # Added: Input materials agent for fertilizer (AgriSens) integration
+            try:
+                from ..agents.input_materials_agent import InputMaterialsAgent
+            except Exception as e:  # pragma: no cover - defensive import
+                logger.error(f"Failed to import InputMaterialsAgent: {e}")
+                InputMaterialsAgent = None  # type: ignore
+
             # Initialize specialist agents
             crop_agent = CropSelectionAgent()
             pest_agent = PestManagementAgent()
             irrigation_agent = IrrigationAgent()
-            
+            input_materials_agent = InputMaterialsAgent() if 'InputMaterialsAgent' in locals() and InputMaterialsAgent else None
+
             # Register specialist agents with their domains
             self.register_specialist_agent(
                 "crop_selection_agent", 
@@ -76,6 +83,16 @@ class AgricultureIntegrationService:
                 irrigation_agent, 
                 [QueryDomain.IRRIGATION]
             )
+            # Added: register input materials agent if available
+            if input_materials_agent:
+                self.register_specialist_agent(
+                    "input_materials_agent",
+                    input_materials_agent,
+                    [QueryDomain.INPUT_MATERIALS]
+                )
+                logger.info("InputMaterialsAgent registered for INPUT_MATERIALS domain")
+            else:
+                logger.warning("InputMaterialsAgent not registered (import or init failed)")
             
             logger.info(f"Agriculture router and {len(self.specialist_agents)} specialist agents initialized")
             

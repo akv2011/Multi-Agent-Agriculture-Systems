@@ -35,6 +35,8 @@ __pycache__/
 *.pyd
 .Python
 
+AgriSens/
+
 # Task files
 # tasks.json
-# tasks/ 
+# tasks/

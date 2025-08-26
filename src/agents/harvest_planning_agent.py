@@ -18,6 +18,12 @@ from ..core.agriculture_models import (
     AgricultureQuery, AgentResponse, CropType, Location, QueryDomain, Language
 )
 from ..core.models import AgentCapability, Task
+# Import AgriSens Harvest Planning model
+from ..models.agrisens_harvest_planning import (
+    enhance_harvest_planning_with_agrisens, HarvestPlan, MaturityStage,
+    MaturityAssessment, WeatherWindow, HarvestRecommendation
+)
+from .satellite_integration import get_satellite_data_for_location, format_satellite_summary
 
 logger = logging.getLogger(__name__)
 
@@ -213,26 +219,289 @@ class HarvestPlanningAgent(BaseWorkerAgent):
         }
     
     async def process_query(self, query: AgricultureQuery) -> AgentResponse:
-        """Process harvest planning and timing queries"""
+        """Process a harvest planning query with satellite integration"""
         try:
-            # Analyze query for crop and intent
-            query_analysis = self._analyze_harvest_query(query.query_text)
+            query_text = query.query_text.lower()
+            location = query.location
+            context = query.context or {}
             
-            if not query_analysis["crop_type"]:
-                return self._create_general_harvest_info_response(query)
+            # Extract crop information
+            crop_type = self._extract_crop_type(query_text, context)
             
-            crop_type = query_analysis["crop_type"]
+            # Get growth stage from context or estimate it
+            growth_stage = context.get('growth_stage', '')
+            if not growth_stage:
+                growth_stage = self._estimate_growth_stage(crop_type, query_text, context)
             
-            # Generate harvest recommendation
-            recommendation = await self._generate_harvest_recommendation(
-                crop_type, query.location, query_analysis
+            # Get field size from context (default: 5 hectares)
+            field_size = float(context.get('field_size', 5.0))
+            
+            # Extract planting date information
+            planting_date = self._extract_planting_date(query_text, context)
+            
+            # Create basic response
+            response_parts = []
+            confidence = 0.75
+            
+            # Handle uncertainty in planting date
+            if not planting_date:
+                response_parts.append("I don't have the exact planting date, which limits the accuracy of my harvest timing recommendation.")
+                planting_date = datetime.now() - timedelta(days=90)  # Assume planted ~3 months ago
+                confidence *= 0.8
+            
+            # Get satellite data
+            satellite_data = None
+            try:
+                satellite_data = await get_satellite_data_for_location(location)
+                if satellite_data:
+                    response_parts.append(format_satellite_summary(satellite_data))
+                    confidence += 0.15
+            except Exception as e:
+                logger.warning(f"Satellite data retrieval failed: {e}")
+                response_parts.append("Note: Satellite data is temporarily unavailable. Using ground-based calculations only.")
+                confidence *= 0.9
+            
+            # Prepare weather forecast (10 day forecast)
+            weather_forecast = self._get_weather_forecast(location, days=10)
+            
+            # Prepare growth data
+            growth_data = self._prepare_growth_data(crop_type, growth_stage, context)
+            
+            # Determine crop variety (if available)
+            crop_variety = context.get('crop_variety', 'standard')
+            
+            # Determine equipment availability
+            equipment_availability = {
+                "mechanized_harvester": context.get('has_mechanized_equipment', True),
+                "semi_mechanized": context.get('has_semi_mechanized', True)
+            }
+            
+            # Use AgriSens model for enhanced harvest planning
+            harvest_plan = enhance_harvest_planning_with_agrisens(
+                crop_type=str(crop_type.value) if isinstance(crop_type, Enum) else str(crop_type),
+                crop_variety=crop_variety,
+                planting_date=planting_date,
+                growth_data=growth_data,
+                field_size=field_size,
+                weather_forecast=weather_forecast,
+                equipment_availability=equipment_availability,
+                satellite_data=satellite_data
             )
             
-            return self._create_agent_response(recommendation, query)
+            # Format the response based on the harvest plan
+            response_parts.extend(self._format_harvest_plan_response(harvest_plan))
+            
+            # Add confidence boosting if satellite data enhanced the prediction
+            if harvest_plan.satellite_enhancement:
+                confidence = min(0.98, confidence + 0.1)
+            
+            # Combine all response parts
+            full_response = "\n\n".join(response_parts)
+            
+            return AgentResponse(
+                query_id=query.query_id,
+                response_text=full_response,
+                confidence=confidence,
+                agent_name=self.name,
+                metadata={
+                    "crop_type": str(crop_type),
+                    "growth_stage": growth_stage,
+                    "days_to_harvest": harvest_plan.current_status.days_to_harvest,
+                    "optimal_window_start": harvest_plan.primary_recommendation.primary_window.start_date.strftime("%Y-%m-%d"),
+                    "optimal_window_end": harvest_plan.primary_recommendation.primary_window.end_date.strftime("%Y-%m-%d"),
+                    "weather_quality": f"{harvest_plan.primary_recommendation.primary_window.quality:.2f}",
+                    "satellite_enhanced": bool(harvest_plan.satellite_enhancement)
+                }
+            )
             
         except Exception as e:
-            logger.error(f"Error processing harvest query: {e}")
-            return self._create_error_response(query, str(e))
+            logger.error(f"Error processing harvest query: {e}", exc_info=True)
+            return AgentResponse(
+                query_id=query.query_id,
+                response_text=f"I apologize, but I couldn't generate a harvest recommendation due to: {str(e)}. Please provide more details about your crop type and planting date.",
+                confidence=0.3,
+                agent_name=self.name
+            )
+    
+    def _initialize_crop_calendars(self):
+        """Initialize comprehensive crop calendar database for major Indian crops"""
+        self.crop_calendars = {
+            CropType.WHEAT: CropCalendar(
+                crop_type=CropType.WHEAT,
+                variety="HD-3086",  # Popular variety
+                sowing_date=date(2024, 11, 15),  # Typical Rabi sowing
+                total_growth_days=120,
+                harvest_window_start=115,
+                harvest_window_end=130,
+                optimal_harvest_stage=CropStage.MATURITY,
+                weather_sensitivity=0.7,
+                post_harvest_shelf_life=30
+            ),
+            
+            CropType.RICE: CropCalendar(
+                crop_type=CropType.RICE,
+                variety="Basmati-1121",
+                sowing_date=date(2024, 6, 15),  # Kharif sowing
+                total_growth_days=125,
+                harvest_window_start=120,
+                harvest_window_end=135,
+                optimal_harvest_stage=CropStage.MATURITY,
+                weather_sensitivity=0.8,
+                post_harvest_shelf_life=45
+            ),
+            
+            CropType.COTTON: CropCalendar(
+                crop_type=CropType.COTTON,
+                variety="Bt-Cotton",
+                sowing_date=date(2024, 5, 1),
+                total_growth_days=180,
+                harvest_window_start=170,
+                harvest_window_end=200,
+                optimal_harvest_stage=CropStage.MATURITY,
+                weather_sensitivity=0.9,
+                post_harvest_shelf_life=60
+            ),
+            
+            CropType.SUGARCANE: CropCalendar(
+                crop_type=CropType.SUGARCANE,
+                variety="Co-0238",
+                sowing_date=date(2024, 2, 1),
+                total_growth_days=365,
+                harvest_window_start=350,
+                harvest_window_end=380,
+                optimal_harvest_stage=CropStage.MATURITY,
+                weather_sensitivity=0.6,
+                post_harvest_shelf_life=7
+            )
+        }
+    
+    def _initialize_weather_patterns(self):
+        """Initialize weather pattern knowledge for different regions"""
+        self.regional_weather_patterns = {
+            "Punjab": {
+                "monsoon_end": date(2024, 9, 15),
+                "winter_start": date(2024, 11, 1),
+                "harvest_season": "October-April",
+                "risk_periods": ["July-August", "December-January"]
+            },
+            "Maharashtra": {
+                "monsoon_end": date(2024, 10, 1),
+                "winter_start": date(2024, 12, 1),
+                "harvest_season": "November-March",
+                "risk_periods": ["June-September"]
+            },
+            "Uttar Pradesh": {
+                "monsoon_end": date(2024, 9, 30),
+                "winter_start": date(2024, 11, 15),
+                "harvest_season": "October-April",
+                "risk_periods": ["July-September", "January"]
+            }
+        }
+    
+    async def process_query(self, query: AgricultureQuery) -> AgentResponse:
+        """Process a harvest planning query with satellite integration"""
+        try:
+            query_text = query.query_text.lower()
+            location = query.location
+            context = query.context or {}
+            
+            # Extract crop information
+            crop_type = self._extract_crop_type(query_text, context)
+            
+            # Get growth stage from context or estimate it
+            growth_stage = context.get('growth_stage', '')
+            if not growth_stage:
+                growth_stage = self._estimate_growth_stage(crop_type, query_text, context)
+            
+            # Get field size from context (default: 5 hectares)
+            field_size = float(context.get('field_size', 5.0))
+            
+            # Extract planting date information
+            planting_date = self._extract_planting_date(query_text, context)
+            
+            # Create basic response
+            response_parts = []
+            confidence = 0.75
+            
+            # Handle uncertainty in planting date
+            if not planting_date:
+                response_parts.append("I don't have the exact planting date, which limits the accuracy of my harvest timing recommendation.")
+                planting_date = datetime.now() - timedelta(days=90)  # Assume planted ~3 months ago
+                confidence *= 0.8
+            
+            # Get satellite data
+            satellite_data = None
+            try:
+                satellite_data = await get_satellite_data_for_location(location)
+                if satellite_data:
+                    response_parts.append(format_satellite_summary(satellite_data))
+                    confidence += 0.15
+            except Exception as e:
+                logger.warning(f"Satellite data retrieval failed: {e}")
+                response_parts.append("Note: Satellite data is temporarily unavailable. Using ground-based calculations only.")
+                confidence *= 0.9
+            
+            # Prepare weather forecast (10 day forecast)
+            weather_forecast = self._get_weather_forecast(location, days=10)
+            
+            # Prepare growth data
+            growth_data = self._prepare_growth_data(crop_type, growth_stage, context)
+            
+            # Determine crop variety (if available)
+            crop_variety = context.get('crop_variety', 'standard')
+            
+            # Determine equipment availability
+            equipment_availability = {
+                "mechanized_harvester": context.get('has_mechanized_equipment', True),
+                "semi_mechanized": context.get('has_semi_mechanized', True)
+            }
+            
+            # Use AgriSens model for enhanced harvest planning
+            harvest_plan = enhance_harvest_planning_with_agrisens(
+                crop_type=str(crop_type.value) if isinstance(crop_type, Enum) else str(crop_type),
+                crop_variety=crop_variety,
+                planting_date=planting_date,
+                growth_data=growth_data,
+                field_size=field_size,
+                weather_forecast=weather_forecast,
+                equipment_availability=equipment_availability,
+                satellite_data=satellite_data
+            )
+            
+            # Format the response based on the harvest plan
+            response_parts.extend(self._format_harvest_plan_response(harvest_plan))
+            
+            # Add confidence boosting if satellite data enhanced the prediction
+            if harvest_plan.satellite_enhancement:
+                confidence = min(0.98, confidence + 0.1)
+            
+            # Combine all response parts
+            full_response = "\n\n".join(response_parts)
+            
+            return AgentResponse(
+                query_id=query.query_id,
+                response_text=full_response,
+                confidence=confidence,
+                agent_name=self.name,
+                metadata={
+                    "crop_type": str(crop_type),
+                    "growth_stage": growth_stage,
+                    "days_to_harvest": harvest_plan.current_status.days_to_harvest,
+                    "optimal_window_start": harvest_plan.primary_recommendation.primary_window.start_date.strftime("%Y-%m-%d"),
+                    "optimal_window_end": harvest_plan.primary_recommendation.primary_window.end_date.strftime("%Y-%m-%d"),
+                    "weather_quality": f"{harvest_plan.primary_recommendation.primary_window.quality:.2f}",
+                    "satellite_enhanced": bool(harvest_plan.satellite_enhancement)
+                }
+            )
+            
+        except Exception as e:
+            logger.error(f"Error processing harvest query: {e}", exc_info=True)
+            return AgentResponse(
+                query_id=query.query_id,
+                response_text=f"I apologize, but I couldn't generate a harvest recommendation due to: {str(e)}. Please provide more details about your crop type and planting date.",
+                confidence=0.3,
+                agent_name=self.name
+            )
     
     def _analyze_harvest_query(self, query_text: str) -> Dict[str, Any]:
         """Analyze query to identify crop and harvest intent"""
@@ -685,6 +954,97 @@ class HarvestPlanningAgent(BaseWorkerAgent):
             timestamp=datetime.now(),
             metadata={"error": True, "error_message": error}
         )
+    
+    def _prepare_growth_data(self, crop_type: CropType, growth_stage: str, context: Dict[str, Any]) -> Dict[str, Any]:
+        """Prepare growth data for the AgriSens harvest model"""
+        # Default values
+        daily_gdd = 10.0  # Growing Degree Days per day
+        accumulated_gdd = 0.0
+        
+        # Calculate accumulated GDD based on crop type and growth stage
+        if growth_stage == "vegetative":
+            accumulated_gdd = 800.0
+        elif growth_stage == "flowering":
+            accumulated_gdd = 1200.0
+        elif growth_stage == "grain_filling" or growth_stage == "fruit_development":
+            accumulated_gdd = 1800.0
+        elif growth_stage == "maturity":
+            accumulated_gdd = 2300.0
+        
+        # Adjust based on crop type
+        if crop_type == CropType.WHEAT:
+            accumulated_gdd *= 0.9
+            daily_gdd = 8.0
+        elif crop_type == CropType.RICE:
+            accumulated_gdd *= 1.1
+            daily_gdd = 12.0
+        elif crop_type == CropType.COTTON:
+            accumulated_gdd *= 1.2
+            daily_gdd = 15.0
+        
+        # Extract additional context information if available
+        moisture_stress = context.get("moisture_stress", False)
+        disease_pressure = context.get("disease_pressure", False)
+        nutrient_deficiency = context.get("nutrient_deficiency", False)
+        
+        return {
+            "accumulated_gdd": accumulated_gdd,
+            "daily_gdd": daily_gdd,
+            "expected_daily_gdd": daily_gdd,
+            "moisture_stress": moisture_stress,
+            "disease_pressure": disease_pressure,
+            "nutrient_deficiency": nutrient_deficiency
+        }
+    
+    def _format_harvest_plan_response(self, harvest_plan: HarvestPlan) -> List[str]:
+        """Format harvest plan into readable response parts"""
+        response_parts = []
+        
+        # Crop status
+        response_parts.append(f"## 🌾 Crop Status: {harvest_plan.crop_type} ({harvest_plan.crop_variety})")
+        response_parts.append(f"**Current Stage:** {harvest_plan.current_status.current_stage.value}")
+        response_parts.append(f"**Days to Harvest:** {harvest_plan.current_status.days_to_harvest} days")
+        response_parts.append(f"**Maturity Score:** {harvest_plan.current_status.maturity_score:.1f}/100")
+        
+        if harvest_plan.current_status.risk_factors:
+            response_parts.append(f"**Risk Factors:** {', '.join(harvest_plan.current_status.risk_factors)}")
+        
+        # Harvest window recommendation
+        response_parts.append(f"\n## 📆 Harvest Window Recommendation")
+        primary_window = harvest_plan.primary_recommendation.primary_window
+        start_date = primary_window.start_date.strftime("%Y-%m-%d")
+        end_date = primary_window.end_date.strftime("%Y-%m-%d")
+        
+        response_parts.append(f"**Optimal Harvest Window:** {start_date} to {end_date}")
+        response_parts.append(f"**Window Quality:** {'Excellent' if primary_window.quality > 0.8 else 'Good' if primary_window.quality > 0.6 else 'Fair'}")
+        response_parts.append(f"**Weather Assessment:** {primary_window.risk_assessment}")
+        
+        if harvest_plan.primary_recommendation.alternative_windows:
+            alt_window = harvest_plan.primary_recommendation.alternative_windows[0]
+            alt_start = alt_window.start_date.strftime("%Y-%m-%d")
+            alt_end = alt_window.end_date.strftime("%Y-%m-%d")
+            response_parts.append(f"**Alternative Window:** {alt_start} to {alt_end}")
+        
+        # Equipment and resources
+        response_parts.append(f"\n## 🚜 Equipment & Resources")
+        response_parts.append(f"**Recommended Equipment:** {', '.join(harvest_plan.primary_recommendation.equipment_recommendations[:3])}")
+        response_parts.append(f"**Labor Requirement:** {harvest_plan.primary_recommendation.labor_requirements} person-days/hectare")
+        response_parts.append(f"**Estimated Cost:** ₹{harvest_plan.primary_recommendation.cost_estimate:.2f}/hectare")
+        
+        # Quality optimization
+        response_parts.append(f"\n## ✅ Quality Optimization Tips")
+        response_parts.append("\n".join([f"* {tip}" for tip in harvest_plan.quality_optimization[:3]]))
+        
+        # Risk mitigation
+        if harvest_plan.risk_mitigation:
+            response_parts.append(f"\n## ⚠️ Risk Management")
+            response_parts.append("\n".join([f"* {strategy}" for strategy in harvest_plan.risk_mitigation[:3]]))
+        
+        # Add satellite enhancement notice if available
+        if harvest_plan.satellite_enhancement:
+            response_parts.append(f"\n*This recommendation is enhanced with satellite data for increased accuracy.*")
+        
+        return response_parts
 
 
 # Test function for the Harvest Planning Agent

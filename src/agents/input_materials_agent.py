@@ -11,12 +11,19 @@ from dataclasses import dataclass
 from enum import Enum
 import asyncio
 import random
+import re
 
 from .base_agent import BaseWorkerAgent
 from ..core.agriculture_models import (
     AgricultureQuery, AgentResponse, CropType, SoilType, Location, QueryDomain, Language
 )
 from ..core.models import AgentCapability, Task
+from ..models.agrisens_fertilizer_recommendation import (
+    enhance_input_materials_with_fertilizer_recommend as agrisens_fertilizer_recommend,
+    NutrientPlan as AgriNutrientPlan,
+    FertilizerRecommendation, SoilAnalysis
+)
+from .satellite_integration import get_satellite_data_for_location, format_satellite_summary
 
 logger = logging.getLogger(__name__)
 
@@ -328,24 +335,379 @@ class InputMaterialsAgent(BaseWorkerAgent):
         }
     
     async def process_query(self, query: AgricultureQuery) -> AgentResponse:
-        """Process input materials recommendation queries"""
+        """Process an input materials query with AgriSens model integration"""
         try:
-            # Analyze query for input type and crop
-            query_analysis = self._analyze_input_query(query.query_text)
+            query_text = query.query_text.lower()
+            location = query.location
+            context = query.context or {}
             
-            if not query_analysis["crop_type"] and not query_analysis["input_type"]:
-                return self._create_general_input_info_response(query)
+            # Extract key information
+            crop_type = self._extract_crop_type(query_text, context)
+            soil_type = self._extract_soil_type(query_text, context)
+            growth_stage = self._extract_growth_stage(query_text, context)
+            budget_constraint = self._extract_budget_constraint(query_text, context)
             
-            # Generate comprehensive recommendation
-            recommendation = await self._generate_input_recommendation(
-                query_analysis, query.farm_profile, query.location
+            # Determine if user prefers organic inputs
+            organic_preference = "organic" in query_text.lower() or context.get("organic_preference", False)
+            
+            # Get soil data (from context or default values)
+            soil_data = self._prepare_soil_data(soil_type, context)
+            
+            # Initialize response parts
+            response_parts = []
+            confidence = 0.75
+            
+            # Get satellite data if available
+            satellite_data = None
+            try:
+                satellite_data = await get_satellite_data_for_location(location)
+                if satellite_data:
+                    response_parts.append(format_satellite_summary(satellite_data))
+                    confidence += 0.15
+                    
+                    # Enhance soil data with satellite information
+                    if "ndvi" in satellite_data:
+                        # Adjust nitrogen levels based on vegetation index
+                        ndvi = satellite_data.get("ndvi", 0.5)
+                        if ndvi < 0.3:
+                            soil_data["nitrogen"] *= 0.8  # Likely nitrogen deficient
+                        elif ndvi > 0.7:
+                            soil_data["nitrogen"] *= 1.2  # Good nitrogen levels
+            
+            except Exception as e:
+                logger.warning(f"Satellite data retrieval failed: {e}")
+                response_parts.append("Note: Satellite data is temporarily unavailable.")
+                confidence *= 0.9
+                
+            # Use AgriSens fertilizer recommendation model
+            crop_type_str = str(crop_type.value) if isinstance(crop_type, Enum) else str(crop_type)
+            nutrient_plan = agrisens_fertilizer_recommend(
+                crop_type=crop_type_str,
+                soil_data=soil_data,
+                growth_stage=growth_stage,
+                budget_constraint=budget_constraint,
+                organic_preference=organic_preference,
+                location_data=satellite_data
             )
             
-            return self._create_agent_response(recommendation, query)
+            # Generate response based on nutrient plan
+            response_parts.extend(self._format_nutrient_plan_response(nutrient_plan, crop_type_str, soil_type))
+            
+            # Add confidence boosting if we have satellite data
+            if satellite_data:
+                confidence = min(0.98, confidence + 0.1)
+                
+            # Generate final response
+            full_response = "\n\n".join(response_parts)
+            
+            return AgentResponse(
+                query_id=query.query_id,
+                response_text=full_response,
+                confidence=confidence,
+                agent_name=self.name,
+                metadata={
+                    "crop_type": str(crop_type),
+                    "soil_type": str(soil_type),
+                    "growth_stage": growth_stage,
+                    "organic_preference": organic_preference,
+                    "soil_health_score": nutrient_plan.current_status.health_score,
+                    "recommendation_count": len(nutrient_plan.recommendations),
+                    "total_cost": nutrient_plan.total_cost,
+                    "expected_roi": nutrient_plan.expected_roi,
+                    "satellite_enhanced": bool(satellite_data)
+                }
+            )
             
         except Exception as e:
-            logger.error(f"Error processing input materials query: {e}")
-            return self._create_error_response(query, str(e))
+            logger.error(f"Error processing input materials query: {e}", exc_info=True)
+            return AgentResponse(
+                query_id=query.query_id,
+                response_text=f"I apologize, but I couldn't generate input material recommendations due to: {str(e)}. Please provide more details about your crop and soil type.",
+                confidence=0.3,
+                agent_name=self.name
+            )
+    
+    def _initialize_fertilizer_database(self):
+        """Initialize comprehensive fertilizer database"""
+        self.fertilizers = {
+            "urea_46": InputProduct(
+                product_name="Urea 46%",
+                input_type=InputType.FERTILIZER,
+                sub_type=FertilizerType.UREA.value,
+                composition={"nitrogen": 46.0},
+                application_rate="120-150 kg/hectare",
+                application_method=ApplicationMethod.SOIL_APPLICATION,
+                cost_per_unit=350.0,  # Rs per 50kg bag
+                unit="50kg bag",
+                brand="IFFCO",
+                availability="widely_available",
+                organic_certified=False,
+                target_crops=[CropType.WHEAT, CropType.RICE, CropType.MAIZE],
+                soil_suitability=[SoilType.ALLUVIAL, SoilType.BLACK, SoilType.RED]
+            ),
+            
+            "dap_fertilizer": InputProduct(
+                product_name="DAP (Di-Ammonium Phosphate)",
+                input_type=InputType.FERTILIZER,
+                sub_type=FertilizerType.DAP.value,
+                composition={"nitrogen": 18.0, "phosphorus": 46.0},
+                application_rate="100-125 kg/hectare",
+                application_method=ApplicationMethod.SOIL_APPLICATION,
+                cost_per_unit=1450.0,  # Rs per 50kg bag
+                unit="50kg bag",
+                brand="IFFCO",
+                availability="widely_available",
+                organic_certified=False,
+                target_crops=[CropType.WHEAT, CropType.RICE, CropType.COTTON],
+                soil_suitability=[SoilType.ALLUVIAL, SoilType.BLACK, SoilType.SANDY]
+            ),
+            
+            "npk_complex": InputProduct(
+                product_name="NPK Complex 10:26:26",
+                input_type=InputType.FERTILIZER,
+                sub_type=FertilizerType.NPK.value,
+                composition={"nitrogen": 10.0, "phosphorus": 26.0, "potassium": 26.0},
+                application_rate="150-200 kg/hectare",
+                application_method=ApplicationMethod.SOIL_APPLICATION,
+                cost_per_unit=1200.0,
+                unit="50kg bag",
+                brand="KRIBHCO",
+                availability="widely_available",
+                organic_certified=False,
+                target_crops=[CropType.COTTON, CropType.SUGARCANE],
+                soil_suitability=[SoilType.BLACK, SoilType.RED, SoilType.LATERITE]
+            ),
+            
+            "organic_compost": InputProduct(
+                product_name="Organic Compost",
+                input_type=InputType.FERTILIZER,
+                sub_type=FertilizerType.ORGANIC.value,
+                composition={"organic_matter": 45.0, "nitrogen": 1.5, "phosphorus": 1.0, "potassium": 1.5},
+                application_rate="5-10 tonnes/hectare",
+                application_method=ApplicationMethod.SOIL_APPLICATION,
+                cost_per_unit=150.0,  # Rs per 50kg bag
+                unit="50kg bag",
+                brand="Local/FPO",
+                availability="seasonal",
+                organic_certified=True,
+                target_crops=[CropType.WHEAT, CropType.RICE, CropType.COTTON, CropType.SUGARCANE],
+                soil_suitability=[SoilType.ALLUVIAL, SoilType.BLACK, SoilType.RED, SoilType.SANDY]
+            )
+        }
+    
+    def _initialize_pesticide_database(self):
+        """Initialize pesticide and pest control database"""
+        self.pesticides = {
+            "chlorpyrifos": InputProduct(
+                product_name="Chlorpyrifos 20% EC",
+                input_type=InputType.PESTICIDE,
+                sub_type=PesticideType.INSECTICIDE.value,
+                composition={"chlorpyrifos": 20.0},
+                application_rate="2-2.5 ml/liter water",
+                application_method=ApplicationMethod.FOLIAR_SPRAY,
+                cost_per_unit=280.0,  # Rs per 250ml bottle
+                unit="250ml bottle",
+                brand="Tata Rallis",
+                availability="widely_available",
+                organic_certified=False,
+                target_crops=[CropType.COTTON, CropType.RICE, CropType.WHEAT],
+                soil_suitability=[SoilType.ALLUVIAL, SoilType.BLACK, SoilType.RED]
+            ),
+            
+            "mancozeb": InputProduct(
+                product_name="Mancozeb 75% WP",
+                input_type=InputType.PESTICIDE,
+                sub_type=PesticideType.FUNGICIDE.value,
+                composition={"mancozeb": 75.0},
+                application_rate="2-3 grams/liter water",
+                application_method=ApplicationMethod.FOLIAR_SPRAY,
+                cost_per_unit=320.0,  # Rs per 500g pack
+                unit="500g pack",
+                brand="UPL",
+                availability="widely_available",
+                organic_certified=False,
+                target_crops=[CropType.RICE, CropType.WHEAT, CropType.COTTON],
+                soil_suitability=[SoilType.ALLUVIAL, SoilType.BLACK, SoilType.RED]
+            ),
+            
+            "neem_oil": InputProduct(
+                product_name="Neem Oil Organic",
+                input_type=InputType.PESTICIDE,
+                sub_type=PesticideType.BIOPESTICIDE.value,
+                composition={"azadirachtin": 1.0, "neem_oil": 99.0},
+                application_rate="3-5 ml/liter water",
+                application_method=ApplicationMethod.FOLIAR_SPRAY,
+                cost_per_unit=180.0,  # Rs per 250ml bottle
+                unit="250ml bottle",
+                brand="Organic India",
+                availability="widely_available",
+                organic_certified=True,
+                target_crops=[CropType.COTTON, CropType.RICE, CropType.WHEAT, CropType.SUGARCANE],
+                soil_suitability=[SoilType.ALLUVIAL, SoilType.BLACK, SoilType.RED, SoilType.SANDY]
+            )
+        }
+    
+    def _initialize_seed_database(self):
+        """Initialize seed variety database"""
+        self.seeds = {
+            "wheat_hd3086": InputProduct(
+                product_name="Wheat HD-3086",
+                input_type=InputType.SEED,
+                sub_type="high_yielding_variety",
+                composition={"purity": 98.0, "germination": 85.0},
+                application_rate="100-125 kg/hectare",
+                application_method=ApplicationMethod.BROADCAST,
+                cost_per_unit=2800.0,  # Rs per 50kg bag
+                unit="50kg bag",
+                brand="IARI",
+                availability="widely_available",
+                organic_certified=False,
+                target_crops=[CropType.WHEAT],
+                soil_suitability=[SoilType.ALLUVIAL, SoilType.BLACK]
+            ),
+            
+            "rice_pusa1121": InputProduct(
+                product_name="Basmati Rice Pusa-1121",
+                input_type=InputType.SEED,
+                sub_type="premium_variety",
+                composition={"purity": 97.0, "germination": 80.0},
+                application_rate="20-25 kg/hectare",
+                application_method=ApplicationMethod.SEED_TREATMENT,
+                cost_per_unit=5500.0,  # Rs per 50kg bag
+                unit="50kg bag",
+                brand="IARI",
+                availability="seasonal",
+                organic_certified=False,
+                target_crops=[CropType.RICE],
+                soil_suitability=[SoilType.ALLUVIAL, SoilType.BLACK]
+            ),
+            
+            "cotton_bt": InputProduct(
+                product_name="Bt Cotton RCH-659",
+                input_type=InputType.SEED,
+                sub_type="genetically_modified",
+                composition={"purity": 95.0, "germination": 80.0},
+                application_rate="1.5-2.0 kg/hectare",
+                application_method=ApplicationMethod.SEED_TREATMENT,
+                cost_per_unit=950.0,  # Rs per 450g packet
+                unit="450g packet",
+                brand="Rasi Seeds",
+                availability="seasonal",
+                organic_certified=False,
+                target_crops=[CropType.COTTON],
+                soil_suitability=[SoilType.BLACK, SoilType.RED]
+            )
+        }
+    
+    def _initialize_cost_data(self):
+        """Initialize regional cost and availability data"""
+        self.regional_cost_factors = {
+            "Punjab": 1.0,      # Base pricing
+            "Haryana": 1.05,    # 5% higher
+            "Uttar Pradesh": 0.95,  # 5% lower
+            "Maharashtra": 1.1,  # 10% higher
+            "Karnataka": 1.08,   # 8% higher
+            "Andhra Pradesh": 0.98  # 2% lower
+        }
+        
+        self.seasonal_factors = {
+            "peak_season": 1.2,  # 20% higher during peak
+            "off_season": 0.9,   # 10% lower during off-season
+            "normal": 1.0        # Normal pricing
+        }
+    
+    async def process_query(self, query: AgricultureQuery) -> AgentResponse:
+        """Process an input materials query with AgriSens model integration"""
+        try:
+            query_text = query.query_text.lower()
+            location = query.location
+            context = query.context or {}
+            
+            # Extract key information
+            crop_type = self._extract_crop_type(query_text, context)
+            soil_type = self._extract_soil_type(query_text, context)
+            growth_stage = self._extract_growth_stage(query_text, context)
+            budget_constraint = self._extract_budget_constraint(query_text, context)
+            
+            # Determine if user prefers organic inputs
+            organic_preference = "organic" in query_text.lower() or context.get("organic_preference", False)
+            
+            # Get soil data (from context or default values)
+            soil_data = self._prepare_soil_data(soil_type, context)
+            
+            # Initialize response parts
+            response_parts = []
+            confidence = 0.75
+            
+            # Get satellite data if available
+            satellite_data = None
+            try:
+                satellite_data = await get_satellite_data_for_location(location)
+                if satellite_data:
+                    response_parts.append(format_satellite_summary(satellite_data))
+                    confidence += 0.15
+                    
+                    # Enhance soil data with satellite information
+                    if "ndvi" in satellite_data:
+                        # Adjust nitrogen levels based on vegetation index
+                        ndvi = satellite_data.get("ndvi", 0.5)
+                        if ndvi < 0.3:
+                            soil_data["nitrogen"] *= 0.8  # Likely nitrogen deficient
+                        elif ndvi > 0.7:
+                            soil_data["nitrogen"] *= 1.2  # Good nitrogen levels
+            
+            except Exception as e:
+                logger.warning(f"Satellite data retrieval failed: {e}")
+                response_parts.append("Note: Satellite data is temporarily unavailable.")
+                confidence *= 0.9
+                
+            # Use AgriSens fertilizer recommendation model
+            crop_type_str = str(crop_type.value) if isinstance(crop_type, Enum) else str(crop_type)
+            nutrient_plan = agrisens_fertilizer_recommend(
+                crop_type=crop_type_str,
+                soil_data=soil_data,
+                growth_stage=growth_stage,
+                budget_constraint=budget_constraint,
+                organic_preference=organic_preference,
+                location_data=satellite_data
+            )
+            
+            # Generate response based on nutrient plan
+            response_parts.extend(self._format_nutrient_plan_response(nutrient_plan, crop_type_str, soil_type))
+            
+            # Add confidence boosting if we have satellite data
+            if satellite_data:
+                confidence = min(0.98, confidence + 0.1)
+                
+            # Generate final response
+            full_response = "\n\n".join(response_parts)
+            
+            return AgentResponse(
+                query_id=query.query_id,
+                response_text=full_response,
+                confidence=confidence,
+                agent_name=self.name,
+                metadata={
+                    "crop_type": str(crop_type),
+                    "soil_type": str(soil_type),
+                    "growth_stage": growth_stage,
+                    "organic_preference": organic_preference,
+                    "soil_health_score": nutrient_plan.current_status.health_score,
+                    "recommendation_count": len(nutrient_plan.recommendations),
+                    "total_cost": nutrient_plan.total_cost,
+                    "expected_roi": nutrient_plan.expected_roi,
+                    "satellite_enhanced": bool(satellite_data)
+                }
+            )
+            
+        except Exception as e:
+            logger.error(f"Error processing input materials query: {e}", exc_info=True)
+            return AgentResponse(
+                query_id=query.query_id,
+                response_text=f"I apologize, but I couldn't generate input material recommendations due to: {str(e)}. Please provide more details about your crop and soil type.",
+                confidence=0.3,
+                agent_name=self.name
+            )
     
     def _analyze_input_query(self, query_text: str) -> Dict[str, Any]:
         """Analyze query to identify crop and input requirements"""
@@ -573,31 +935,55 @@ class InputMaterialsAgent(BaseWorkerAgent):
         return alternatives[:3]  # Limit to 3 alternatives
     
     def _create_agent_response(self, recommendation: InputRecommendation, 
-                             query: AgricultureQuery) -> AgentResponse:
-        """Create structured agent response"""
-        
+                             query: AgricultureQuery, nutrient_plan: Optional[AgriNutrientPlan] = None, agrisens_used: bool = False) -> AgentResponse:
+        """Create structured agent response (extended to include AgriSens nutrient plan)."""
         summary = self._create_summary(recommendation, query.query_language)
         recommendations_list = self._create_recommendations_list(recommendation)
-        
+
+        # Append nutrient plan recommendations (top 1-2) if available
+        if nutrient_plan and nutrient_plan.recommendations:
+            for rec in nutrient_plan.recommendations[:2]:
+                recommendations_list.append({
+                    "title": f"Fertilizer Plan: {rec.primary_fertilizer.value}",
+                    "description": f"Rate: {rec.application_rate:.1f} kg/ha | NPK: {rec.npk_ratio} | Cost≈₹{rec.cost_estimate:,.0f}",
+                    "priority": "high",
+                    "action_required": "Follow staged application schedule"
+                })
+
+        sources = ["Fertilizer Database", "Pesticide Registry", "Seed Catalog", "Market Price Data"]
+        if nutrient_plan:
+            sources.append("AgriSens Fertilizer Model")
+
+        metadata_extra = {}
+        if nutrient_plan:
+            metadata_extra = {
+                "agrisens_soil_health": nutrient_plan.current_status.health_score,
+                "agrisens_total_cost": nutrient_plan.total_cost,
+                "agrisens_expected_roi": nutrient_plan.expected_roi,
+                "agrisens_growth_stage": nutrient_plan.growth_stage,
+                "agrisens_used": agrisens_used
+            }
+
         return AgentResponse(
             agent_id=self.name,
             agent_name="Input Materials Advisor",
             query_id=query.query_id,
-            response_text=summary,
+            response_text=summary + (" | AgriSens nutrient optimization applied" if nutrient_plan else ""),
             response_language=query.query_language,
-            confidence_score=0.85,
-            reasoning=f"Based on {recommendation.crop_type.value} requirements and {recommendation.soil_type.value} soil conditions",
+            confidence_score=0.88 if nutrient_plan else 0.85,
+            reasoning=(f"Based on {recommendation.crop_type.value} requirements, soil conditions, and AgriSens analysis" if nutrient_plan else f"Based on {recommendation.crop_type.value} requirements and {recommendation.soil_type.value} soil conditions"),
             recommendations=recommendations_list,
-            sources=["Fertilizer Database", "Pesticide Registry", "Seed Catalog", "Market Price Data"],
-            next_steps=["Purchase recommended inputs", "Follow application schedule", "Monitor crop response"],
+            sources=sources,
+            next_steps=["Purchase recommended inputs", "Apply as per schedule", "Monitor crop response"] + (["Follow nutrient monitoring schedule"] if nutrient_plan else []),
             timestamp=datetime.now(),
-            processing_time_ms=180,
+            processing_time_ms=220 if nutrient_plan else 180,
             metadata={
                 "crop_type": recommendation.crop_type.value,
                 "soil_type": recommendation.soil_type.value,
                 "total_cost": recommendation.total_cost_estimate,
                 "num_primary_inputs": len(recommendation.primary_inputs),
-                "growth_stage": recommendation.growth_stage
+                "growth_stage": recommendation.growth_stage,
+                **metadata_extra
             }
         )
     
@@ -684,52 +1070,156 @@ class InputMaterialsAgent(BaseWorkerAgent):
             timestamp=datetime.now(),
             metadata={"error": True, "error_message": error}
         )
+    
+    # ---------------- AgriSens Integration Helpers ----------------
+    def _extract_soil_data(self, query: AgricultureQuery) -> Dict[str, float]:
+        soil_ctx = query.context.get("soil_data") if query.context else None
+        if isinstance(soil_ctx, dict):
+            return soil_ctx
+        # Try to parse from text
+        return self._parse_soil_values_from_text(query.query_text.lower())
 
+    def _parse_soil_values_from_text(self, text: str) -> Dict[str, float]:
+        soil: Dict[str, float] = {}
+        patterns = {
+            'nitrogen': r'(?:n|nitrogen)[:=\s]+(\d{1,4})',
+            'phosphorus': r'(?:p|phosphorus)[:=\s]+(\d{1,4})',
+            'potassium': r'(?:k|potassium)[:=\s]+(\d{1,4})',
+            'ph': r'(?:ph)[:=\s]+(\d(?:\.\d)?)',
+            'organic_matter': r'(?:om|organic matter)[:=\s]+(\d(?:\.\d)?)',
+            'moisture_content': r'(?:moisture)[:=\s]+(\d{1,3})'
+        }
+        for key, pattern in patterns.items():
+            m = re.search(pattern, text)
+            if m:
+                try:
+                    soil[key] = float(m.group(1))
+                except ValueError:
+                    pass
+        return soil
 
-# Test function for the Input Materials Agent
-async def test_input_materials_agent():
-    """Test the Input Materials Agent"""
-    agent = InputMaterialsAgent()
-    
-    print("🌱 Testing Input Materials Agent")
-    
-    # Test fertilizer query in English
-    query_en = AgricultureQuery(
-        query_text="What fertilizer should I use for wheat crop?",
-        query_language=Language.ENGLISH,
-        user_id="test_farmer_en",
-        location=Location(state="Punjab", district="Ludhiana")
-    )
-    
-    print("🔄 Processing English query for Wheat fertilizer...")
-    response_en = await agent.process_query(query_en)
-    print(f"✅ English Response: {response_en.response_text}")
-    
-    # Test pesticide query in Hindi
-    query_hi = AgricultureQuery(
-        query_text="चावल की फसल के लिए कीटनाशक की सलाह दें",
-        query_language=Language.HINDI,
-        user_id="test_farmer_hi",
-        location=Location(state="Uttar Pradesh", district="Lucknow")
-    )
-    
-    print("🔄 Processing Hindi query for Rice pesticide...")
-    response_hi = await agent.process_query(query_hi)
-    print(f"✅ Hindi Response: {response_hi.response_text}")
-    
-    # Test budget-conscious query
-    query_budget = AgricultureQuery(
-        query_text="Cheap fertilizer for cotton crop",
-        query_language=Language.ENGLISH,
-        user_id="test_farmer_budget"
-    )
-    
-    print("🔄 Processing budget-conscious query...")
-    response_budget = await agent.process_query(query_budget)
-    print(f"✅ Budget Response: {response_budget.response_text}")
-    
-    print("\n🎉 Input Materials Agent working successfully!")
+    def _extract_growth_stage_from_text(self, text: str) -> Optional[str]:
+        stages = {
+            'tillering': 'tillering', 'flowering': 'flowering', 'boll': 'flowering', 'vegetative': 'vegetative',
+            'panicle': 'panicle_initiation', 'grain': 'grain_filling', 'fruit': 'fruiting', 'planting': 'planting'
+        }
+        for k, stage in stages.items():
+            if k in text.lower():
+                return stage
+        return None
 
+    def _serialize_location(self, location: Optional[Location]) -> Dict[str, Any]:
+        if not location:
+            return {}
+        return {
+            'state': getattr(location, 'state', None),
+            'district': getattr(location, 'district', None),
+            'latitude': getattr(location, 'latitude', None),
+            'longitude': getattr(location, 'longitude', None)
+        }
 
-if __name__ == "__main__":
-    asyncio.run(test_input_materials_agent())
+    def _prepare_soil_data(self, soil_type: SoilType, context: Dict[str, Any]) -> Dict[str, float]:
+        """Prepare soil data for fertilizer recommendation model"""
+        # Default values based on soil type
+        soil_defaults = {
+            SoilType.ALLUVIAL: {"nitrogen": 280, "phosphorus": 25, "potassium": 220, "ph": 7.2, "organic_matter": 2.5},
+            SoilType.BLACK: {"nitrogen": 200, "phosphorus": 18, "potassium": 300, "ph": 7.8, "organic_matter": 1.8},
+            SoilType.RED: {"nitrogen": 180, "phosphorus": 12, "potassium": 180, "ph": 6.0, "organic_matter": 1.2},
+            SoilType.LATERITE: {"nitrogen": 140, "phosphorus": 8, "potassium": 120, "ph": 5.5, "organic_matter": 0.8},
+            SoilType.SANDY: {"nitrogen": 120, "phosphorus": 10, "potassium": 100, "ph": 6.8, "organic_matter": 0.6},
+            SoilType.CLAY: {"nitrogen": 220, "phosphorus": 15, "potassium": 200, "ph": 7.5, "organic_matter": 2.0}
+        }
+        
+        # Get default values for the soil type
+        defaults = soil_defaults.get(soil_type, soil_defaults[SoilType.ALLUVIAL])
+        
+        # Override with values from context if available
+        soil_data = {
+            "nitrogen": float(context.get("nitrogen", defaults["nitrogen"])),
+            "phosphorus": float(context.get("phosphorus", defaults["phosphorus"])),
+            "potassium": float(context.get("potassium", defaults["potassium"])),
+            "ph": float(context.get("ph", defaults["ph"])),
+            "organic_matter": float(context.get("organic_matter", defaults["organic_matter"])),
+            "moisture_content": float(context.get("moisture_content", 50.0)),
+            "soil_type": str(soil_type.value) if isinstance(soil_type, Enum) else str(soil_type)
+        }
+        
+        return soil_data
+    
+    def _format_nutrient_plan_response(self, nutrient_plan: AgriNutrientPlan, crop_type: str, soil_type: SoilType) -> List[str]:
+        """Format nutrient plan into readable response parts"""
+        response_parts = []
+        
+        # Soil analysis
+        soil_analysis = nutrient_plan.current_status
+        response_parts.append(f"## 🌱 Soil Analysis for {crop_type}")
+        response_parts.append(f"**Soil Health Score:** {soil_analysis.health_score:.1f}/100")
+        
+        if soil_analysis.health_score >= 80:
+            health_desc = "excellent"
+        elif soil_analysis.health_score >= 60:
+            health_desc = "good"
+        elif soil_analysis.health_score >= 40:
+            health_desc = "fair"
+        else:
+            health_desc = "poor"
+        
+        response_parts.append(f"Your soil health is {health_desc}.")
+        
+        # Nutrient levels
+        response_parts.append(f"\n**Current Nutrient Levels:**")
+        response_parts.append(f"* Nitrogen (N): {soil_analysis.nitrogen} kg/ha")
+        response_parts.append(f"* Phosphorus (P): {soil_analysis.phosphorus} kg/ha")
+        response_parts.append(f"* Potassium (K): {soil_analysis.potassium} kg/ha")
+        response_parts.append(f"* pH: {soil_analysis.ph}")
+        
+        # Deficiencies and excesses
+        if soil_analysis.deficiencies:
+            response_parts.append(f"\n**Deficiencies:** {', '.join(soil_analysis.deficiencies)}")
+        if soil_analysis.excesses:
+            response_parts.append(f"\n**Excesses:** {', '.join(soil_analysis.excesses)}")
+            
+        # Fertilizer recommendations
+        response_parts.append(f"\n## 💧 Fertilizer Recommendations")
+        
+        if nutrient_plan.recommendations:
+            # Primary recommendation
+            primary_rec = nutrient_plan.recommendations[0]
+            response_parts.append(f"**Primary Recommendation:** {primary_rec.primary_fertilizer.value}")
+            response_parts.append(f"**Application Rate:** {primary_rec.application_rate:.1f} kg/hectare")
+            response_parts.append(f"**NPK Ratio:** {primary_rec.npk_ratio}")
+            response_parts.append(f"**Application Method:** {primary_rec.application_method}")
+            response_parts.append(f"**Cost Estimate:** ₹{primary_rec.cost_estimate:.2f}/hectare")
+            
+            # Add timing information
+            if primary_rec.application_timing:
+                response_parts.append(f"**Application Timing:** {', '.join(primary_rec.application_timing)}")
+            
+            # Secondary recommendations if available
+            if len(nutrient_plan.recommendations) > 1:
+                response_parts.append(f"\n**Secondary Recommendations:**")
+                for i, rec in enumerate(nutrient_plan.recommendations[1:], 1):
+                    if i > 2:  # Limit to 2 secondary recommendations
+                        break
+                    response_parts.append(f"* {rec.primary_fertilizer.value}: {rec.application_rate:.1f} kg/ha (₹{rec.cost_estimate:.2f}/ha)")
+            
+            # Organic alternatives if available
+            if primary_rec.organic_alternatives:
+                response_parts.append(f"\n**Organic Alternatives:**")
+                response_parts.append(", ".join(primary_rec.organic_alternatives))
+        else:
+            response_parts.append("No specific fertilizer recommendations available.")
+            
+        # Economics
+        response_parts.append(f"\n## 💰 Economics")
+        response_parts.append(f"**Total Cost:** ₹{nutrient_plan.total_cost:.2f}/hectare")
+        response_parts.append(f"**Expected Return on Investment:** {nutrient_plan.expected_roi:.1f}%")
+        
+        # Monitoring schedule
+        response_parts.append(f"\n## 📊 Monitoring Schedule")
+        for i, item in enumerate(nutrient_plan.monitoring_schedule):
+            if i > 3:  # Limit to 4 monitoring points
+                break
+            response_parts.append(f"* {item}")
+            
+        return response_parts

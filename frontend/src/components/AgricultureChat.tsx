@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Loader2, AlertCircle, CheckCircle, Clock, User, Bot } from 'lucide-react';
+import { Send, Loader2, AlertCircle, CheckCircle, Clock, User, Bot, Camera, X, Upload, FileImage } from 'lucide-react';
 
 interface Message {
   id: string;
@@ -9,6 +9,9 @@ interface Message {
   status?: 'sending' | 'sent' | 'error';
   queryId?: string;
   agentResponses?: AgentResponse[];
+  language?: 'english' | 'tamil';
+  detectedCategory?: string;
+  uploadedImage?: string;
 }
 
 interface AgentResponse {
@@ -17,6 +20,7 @@ interface AgentResponse {
   response: string;
   confidence: number;
   status: 'processing' | 'completed' | 'error';
+  category?: string;
 }
 
 import config from '../config';
@@ -41,10 +45,84 @@ const AgricultureChat: React.FC<AgricultureChatProps> = ({
   const [inputText, setInputText] = useState('');
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState<'english' | 'hindi' | 'mixed'>('english');
+  const [loadingStep, setLoadingStep] = useState('');
+  const [selectedLanguage, setSelectedLanguage] = useState<'english' | 'tamil'>('english');
+  const [uploadedImage, setUploadedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  // Advanced input states (AgriSens integrations)
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [diseaseImagePreview, setDiseaseImagePreview] = useState<string | null>(null);
+  const [soilFormOpen, setSoilFormOpen] = useState(false);
+  const [soilData, setSoilData] = useState<{ [k: string]: string }>({
+    nitrogen: '', phosphorus: '', potassium: '', ph: '', organic_matter: '', moisture_content: ''
+  });
+  const [cropType, setCropType] = useState('');
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Query categorization helper
+  const categorizeQuery = (text: string, hasImage: boolean): string => {
+    const lowerText = text.toLowerCase();
+    
+    if (hasImage || lowerText.includes('disease') || lowerText.includes('pest') || lowerText.includes('infection') || 
+        lowerText.includes('நோய்') || lowerText.includes('பூச்சி')) {
+      return 'disease_identification';
+    }
+    if (lowerText.includes('crop') || lowerText.includes('recommend') || lowerText.includes('plant') ||
+        lowerText.includes('பயிர்') || lowerText.includes('சிபாரிசு')) {
+      return 'crop_recommendation';
+    }
+    if (lowerText.includes('irrigation') || lowerText.includes('water') || lowerText.includes('watering') ||
+        lowerText.includes('நீர்') || lowerText.includes('பாசனம்')) {
+      return 'irrigation';
+    }
+    if (lowerText.includes('fertilizer') || lowerText.includes('nutrient') || lowerText.includes('npk') ||
+        lowerText.includes('உரம்') || lowerText.includes('சத்து')) {
+      return 'fertilizer_recommendation';
+    }
+    if (lowerText.includes('market') || lowerText.includes('price') || lowerText.includes('sell') ||
+        lowerText.includes('சந்தை') || lowerText.includes('விலை')) {
+      return 'market_timing';
+    }
+    if (lowerText.includes('harvest') || lowerText.includes('harvest time') || 
+        lowerText.includes('அறுவடை') || lowerText.includes('காலம்')) {
+      return 'harvest_planning';
+    }
+    if (lowerText.includes('weather') || lowerText.includes('forecast') || lowerText.includes('rain') ||
+        lowerText.includes('வானிலை') || lowerText.includes('மழை')) {
+      return 'weather_forecast';
+    }
+    return 'general';
+  };
+
+  // Loading steps for different categories
+  const getLoadingSteps = (category: string, language: string): string[] => {
+    if (language === 'tamil') {
+      switch (category) {
+        case 'disease_identification':
+          return ['படத்தை பகுப்பாய்வு செய்கிறது...', 'நோய் கண்டறிதல் மாதிரியை இயக்குகிறது...', 'முடிவுகளை தயாரிக்கிறது...'];
+        case 'crop_recommendation':
+          return ['மண் தரவை பகுப்பாய்வு செய்கிறது...', 'பயிர் பரிந்துரை மாதிரியை இயக்குகிறது...', 'சிறந்த பயிர்களை தேர்ந்தெடுக்கிறது...'];
+        case 'irrigation':
+          return ['மண் ஈரப்பதத்தை சரிபார்க்கிறது...', 'நீர்ப்பாசன அட்டவணையை கணக்கிடுகிறது...', 'பரிந்துரைகளை தயாரிக்கிறது...'];
+        default:
+          return ['தரவை பகுப்பாய்வு செய்கிறது...', 'முடிவுகளை கணக்கிடுகிறது...', 'பதிலை தயாரிக்கிறது...'];
+      }
+    } else {
+      switch (category) {
+        case 'disease_identification':
+          return ['Analyzing uploaded image...', 'Running disease detection model...', 'Preparing diagnosis...'];
+        case 'crop_recommendation':
+          return ['Analyzing soil data...', 'Running crop recommendation model...', 'Selecting optimal crops...'];
+        case 'irrigation':
+          return ['Checking soil moisture...', 'Calculating irrigation schedule...', 'Preparing recommendations...'];
+        default:
+          return ['Analyzing query...', 'Processing with AI agents...', 'Preparing response...'];
+      }
+    }
+  };
 
   // Scroll to bottom when new messages arrive
   useEffect(() => {
@@ -105,7 +183,7 @@ const AgricultureChat: React.FC<AgricultureChatProps> = ({
   const handleWebSocketMessage = (data: any) => {
     switch (data.type) {
       case 'agriculture_query_status':
-        updateQueryStatus(data.query_id, data.status, data.data);
+        updateQueryStatus(data.query_id, data.status);
         break;
       case 'agent_response':
         updateAgentResponse(data.query_id, data.agent_id, data.response);
@@ -134,17 +212,19 @@ const AgricultureChat: React.FC<AgricultureChatProps> = ({
   };
 
   const addBotMessage = (content: string, queryId?: string) => {
+    // Allow basic markdown bold -> replace for simple emphasis
+    const formatted = content.replace(/\*\*(.*?)\*\*/g, '$1');
     const message: Message = {
       id: Date.now().toString(),
       type: 'bot',
-      content,
+      content: formatted,
       timestamp: new Date().toISOString(),
       queryId
     };
     setMessages(prev => [...prev, message]);
   };
 
-  const updateQueryStatus = (queryId: string, status: string, data: any) => {
+  const updateQueryStatus = (queryId: string, status: string) => {
     setMessages(prev => prev.map(msg => {
       if (msg.queryId === queryId) {
         return {
@@ -156,7 +236,7 @@ const AgricultureChat: React.FC<AgricultureChatProps> = ({
     }));
   };
 
-  const updateAgentResponse = (queryId: string, agentId: string, response: any) => {
+  const updateAgentResponse = (queryId: string, agentId: string, response: Record<string, unknown>) => {
     // Add intermediate agent response display
     const agentMessage: Message = {
       id: `${queryId}-${agentId}`,
@@ -168,68 +248,144 @@ const AgricultureChat: React.FC<AgricultureChatProps> = ({
     setMessages(prev => [...prev, agentMessage]);
   };
 
+  // Image upload handler
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setUploadedImage(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        setImagePreview(result);
+        setDiseaseImagePreview(result); // Keep existing compatibility
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const clearUploadedImage = () => {
+    setUploadedImage(null);
+    setImagePreview(null);
+    setDiseaseImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const clearDiseaseImage = () => {
+    clearUploadedImage();
+  };
+
+  const updateSoilField = (field: string, value: string) => {
+    setSoilData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const soilDataProvided = () => Object.values(soilData).some(v => v.trim() !== '');
+
   const sendMessage = async () => {
-    if (!inputText.trim() || isLoading || !isConnected) return;
+    if (!inputText.trim() && !imagePreview) return;
+    if (isLoading || !isConnected) return;
+
+    // Categorize the query
+    const hasImage = !!imagePreview;
+    const detectedCategory = categorizeQuery(inputText, hasImage);
+    
+    // Auto-synthesize query if only image uploaded
+    let queryToSend = inputText.trim();
+    if (!queryToSend && imagePreview) {
+      queryToSend = selectedLanguage === 'tamil' 
+        ? `இந்த படத்தில் உள்ள நோயை கண்டறியவும்${cropType ? ' - ' + cropType + ' பயிருக்கு' : ''}` 
+        : `Identify disease from this image${cropType ? ' for ' + cropType : ''}`;
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
       type: 'user',
-      content: inputText,
+      content: queryToSend,
       timestamp: new Date().toISOString(),
-      status: 'sending'
+      status: 'sending',
+      uploadedImage: imagePreview || undefined,
+      language: selectedLanguage,
+      detectedCategory
     };
 
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
+
+    // Show loading animation with steps
+    const steps = getLoadingSteps(detectedCategory, selectedLanguage);
+    let stepIndex = 0;
+    const stepInterval = setInterval(() => {
+      if (stepIndex < steps.length) {
+        setLoadingStep(steps[stepIndex]);
+        stepIndex++;
+      } else {
+        clearInterval(stepInterval);
+      }
+    }, 1500);
+
+    // Simulate 5-second delay as requested
+    setTimeout(() => {
+      clearInterval(stepInterval);
+      setLoadingStep('');
+    }, 5000);
+
+    const contextPayload: Record<string, unknown> = {
+      timestamp: new Date().toISOString(),
+      source: 'web_chat',
+      language: selectedLanguage,
+      category: detectedCategory
+    };
     
-    const queryText = inputText;
+    if (imagePreview) {
+      const base64 = imagePreview.split(',')[1];
+      contextPayload.image_base64 = base64;
+      if (cropType) contextPayload.crop_type = cropType;
+    }
+    
+    if (soilDataProvided()) {
+      const parsed: Record<string, number> = {};
+      ['nitrogen','phosphorus','potassium','ph','organic_matter','moisture_content'].forEach(k => {
+        if (soilData[k]) {
+          const num = parseFloat(soilData[k]);
+          if (!isNaN(num)) parsed[k === 'moisture_content' ? 'moisture_content' : k] = num;
+        }
+      });
+      if (Object.keys(parsed).length) contextPayload.soil_data = parsed;
+      if (cropType) contextPayload.crop_type = cropType;
+    }
+
+    const queryText = queryToSend;
     setInputText('');
 
     try {
-      // Send query to backend API
       const response = await fetch('/agriculture/query', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           query_text: queryText,
           language: selectedLanguage,
-          user_id: 'user-' + Date.now(),
-          context: {
-            timestamp: new Date().toISOString(),
-            source: 'web_chat'
-          }
-        }),
+            user_id: 'user-' + Date.now(),
+          context: contextPayload
+        })
       });
-
       const result = await response.json();
-      
       if (result.status === 'success') {
-        // Update user message status
-        setMessages(prev => prev.map(msg => 
-          msg.id === userMessage.id 
-            ? { ...msg, status: 'sent', queryId: result.query_id }
-            : msg
-        ));
-        
-        // WebSocket will handle the response updates
+        setMessages(prev => prev.map(msg => msg.id === userMessage.id ? { ...msg, status: 'sent', queryId: result.query_id } : msg));
+        // Reset one-shot advanced inputs after successful send
+        if (diseaseImagePreview) clearDiseaseImage();
       } else if (result.status === 'clarification_needed') {
         setIsLoading(false);
         addBotMessage(`I need more information: ${result.response?.questions?.join(', ')}`);
       } else {
         setIsLoading(false);
-        addSystemMessage(`Error: ${result.error || 'Unknown error occurred'}`);
+        setMessages(prev => prev.map(msg => msg.id === userMessage.id ? { ...msg, status: 'error' } : msg));
+        addSystemMessage(`Error: ${result.error || 'Unknown error'}`);
       }
-      
     } catch (error) {
       console.error('Error sending message:', error);
       setIsLoading(false);
-      setMessages(prev => prev.map(msg => 
-        msg.id === userMessage.id 
-          ? { ...msg, status: 'error' }
-          : msg
-      ));
+      setMessages(prev => prev.map(msg => msg.id === userMessage.id ? { ...msg, status: 'error' } : msg));
       addSystemMessage('Failed to send message. Please try again.');
     }
   };
@@ -268,6 +424,13 @@ const AgricultureChat: React.FC<AgricultureChatProps> = ({
     "Kisan loan kaise milega?"
   ];
 
+  const diseaseExampleQueries = [
+    "Identify this disease and suggest treatment",
+    "What's wrong with my plant? How to cure it?",
+    "Disease diagnosis and prevention tips",
+    "Recommend fungicide for this condition"
+  ];
+
   return (
     <div className="flex flex-col h-full bg-white rounded-lg shadow-lg">
       {/* Header */}
@@ -290,24 +453,114 @@ const AgricultureChat: React.FC<AgricultureChatProps> = ({
           <label className="text-sm text-green-100 mr-2">Language:</label>
           <select
             value={selectedLanguage}
-            onChange={(e) => setSelectedLanguage(e.target.value as any)}
+            onChange={(e) => setSelectedLanguage(e.target.value as 'english' | 'tamil')}
             className="bg-green-700 text-white px-2 py-1 rounded text-sm"
           >
             <option value="english">English</option>
-            <option value="hindi">हिंदी (Hindi)</option>
-            <option value="mixed">Mixed (Hindi-English)</option>
+            <option value="tamil">தமிழ் (Tamil)</option>
           </select>
         </div>
       </div>
 
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+        {/* Advanced Inputs Panel (streamlined) */}
+        {showAdvanced && (
+          <div className="bg-white border border-green-200 rounded-lg p-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-green-700">Advanced Options</h3>
+              <button onClick={() => setShowAdvanced(false)} className="text-sm text-green-600 hover:underline">Hide</button>
+            </div>
+            
+            {/* Crop Type */}
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-600 mb-1">Crop Type (optional)</label>
+                <input 
+                  value={cropType} 
+                  onChange={e => setCropType(e.target.value)} 
+                  placeholder="e.g. Wheat, Rice, Tomato" 
+                  className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500" 
+                />
+              </div>
+              {cropType && (
+                <div className="flex items-end">
+                  <button type="button" onClick={() => setCropType('')} className="text-sm text-gray-500 hover:text-gray-700 px-2 py-1">Clear</button>
+                </div>
+              )}
+            </div>
+            
+            {/* Disease Image Upload (secondary access) */}
+            <div className="bg-gray-50 rounded-lg p-3">
+              <label className="block text-sm font-medium text-gray-600 mb-2">Disease Image Upload</label>
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-gray-600">
+                  {diseaseImagePreview ? (
+                    <span className="text-green-600 font-medium">✓ Image attached and ready</span>
+                  ) : (
+                    "Use the camera button in the query bar for quick image upload"
+                  )}
+                </div>
+                {diseaseImagePreview && (
+                  <button type="button" onClick={clearDiseaseImage} className="text-sm text-red-600 hover:underline">Remove</button>
+                )}
+              </div>
+              <div className="text-xs text-gray-500 mt-1">
+                Supports 38 diseases across 14 crops including Apple, Tomato, Wheat, and more
+              </div>
+            </div>
+            
+            {/* Soil Data Toggle */}
+            <div>
+              <button 
+                type="button" 
+                onClick={() => setSoilFormOpen(o => !o)} 
+                className="flex items-center text-sm font-medium text-green-700 hover:underline"
+              >
+                <span>{soilFormOpen ? '− Hide' : '+ Add'} Soil Test Data</span>
+                {soilDataProvided() && !soilFormOpen && (
+                  <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">Data provided</span>
+                )}
+              </button>
+              {soilFormOpen && (
+                <div className="mt-3 space-y-3">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {['nitrogen','phosphorus','potassium','ph','organic_matter','moisture_content'].map(key => (
+                      <div key={key}>
+                        <label className="block text-xs uppercase tracking-wide text-gray-500 mb-1">
+                          {key.replace('_',' ')}
+                        </label>
+                        <input 
+                          type="number" 
+                          step="any" 
+                          value={soilData[key] || ''} 
+                          onChange={e => updateSoilField(key, e.target.value)} 
+                          className="w-full border rounded px-2 py-1 text-sm focus:ring-green-500 focus:border-green-500" 
+                          placeholder={key === 'ph' ? '6.5' : key.includes('moisture') ? '15' : '50'} 
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
+                    💡 Provide lab soil test values (kg/ha for N/P/K, pH scale 5.5–8, moisture %)
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+        {/* Existing messages */}
         {messages.length === 0 && (
           <div className="text-center text-gray-500">
             <Bot className="w-12 h-12 mx-auto mb-3 text-green-500" />
-            <p className="mb-4">Welcome to Agricultural Advisory! Try asking:</p>
+            <p className="mb-4">
+              {diseaseImagePreview 
+                ? "Image ready for disease analysis! Try asking:" 
+                : "Welcome to Agricultural Advisory! Try asking:"
+              }
+            </p>
             <div className="space-y-2">
-              {exampleQueries.map((query, index) => (
+              {(diseaseImagePreview ? diseaseExampleQueries : exampleQueries).map((query, index) => (
                 <button
                   key={index}
                   onClick={() => setInputText(query)}
@@ -317,6 +570,12 @@ const AgricultureChat: React.FC<AgricultureChatProps> = ({
                 </button>
               ))}
             </div>
+            {!diseaseImagePreview && (
+              <div className="mt-4 p-3 bg-green-50 rounded-lg">
+                <p className="text-sm text-green-700 mb-2">🌱 Quick Disease Detection:</p>
+                <p className="text-xs text-green-600">Click the camera button in the query bar to upload a plant image for instant disease identification!</p>
+              </div>
+            )}
           </div>
         )}
         
@@ -342,13 +601,41 @@ const AgricultureChat: React.FC<AgricultureChatProps> = ({
                 ) : null}
                 
                 <div className="flex-1">
+                  {/* Show uploaded image for user messages */}
+                  {message.uploadedImage && (
+                    <div className="mb-2">
+                      <img 
+                        src={message.uploadedImage} 
+                        alt="Uploaded" 
+                        className="max-w-xs rounded-lg border border-white/20"
+                      />
+                    </div>
+                  )}
+                  
                   <div className="whitespace-pre-wrap">{message.content}</div>
+                  
+                  {/* Show detected category for user messages */}
+                  {message.detectedCategory && message.type === 'user' && (
+                    <div className="mt-2 text-xs bg-white/20 rounded px-2 py-1 inline-block">
+                      📂 {message.detectedCategory.replace('_', ' ').toUpperCase()}
+                    </div>
+                  )}
+                  
                   <div className="flex items-center justify-between mt-2">
-                    <span className={`text-xs ${
-                      message.type === 'user' ? 'text-green-100' : 'text-gray-500'
-                    }`}>
-                      {formatTimestamp(message.timestamp)}
-                    </span>
+                    <div className="flex items-center space-x-2">
+                      <span className={`text-xs ${
+                        message.type === 'user' ? 'text-green-100' : 'text-gray-500'
+                      }`}>
+                        {formatTimestamp(message.timestamp)}
+                      </span>
+                      {message.language && (
+                        <span className={`text-xs px-1 rounded ${
+                          message.type === 'user' ? 'bg-white/20 text-green-100' : 'bg-gray-100 text-gray-600'
+                        }`}>
+                          {message.language === 'tamil' ? 'தமிழ்' : 'EN'}
+                        </span>
+                      )}
+                    </div>
                     {message.status && getStatusIcon(message.status)}
                   </div>
                 </div>
@@ -359,12 +646,24 @@ const AgricultureChat: React.FC<AgricultureChatProps> = ({
         
         {isLoading && (
           <div className="flex justify-start">
-            <div className="bg-white border border-gray-200 rounded-lg p-3 mr-12">
-              <div className="flex items-center space-x-2">
-                <Bot className="w-5 h-5 text-green-600" />
-                <div className="flex items-center space-x-2">
-                  <Loader2 className="w-4 h-4 animate-spin text-green-600" />
-                  <span className="text-gray-600">Analyzing your query...</span>
+            <div className="bg-white border border-gray-200 rounded-lg p-4 mr-12 min-w-[300px]">
+              <div className="flex items-center space-x-3">
+                <Bot className="w-6 h-6 text-green-600 flex-shrink-0" />
+                <div className="flex-1">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Loader2 className="w-4 h-4 animate-spin text-green-600" />
+                    <span className="text-gray-700 font-medium">
+                      {selectedLanguage === 'tamil' ? 'முகவர் செயல்படுகிறது...' : 'Agent Processing...'}
+                    </span>
+                  </div>
+                  {loadingStep && (
+                    <div className="text-sm text-gray-600 bg-gray-50 p-2 rounded animate-pulse">
+                      {loadingStep}
+                    </div>
+                  )}
+                  <div className="mt-2 bg-gray-200 rounded-full h-1.5">
+                    <div className="bg-green-600 h-1.5 rounded-full animate-pulse" style={{width: '75%'}}></div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -376,19 +675,73 @@ const AgricultureChat: React.FC<AgricultureChatProps> = ({
 
       {/* Input Area */}
       <div className="border-t bg-white p-4 rounded-b-lg">
+        {/* Image Preview Area (when image attached) */}
+        {imagePreview && (
+          <div className="mb-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-green-700">
+                {selectedLanguage === 'tamil' ? 'நோய் கண்டறிதல் படம்' : 'Disease Detection Image'}
+              </span>
+              <button
+                onClick={clearUploadedImage}
+                className="text-red-600 hover:text-red-800 p-1"
+                title="Remove image"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="flex items-center gap-3">
+              <img src={imagePreview} alt="Preview" className="h-16 w-16 object-cover rounded border" />
+              <div className="text-sm text-green-600">
+                {selectedLanguage === 'tamil' 
+                  ? 'AgriSens AI மாதிரியுடன் நோய் கண்டறிதலுக்கு தயார்' 
+                  : 'Ready for AI disease identification using AgriSens CNN model'}
+              </div>
+            </div>
+          </div>
+        )}
+        
         <div className="flex space-x-2">
-          <textarea
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder={`Ask your agricultural question in ${selectedLanguage}...`}
-            className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
-            rows={2}
-            disabled={!isConnected || isLoading}
-          />
+          <div className="flex-1 relative">
+            <textarea
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder={selectedLanguage === 'tamil' 
+                ? `உங்கள் விவசாய கேள்வியை கேளுங்கள்...${imagePreview ? ' (நோய் கண்டறிதலுக்கு படம் தயார்)' : ' அல்லது நோய் கண்டறிதலுக்கு படம் பதிவேற்றவும்'}`
+                : `Ask your agricultural question...${imagePreview ? ' (image ready for disease ID)' : ' or upload plant image for disease detection'}`
+              }
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 pr-12 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
+              rows={2}
+              disabled={!isConnected || isLoading}
+            />
+            {/* Image Upload Button - Prominent in query bar */}
+            <div className="absolute right-2 top-2">
+              <label
+                htmlFor="disease-image-upload"
+                className={`cursor-pointer p-2 rounded-lg transition-colors ${
+                  imagePreview 
+                    ? 'bg-green-100 text-green-600 hover:bg-green-200' 
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+                title={selectedLanguage === 'tamil' ? 'நோய் கண்டறிதலுக்கு படம் பதிவேற்றவும்' : 'Upload plant/leaf image for disease identification'}
+              >
+                <Camera className="w-5 h-5" />
+              </label>
+              <input
+                id="disease-image-upload"
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+            </div>
+          </div>
+          
           <button
             onClick={sendMessage}
-            disabled={!isConnected || isLoading || !inputText.trim()}
+            disabled={!isConnected || isLoading || (!inputText.trim() && !imagePreview)}
             className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center space-x-2"
           >
             {isLoading ? (
@@ -396,12 +749,36 @@ const AgricultureChat: React.FC<AgricultureChatProps> = ({
             ) : (
               <Send className="w-5 h-5" />
             )}
-            <span className="hidden sm:inline">Send</span>
+            <span className="hidden sm:inline">
+              {selectedLanguage === 'tamil' ? 'அனுப்பு' : 'Send'}
+            </span>
           </button>
         </div>
         
-        <div className="mt-2 text-xs text-gray-500">
-          Press Enter to send, Shift+Enter for new line
+        <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
+          <div>
+            {selectedLanguage === 'tamil' ? 'Enter அழுத்தி அனுப்பவும்' : 'Press Enter to send, Shift+Enter for new line'}
+          </div>
+          <div className="flex items-center space-x-2">
+            {imagePreview && (
+              <span className="text-green-600 font-medium">
+                📷 {selectedLanguage === 'tamil' ? 'படம் தயார்' : 'Image ready'}
+              </span>
+            )}
+            {soilDataProvided() && (
+              <span className="text-blue-600 font-medium">
+                🌱 {selectedLanguage === 'tamil' ? 'மண் தரவு சேர்க்கப்பட்டது' : 'Soil data included'}
+              </span>
+            )}
+            {!showAdvanced && (
+              <button 
+                onClick={() => setShowAdvanced(true)} 
+                className="text-green-600 hover:underline"
+              >
+                + {selectedLanguage === 'tamil' ? 'மேம்பட்ட விருப்பங்கள்' : 'Advanced options'}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -385,7 +385,7 @@ const AgentsPage: React.FC = () => {
       name: 'Market Timing Agent',
       status: 'active',
       description: 'Analyzes market trends and suggests optimal timing for crop sales',
-      type: 'finance',
+      type: 'market_timing',
       lastActive: '2 minutes ago',
       performance: 92,
       metrics: {

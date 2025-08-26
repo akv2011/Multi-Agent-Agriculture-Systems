@@ -57,7 +57,11 @@ class AgricultureRouter(BaseWorkerAgent):
             QueryDomain.FINANCE_POLICY: ["finance_policy_agent"],
             QueryDomain.MARKET_TIMING: ["market_timing_agent"],
             QueryDomain.HARVEST_PLANNING: ["harvest_planning_agent"],
-            QueryDomain.INPUT_MATERIALS: ["input_materials_agent"]
+            QueryDomain.INPUT_MATERIALS: ["input_materials_agent"],
+            QueryDomain.DISEASE_IDENTIFICATION: ["disease_specialist"],
+            QueryDomain.FERTILIZER_RECOMMENDATION: ["fertilizer_recommendation_agent"],
+            QueryDomain.WEATHER_FORECAST: ["weather_forecast_agent"],
+            QueryDomain.SMART_FARMING: ["smart_farming_guidance_agent"]
         }
         
         # Query classification patterns (Hindi/English)
@@ -72,11 +76,20 @@ class AgricultureRouter(BaseWorkerAgent):
             ],
             QueryDomain.PEST_MANAGEMENT: [
                 # English patterns
-                r"(?i)\b(pest|insect|bug|disease|fungus|keet|keeda|bimari)\b",
-                r"(?i)\b(spray|pesticide|treatment|medicine|dawai)\b",
+                r"(?i)\b(pest|insect|bug|fungus|keet|keeda)\b",
+                r"(?i)\b(spray|pesticide|treatment)\b",
                 # Hindi patterns
-                r"(?i)\b(keet|keeda|bimari|rog|spray|dawai|upchar)\b",
-                r"कीट|कीड़े|बीमारी|रोग|स्प्रे|दवाई"
+                r"(?i)\b(keet|keeda|spray|upchar)\b",
+                r"कीट|कीड़े|स्प्रे"
+            ],
+            QueryDomain.DISEASE_IDENTIFICATION: [
+                # English patterns
+                r"(?i)\b(disease|infection|symptom|spot|lesion|blight|rust|mildew|rot|wilt|virus)\b",
+                r"(?i)\b(identify disease|what disease|plant disease|leaf disease)\b",
+                r"(?i)\b(yellow leaf|brown spot|white powder|black spot)\b",
+                # Hindi patterns
+                r"(?i)\b(bimari|rog|lakshan|patti|dhabba|sarav|pila|safed)\b",
+                r"बीमारी|रोग|लक्षण|धब्बे|सड़न|झुलसा"
             ],
             QueryDomain.IRRIGATION: [
                 # English patterns
@@ -117,8 +130,39 @@ class AgricultureRouter(BaseWorkerAgent):
                 # Hindi patterns
                 r"(?i)\b(khad|urvarak|beej|khad|gobar)\b",
                 r"खाद|उर्वरक|बीज|गोबर|कंपोस्ट"
+            ],
+            QueryDomain.FERTILIZER_RECOMMENDATION: [
+                # English patterns
+                r"(?i)\b(fertilizer|recommend|NPK|nitrogen|phosphorus|potassium|nutrient)\b",
+                r"(?i)\b(which fertilizer|best fertilizer|fertilizer dose|fertilizer rate)\b",
+                r"(?i)\b(soil fertility|soil health|soil test)\b",
+                # Hindi patterns
+                r"(?i)\b(khad|urvarak|NPK|matra|dose)\b",
+                r"उर्वरक|खाद की मात्रा|खाद कितनी|उर्वरक का प्रयोग"
+            ],
+            QueryDomain.WEATHER_FORECAST: [
+                # English patterns
+                r"(?i)\b(weather|forecast|rain|temperature|humidity|precipitation|wind|climate|mausam)\b",
+                r"(?i)\b(will it rain|weather prediction|weather update|today's weather)\b",
+                # Hindi patterns
+                r"(?i)\b(mausam|barish|tapman|garmi|sardi|hawa|badal)\b",
+                r"मौसम|बारिश|तापमान|आज का मौसम|कल का मौसम"
+            ],
+            QueryDomain.SMART_FARMING: [
+                # English patterns
+                r"(?i)\b(best practice|farming technique|modern farming|smart farming|sustainable)\b",
+                r"(?i)\b(how to improve|farming method|farming system|farming technology)\b",
+                # Hindi patterns
+                r"(?i)\b(kheti vidhi|adhunik kheti|tarika|krishi takanik)\b",
+                r"खेती विधि|आधुनिक खेती|कृषि तकनीक|उन्नत खेती"
             ]
         }
+        
+        # Special pattern for detecting image-based queries
+        self.image_query_pattern = r"(?i)\b(image|picture|photo|identify|detect|diagnose)\b"
+        
+        # NPK values pattern for fertilizer recommendation
+        self.npk_pattern = r"(?i)\b(N|P|K|NPK)\s*[:=]?\s*\d+"
         
         # Language detection patterns
         self.hindi_patterns = [
@@ -184,12 +228,42 @@ Translated query:
         else:
             return Language.ENGLISH
     
-    def classify_domains(self, query: str) -> Tuple[List[QueryDomain], float]:
-        """Classify query into agricultural domains using pattern matching"""
+    def classify_domains(self, query: str, has_image: bool = False, npk_data: bool = False) -> Tuple[List[QueryDomain], float]:
+        """
+        Classify query into agricultural domains using pattern matching
+        
+        Args:
+            query: Text of the query
+            has_image: Whether the query includes an image attachment
+            npk_data: Whether the query includes NPK soil data
+        """
         
         domain_scores = {}
         
+        # Special handling for image-based queries
+        if has_image or re.search(self.image_query_pattern, query):
+            disease_patterns = self.domain_patterns.get(QueryDomain.DISEASE_IDENTIFICATION, [])
+            
+            # Check if query mentions disease-related terms
+            disease_score = sum(len(re.findall(pattern, query)) for pattern in disease_patterns)
+            
+            if disease_score > 0 or has_image:
+                # This is likely a disease identification query with image
+                domain_scores[QueryDomain.DISEASE_IDENTIFICATION] = 1.0
+        
+        # Special handling for NPK data
+        if npk_data or re.search(self.npk_pattern, query):
+            # If query has NPK data, it's likely fertilizer recommendation
+            domain_scores[QueryDomain.FERTILIZER_RECOMMENDATION] = 0.9
+            
+            # It could also be crop selection, but with lower confidence
+            domain_scores[QueryDomain.CROP_SELECTION] = 0.5
+        
+        # Regular domain pattern matching
         for domain, patterns in self.domain_patterns.items():
+            if domain in domain_scores:
+                continue  # Skip domains we've already scored
+                
             score = 0
             for pattern in patterns:
                 matches = len(re.findall(pattern, query))
@@ -321,33 +395,87 @@ Translated query:
             # Step 1: Language detection
             detected_language = self.detect_language(query_text)
             
-            # Step 2: Domain classification (pattern-based)
-            domains, pattern_confidence = self.classify_domains(query_text)
+            # Step 2: Check for special data types (image, NPK values)
+            has_image = agriculture_query.image_data is not None
             
-            # Step 3: Enhanced analysis with LLM (if available)
-            llm_analysis = await self.analyze_query_with_llm(query_text, context)
+            # Check for NPK data in context or query
+            has_npk_data = False
+            if context.get("soil_data") and any(k in context["soil_data"] for k in ["nitrogen", "phosphorus", "potassium"]):
+                has_npk_data = True
+            elif re.search(self.npk_pattern, query_text):
+                has_npk_data = True
+            
+            # Step 3: Domain classification with special data handling
+            domains, pattern_confidence = self.classify_domains(
+                query_text, 
+                has_image=has_image, 
+                npk_data=has_npk_data
+            )
+            
+            # Step 4: Enhanced analysis with LLM (if available and no clear image/NPK routing)
+            llm_analysis = {}
+            if not (has_image or has_npk_data) or pattern_confidence < 0.7:
+                llm_analysis = await self.analyze_query_with_llm(query_text, context)
             
             # Combine pattern-based and LLM analysis
             if llm_analysis:
                 llm_domains = [QueryDomain(d) for d in llm_analysis.get("primary_domains", [])]
                 if llm_domains:
-                    domains = llm_domains
+                    # If we have high confidence in image/NPK routing, keep those domains
+                    if has_image and QueryDomain.DISEASE_IDENTIFICATION in domains and pattern_confidence > 0.8:
+                        combined_domains = list(set(llm_domains + [QueryDomain.DISEASE_IDENTIFICATION]))
+                        domains = combined_domains
+                    elif has_npk_data and QueryDomain.FERTILIZER_RECOMMENDATION in domains and pattern_confidence > 0.8:
+                        combined_domains = list(set(llm_domains + [QueryDomain.FERTILIZER_RECOMMENDATION]))
+                        domains = combined_domains
+                    else:
+                        domains = llm_domains
                 
                 llm_confidence = llm_analysis.get("confidence", pattern_confidence)
                 final_confidence = (pattern_confidence + llm_confidence) / 2
             else:
                 final_confidence = pattern_confidence
             
-            # Step 4: Extract location information
+            # Step 5: Extract location information
             location = self.extract_location_info(query_text, context)
             
-            # Step 5: Select appropriate agents
+            # Step 6: Select appropriate agents
             selected_agents = self.select_agents(domains)
             
-            # Step 6: Determine execution plan
+            # If no specific agent found, use enhanced fallback strategy
+            if not selected_agents:
+                # Check for financial or market-related queries - use Google Search fallback
+                if re.search(r"(?i)\b(price|cost|market|finance|loan|subsidy|money|MSP|scheme)\b", query_text):
+                    # Use finance agent with Google Search fallback
+                    selected_agents = ["finance_policy_agent"]
+                    domains = [QueryDomain.FINANCE_POLICY]
+                    
+                    # Add Google search fallback flag to context
+                    context["use_google_search"] = True
+                    
+                # Check for weather queries
+                elif re.search(r"(?i)\b(weather|forecast|rain|temperature|climate|monsoon|precipitation)\b", query_text):
+                    selected_agents = ["weather_forecast_agent"]
+                    domains = [QueryDomain.WEATHER_FORECAST]
+                    
+                # Check for best practices or guidance queries
+                elif re.search(r"(?i)\b(practice|technique|method|how to|guidance|advice|best way|sustainable)\b", query_text):
+                    selected_agents = ["smart_farming_guidance_agent"]
+                    domains = [QueryDomain.SMART_FARMING]
+                    
+                # General fallback to crop selection agent
+                else:
+                    selected_agents = ["crop_selection_agent"]
+                    domains = [QueryDomain.CROP_SELECTION]
+            
+            # For financial queries, always consider Google Search as fallback
+            if QueryDomain.FINANCE_POLICY in domains or QueryDomain.MARKET_TIMING in domains:
+                context["use_google_search"] = True
+                
+            # Step 7: Determine execution plan
             execution_plan = self.determine_execution_plan(domains, selected_agents)
             
-            # Step 7: Create routing decision
+            # Step 8: Create routing decision
             routing_decision = RoutingDecision(
                 query_id=agriculture_query.query_id,
                 detected_domains=domains,
@@ -375,7 +503,8 @@ Translated query:
                 "agriculture_query": agriculture_query,
                 "detected_location": location,
                 "processing_time_ms": 500,  # Placeholder
-                "status": "success"
+                "status": "success",
+                "use_google_search_fallback": context.get("use_google_search", False)
             }
             
         except Exception as e:
