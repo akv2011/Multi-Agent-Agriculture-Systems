@@ -6,13 +6,14 @@ Provides REST API endpoints for agricultural queries and agent management.
 import logging
 from typing import Dict, Any, Optional
 from datetime import datetime
-from fastapi import APIRouter, HTTPException, BackgroundTasks
+from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends
 from pydantic import BaseModel, Field
 
 from ...core.agriculture_models import (
     AgricultureQuery, QueryDomain, Language, Location, FarmProfile
 )
 from ...services.agriculture_integration import get_agriculture_service
+from ...config import get_config, ConfigService
 
 
 logger = logging.getLogger(__name__)
@@ -212,16 +213,23 @@ async def get_query_status(query_id: str) -> Dict[str, Any]:
 
 
 @router.get("/domains")
-async def get_supported_domains() -> Dict[str, Any]:
+async def get_supported_domains(config: ConfigService = Depends(get_config)) -> Dict[str, Any]:
     """
     Get list of supported agricultural domains and their descriptions.
+    Uses region-specific configuration for recommendations.
     """
     try:
+        # Get region-specific data
+        current_region = config.get_region_name()
+        region_data = config.region
+        
+        # Load domains info
         domains_info = {
             QueryDomain.CROP_SELECTION.value: {
                 "name": "Crop Selection",
                 "description": "Recommendations for optimal crop varieties based on location, soil, and weather conditions",
-                "keywords": ["crop", "seed", "variety", "plant", "cultivation", "fasal", "beej"]
+                "keywords": ["crop", "seed", "variety", "plant", "cultivation", "fasal", "beej"],
+                "region_crops": config.get_region_data("agriculture_data.major_crops", [])
             },
             QueryDomain.PEST_MANAGEMENT.value: {
                 "name": "Pest Management", 
@@ -230,23 +238,27 @@ async def get_supported_domains() -> Dict[str, Any]:
             },
             QueryDomain.IRRIGATION.value: {
                 "name": "Irrigation Scheduling",
-                "description": "Water requirement calculation and optimal irrigation scheduling",
-                "keywords": ["water", "irrigation", "watering", "schedule", "pani", "sinchai"]
+                "description": f"Water requirement calculation and optimal irrigation scheduling for {current_region}",
+                "keywords": ["water", "irrigation", "watering", "schedule", "pani", "sinchai"],
+                "irrigation_systems": config.get_region_data("agriculture_data.irrigation_systems", [])
             },
             QueryDomain.FINANCE_POLICY.value: {
                 "name": "Finance & Policy",
                 "description": "Agricultural loans, subsidies, insurance, and government schemes",
-                "keywords": ["loan", "subsidy", "insurance", "scheme", "bank", "karza", "yojana"]
+                "keywords": ["loan", "subsidy", "insurance", "scheme", "bank", "karza", "yojana"],
+                "govt_schemes": config.get_region_data("government_schemes", [])
             },
             QueryDomain.MARKET_TIMING.value: {
                 "name": "Market Timing",
                 "description": "Price forecasting and optimal selling time recommendations",
-                "keywords": ["sell", "market", "price", "mandi", "rate", "bhav"]
+                "keywords": ["sell", "market", "price", "mandi", "rate", "bhav"],
+                "market_centers": config.get_region_data("market_centers", [])
             },
             QueryDomain.HARVEST_PLANNING.value: {
                 "name": "Harvest Planning",
                 "description": "Optimal harvest timing and post-harvest handling advice",
-                "keywords": ["harvest", "cutting", "maturity", "katana", "fasal"]
+                "keywords": ["harvest", "cutting", "maturity", "katana", "fasal"],
+                "growing_seasons": config.get_region_data("agriculture_data.growing_seasons", {})
             },
             QueryDomain.INPUT_MATERIALS.value: {
                 "name": "Input Materials",
@@ -311,7 +323,7 @@ async def submit_feedback(feedback_data: Dict[str, Any]) -> Dict[str, Any]:
 
 
 @router.get("/test")
-async def test_agriculture_system() -> Dict[str, Any]:
+async def test_agriculture_system(config: ConfigService = Depends(get_config)) -> Dict[str, Any]:
     """
     Test endpoint to verify agriculture system is working.
     Runs basic connectivity and functionality tests.
@@ -322,7 +334,11 @@ async def test_agriculture_system() -> Dict[str, Any]:
         tests = {
             "service_available": service is not None,
             "router_initialized": False,
-            "agents_registered": 0
+            "agents_registered": 0,
+            "config_service": True,
+            "environment": config.settings.APP_ENV.value,
+            "region": config.get_region_name(),
+            "region_loaded": bool(config.region)
         }
         
         if service:
@@ -330,15 +346,29 @@ async def test_agriculture_system() -> Dict[str, Any]:
             tests["router_initialized"] = status.get("router_available", False)
             tests["agents_registered"] = status.get("specialist_agents", 0)
         
+        # Check if the region has major crops data
+        tests["region_crops_loaded"] = bool(config.get_region_data("agriculture_data.major_crops", []))
+        
         overall_status = "healthy" if all([
             tests["service_available"],
-            tests["router_initialized"]
+            tests["router_initialized"],
+            tests["config_service"],
+            tests["region_loaded"],
+            tests["region_crops_loaded"]
         ]) else "degraded"
         
         return {
             "status": overall_status,
             "timestamp": datetime.now().isoformat(),
             "tests": tests,
+            "environment": config.settings.APP_ENV.value,
+            "region": {
+                "name": config.get_region_name(),
+                "major_crops": config.get_region_data("agriculture_data.major_crops", []),
+                "agricultural_zones": config.get_region_data("agriculture_data.agricultural_zones", [])
+            },
+            "api_url": config.get_api_url(),
+            "ws_url": config.get_ws_url(),
             "message": "Agriculture system test completed"
         }
     

@@ -287,7 +287,10 @@ export class WebSocketService {
   }
 }
 
+// Import the WebSocket URL from configuration
+import getWebSocketUrl from './websocketConfig.ts';
+
 // Default WebSocket service instance
 export const defaultWebSocketService = new WebSocketService({
-  url: 'ws://localhost:8000/ws/updates'
+  url: getWebSocketUrl()
 });
