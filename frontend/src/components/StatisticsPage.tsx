@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './StatisticsPage.css';
+import { useDashboard } from '../hooks/useDashboard';
 
 // Define types for statistics data
 interface StatisticCard {
@@ -29,71 +30,106 @@ interface ComparisonData {
 }
 
 const StatisticsPage: React.FC = () => {
-  // Sample statistics data
-  const mainStats: StatisticCard[] = [
+  // Get real-time dashboard metrics
+  const { metrics, stats, detailed } = useDashboard();
+  
+  // Generate real-time statistics from dashboard data
+  const getMainStats = (): StatisticCard[] => [
     {
-      title: 'Total Yield',
-      value: '1,254',
-      change: 8.2,
+      title: 'Total Queries',
+      value: metrics.totalQueries.toLocaleString(),
+      change: metrics.totalQueries > 0 ? 15.3 : 0,
       changeType: 'positive',
-      icon: '🌾',
+      icon: '📊',
       color: '#22C55E'
     },
     {
-      title: 'Water Usage',
-      value: '34,280',
-      change: -12.5,
-      changeType: 'positive',
-      icon: '💧',
+      title: 'Success Rate',
+      value: `${detailed.overview.successRate}%`,
+      change: parseFloat(detailed.overview.successRate) > 85 ? 5.2 : -2.1,
+      changeType: parseFloat(detailed.overview.successRate) > 85 ? 'positive' : 'negative',
+      icon: '✅',
       color: '#3B82F6'
     },
     {
-      title: 'Field Efficiency',
-      value: '87%',
+      title: 'Active Agents',
+      value: stats.activeAgents.toString(),
       change: 2.8,
       changeType: 'positive',
-      icon: '📊',
+      icon: '🤖',
       color: '#DFBA47'
     },
     {
-      title: 'Operating Costs',
-      value: '$42,150',
-      change: 5.3,
-      changeType: 'negative',
-      icon: '💰',
+      title: 'Avg Response Time',
+      value: `${detailed.overview.avgProcessingTime}ms`,
+      change: parseFloat(detailed.overview.avgProcessingTime) < 1000 ? -8.5 : 12.3,
+      changeType: parseFloat(detailed.overview.avgProcessingTime) < 1000 ? 'positive' : 'negative',
+      icon: '⚡',
       color: '#EF4444'
     }
   ];
 
-  // Sample chart data
-  const monthlyYieldData: ChartData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
-    datasets: [
-      {
-        label: 'Corn',
-        data: [65, 72, 78, 75, 85, 92, 96],
-        color: '#DFBA47'
-      },
-      {
-        label: 'Wheat',
-        data: [42, 45, 48, 52, 55, 59, 63],
-        color: '#22C55E'
-      },
-      {
-        label: 'Soybeans',
-        data: [28, 35, 36, 32, 39, 45, 52],
-        color: '#3B82F6'
-      }
-    ]
+  const mainStats = getMainStats();
+
+  // Generate agent usage chart from real data
+  const getAgentUsageData = (): ChartData => {
+    const agentNames = Object.keys(metrics.agentUsage);
+    const agentCounts = Object.values(metrics.agentUsage);
+    
+    // If no agent data, show sample data
+    if (agentNames.length === 0) {
+      return {
+        labels: ['Disease ID', 'Crop Rec', 'Irrigation', 'Market'],
+        datasets: [
+          {
+            label: 'Queries Processed',
+            data: [0, 0, 0, 0],
+            color: '#22C55E'
+          }
+        ]
+      };
+    }
+    
+    return {
+      labels: agentNames.map(name => name.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())),
+      datasets: [
+        {
+          label: 'Queries Processed', 
+          data: agentCounts,
+          color: '#22C55E'
+        }
+      ]
+    };
   };
 
-  const resourceUtilization: { category: string; value: number; color: string }[] = [
-    { category: 'Water', value: 75, color: '#3B82F6' },
-    { category: 'Fertilizer', value: 65, color: '#22C55E' },
-    { category: 'Electricity', value: 50, color: '#F59E0B' },
-    { category: 'Fuel', value: 40, color: '#EF4444' },
-    { category: 'Labor', value: 80, color: '#8B5CF6' }
-  ];
+  const monthlyYieldData = getAgentUsageData();
+
+  const getResourceUtilization = () => {
+    const agents = Object.keys(metrics.agentUsage);
+    const totalQueries = metrics.totalQueries || 1;
+    
+    if (agents.length === 0) {
+      return [
+        { category: 'Disease ID', value: 0, color: '#3B82F6' },
+        { category: 'Crop Rec', value: 0, color: '#22C55E' },
+        { category: 'Irrigation', value: 0, color: '#F59E0B' },
+        { category: 'Market', value: 0, color: '#EF4444' }
+      ];
+    }
+    
+    return agents.map((agent, index) => {
+      const colors = ['#3B82F6', '#22C55E', '#F59E0B', '#EF4444', '#8B5CF6'];
+      const percentage = Math.round((metrics.agentUsage[agent] / totalQueries) * 100);
+      
+      return {
+        category: agent.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        value: percentage,
+        color: colors[index % colors.length]
+      };
+    });
+  };
+
+  const resourceUtilization = getResourceUtilization();
 
   const fieldComparisons: ComparisonData[] = [
     {

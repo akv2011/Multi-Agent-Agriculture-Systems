@@ -6,6 +6,7 @@ import type { Workflow } from './WorkflowVisualizer'
 import { useWebSocket, useAgentUpdates, useWorkflowUpdates } from '../hooks/useWebSocket'
 import { WebSocketConnectionStatus } from '../services/websocketService'
 import { useMemo, useEffect, useState } from 'react'
+import { useDashboard } from '../hooks/useDashboard'
 
 // Mock data for testing
 const mockAgents: Agent[] = [
@@ -128,6 +129,9 @@ const mockWorkflow: Workflow = {
 function DashboardPage() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   
+  // Get real-time dashboard metrics
+  const { metrics, stats, detailed, isConnected: dashboardConnected } = useDashboard();
+
   const { connectionStatus, isConnected, connect, disconnect, lastMessage } = useWebSocket({
     autoConnect: true,
     onMessage: (message) => {
@@ -313,10 +317,10 @@ function DashboardPage() {
           }}>
             <span style={{ fontSize: "0.8rem", color: "#6B7280", fontWeight: "500" }}>Active Agents</span>
             <div style={{ display: "flex", alignItems: "baseline", marginTop: "0.5rem" }}>
-              <span style={{ fontSize: "1.8rem", fontWeight: "700", color: "#18A1CC" }}>{activeAgentCount}</span>
+              <span style={{ fontSize: "1.8rem", fontWeight: "700", color: "#18A1CC" }}>{stats.activeAgents}</span>
               <span style={{ fontSize: "1rem", marginLeft: "0.5rem", color: "#22C55E" }}>/{mergedAgents.length}</span>
             </div>
-            <span style={{ fontSize: "0.75rem", color: "#6B7280", marginTop: "0.5rem" }}>Working on tasks</span>
+            <span style={{ fontSize: "0.75rem", color: "#6B7280", marginTop: "0.5rem" }}>Agriculture AI System</span>
             <div style={{ 
               position: "absolute", 
               right: "-10px", 
@@ -345,12 +349,12 @@ function DashboardPage() {
             position: "relative",
             overflow: "hidden"
           }}>
-            <span style={{ fontSize: "0.8rem", color: "#6B7280", fontWeight: "500" }}>Active Workflows</span>
+            <span style={{ fontSize: "0.8rem", color: "#6B7280", fontWeight: "500" }}>Total Queries</span>
             <div style={{ display: "flex", alignItems: "baseline", marginTop: "0.5rem" }}>
-              <span style={{ fontSize: "1.8rem", fontWeight: "700", color: "#DFBA47" }}>{activeWorkflows.length}</span>
-              <span style={{ fontSize: "1rem", marginLeft: "0.5rem", color: "#22C55E" }}>/{realTimeWorkflows.length || 1}</span>
+              <span style={{ fontSize: "1.8rem", fontWeight: "700", color: "#DFBA47" }}>{metrics.totalQueries}</span>
+              <span style={{ fontSize: "1rem", marginLeft: "0.5rem", color: "#22C55E" }}>{detailed.overview.successRate}%</span>
             </div>
-            <span style={{ fontSize: "0.75rem", color: "#6B7280", marginTop: "0.5rem" }}>In execution</span>
+            <span style={{ fontSize: "0.75rem", color: "#6B7280", marginTop: "0.5rem" }}>Success rate</span>
             <div style={{ 
               position: "absolute", 
               right: "-10px", 
@@ -379,22 +383,19 @@ function DashboardPage() {
             position: "relative",
             overflow: "hidden"
           }}>
-            <span style={{ fontSize: "0.8rem", color: "#6B7280", fontWeight: "500" }}>Overall Progress</span>
+            <span style={{ fontSize: "0.8rem", color: "#6B7280", fontWeight: "500" }}>System Health</span>
             <div style={{ display: "flex", alignItems: "baseline", marginTop: "0.5rem" }}>
-              <span style={{ fontSize: "1.8rem", fontWeight: "700", color: "#22C55E" }}>
-                {Math.round(currentWorkflow.progress * 100)}%
+              <span style={{ 
+                fontSize: "1.4rem", 
+                fontWeight: "700", 
+                color: stats.systemHealth === 'healthy' ? "#22C55E" : stats.systemHealth === 'warning' ? "#F59E0B" : "#EF4444" 
+              }}>
+                {stats.systemHealth.toUpperCase()}
               </span>
             </div>
-            <div style={{ marginTop: "0.5rem", height: "6px", backgroundColor: "rgba(34, 197, 94, 0.1)", borderRadius: "3px", overflow: "hidden" }}>
-              <div style={{ 
-                height: "100%", 
-                width: `${Math.round(currentWorkflow.progress * 100)}%`, 
-                backgroundColor: "#22C55E",
-                borderRadius: "3px",
-                transition: "width 0.5s ease"
-              }}></div>
-            </div>
-            <span style={{ fontSize: "0.75rem", color: "#6B7280", marginTop: "0.5rem" }}>Tasks completed</span>
+            <span style={{ fontSize: "0.75rem", color: "#6B7280", marginTop: "0.5rem" }}>
+              Avg: {detailed.overview.avgProcessingTime}ms
+            </span>
             <div style={{ 
               position: "absolute", 
               right: "-10px", 
@@ -402,12 +403,12 @@ function DashboardPage() {
               width: "60px", 
               height: "60px", 
               borderRadius: "50%", 
-              backgroundColor: "rgba(34, 197, 94, 0.1)",
+              backgroundColor: stats.systemHealth === 'healthy' ? "rgba(34, 197, 94, 0.1)" : "rgba(245, 158, 11, 0.1)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               fontSize: "1.5rem"
-            }}>✅</div>
+            }}>{stats.systemHealth === 'healthy' ? '✅' : stats.systemHealth === 'warning' ? '⚠️' : '❌'}</div>
           </div>
         </div>
 
