@@ -2,7 +2,11 @@
 Fertilizer Recommendation Agent
 Specialized agent for recommending optimal fertilizer types and application rates
 based on soil NPK values, crop type, and environmental conditions.
+<<<<<<< HEAD
+Integrates with AgriMitr fertilizer recommendation model.
+=======
 Integrates with AgriSens fertilizer recommendation model.
+>>>>>>> upstream/main
 """
 
 import logging
@@ -17,8 +21,13 @@ from ..core.agriculture_models import (
     AgricultureQuery, AgentResponse, CropType, SoilType, SeasonType,
     WeatherData, Location, FarmProfile, QueryDomain
 )
+<<<<<<< HEAD
+# AgriMitr Model Integration
+from ..models.AgriMitr_fertilizer_recommendation import (
+=======
 # AgriSens Model Integration
 from ..models.agrisens_fertilizer_recommendation import (
+>>>>>>> upstream/main
     get_fertilizer_recommendation_model, FertilizerRecommendationData, FertilizerRecommendation
 )
 
@@ -59,7 +68,11 @@ class FertilizerRecommendationAgent(BaseWorkerAgent):
     
     def initialize(self):
         """Load the fertilizer recommendation model"""
+<<<<<<< HEAD
+        logger.info("Loading AgriMitr fertilizer recommendation model...")
+=======
         logger.info("Loading AgriSens fertilizer recommendation model...")
+>>>>>>> upstream/main
         self.model = get_fertilizer_recommendation_model()
         logger.info("Fertilizer recommendation agent initialized successfully")
     

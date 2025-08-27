@@ -1,6 +1,10 @@
 """
 Disease Identification Agent
+<<<<<<< HEAD
+Specialized agent for detecting and diagnosing plant diseases from images using AgriMitr AI models.
+=======
 Specialized agent for detecting and diagnosing plant diseases from images using AgriSens AI models.
+>>>>>>> upstream/main
 Provides treatment recommendations and prevention strategies.
 """
 
@@ -13,8 +17,13 @@ import re
 
 from .base_agent import BaseWorkerAgent
 from .satellite_integration import get_satellite_data_for_location, format_satellite_summary
+<<<<<<< HEAD
+from ..models.AgriMitr_disease_identification import (
+    AgriMitrDiseaseModel, DiseaseIdentificationResult, 
+=======
 from ..models.agrisens_disease_identification import (
     AgriSensDiseaseModel, DiseaseIdentificationResult, 
+>>>>>>> upstream/main
     load_disease_model, preprocess_image, get_disease_details,
     identify_disease_from_symptoms
 )
@@ -29,7 +38,11 @@ logger = logging.getLogger(__name__)
 class DiseaseIdentificationAgent(BaseWorkerAgent):
     """
     Agent for identifying crop diseases from images and providing treatment recommendations
+<<<<<<< HEAD
+    using AgriMitr CNN models for 38 diseases across 14 crops
+=======
     using AgriSens CNN models for 38 diseases across 14 crops
+>>>>>>> upstream/main
     
     Capabilities:
     - Image-based disease identification using CNN models
@@ -86,7 +99,11 @@ class DiseaseIdentificationAgent(BaseWorkerAgent):
     
     def initialize(self):
         """Load the disease identification model"""
+<<<<<<< HEAD
+        logger.info("Loading AgriMitr disease identification model...")
+=======
         logger.info("Loading AgriSens disease identification model...")
+>>>>>>> upstream/main
         self.model = load_disease_model()
         logger.info("Disease identification agent initialized successfully")
     
@@ -279,7 +296,11 @@ class DiseaseIdentificationAgent(BaseWorkerAgent):
     
     def _identify_disease(self, image_data: bytes, crop_type: Optional[str] = None) -> DiseaseIdentificationResult:
         """
+<<<<<<< HEAD
+        Process image and identify disease using AgriMitr model
+=======
         Process image and identify disease using AgriSens model
+>>>>>>> upstream/main
         
         Args:
             image_data: Raw image data bytes

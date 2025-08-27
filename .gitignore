@@ -65,9 +65,16 @@ __pycache__/
 *.pyd
 .Python
 
-# AgriSens directory
 AgriSens/
+# AgriMitr directory
+AgriMitr/
 
 # Task files
 # tasks.json
 # tasks/
+
+# Ignore sensitive credentials
+LOGIN_CREDENTIALS.md
+
+# Ignore archived development files
+development/archive/

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './LoginPage.css';
+import { isDemoMode, validateDemoCredentials } from '../utils/authUtils';
 
 interface LoginPageProps {
   onLogin: (username: string, password: string) => boolean;
@@ -23,19 +24,22 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
       const loginSuccess = onLogin(username, password);
       
       if (!loginSuccess) {
-        // If login failed, try with default credentials as fallback
-        const envUsername = import.meta.env.VITE_DEMO_DEFAULT_USER || 'admin';
-        const envPassword = import.meta.env.VITE_DEMO_DEFAULT_PASSWORD || 'admin123';
-        
-        const fallbackSuccess = onLogin(envUsername, envPassword);
-        
-        if (!fallbackSuccess) {
-          setError('Invalid username or password. Try admin/admin123');
-        }
+        setError('Invalid username or password');
       }
       
       setIsLoading(false);
-    }, 500);
+    }, 1000);
+  };
+
+  const handleDemoLogin = () => {
+    if (isDemoMode()) {
+      // Get demo username from environment
+      const demoUser = import.meta.env.VITE_DEMO_DEFAULT_USER || 'demo';
+      setUsername(demoUser);
+      setPassword(''); // Don't pre-fill passwords for security
+    } else {
+      setError('Demo mode is not enabled');
+    }
   };
 
   return (
@@ -152,6 +156,36 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
             )}
           </button>
         </form>
+
+        <div className="login-demo">
+          <p className="demo-text">Demo Mode Available</p>
+          <div className="demo-credentials">
+            <div className="demo-row">
+              <strong>Note:</strong> Demo credentials are configured via environment variables
+            </div>
+            <div className="demo-row">
+              <strong>Contact:</strong> Administrator for demo access credentials
+            </div>
+            {isDemoMode() && (
+              <div className="demo-row">
+                <strong>Status:</strong> <span style={{color: '#4CAF50'}}>Demo mode enabled</span>
+              </div>
+            )}
+            {!isDemoMode() && (
+              <div className="demo-row">
+                <strong>Status:</strong> <span style={{color: '#ff9800'}}>Demo mode disabled</span>
+              </div>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={handleDemoLogin}
+            className="demo-button"
+            disabled={!isDemoMode()}
+          >
+            {isDemoMode() ? 'Quick Demo Login' : 'Demo Mode Disabled'}
+          </button>
+        </div>
 
         <div className="login-footer">
           <p>&copy; 2025 AgriSens. All rights reserved.</p>

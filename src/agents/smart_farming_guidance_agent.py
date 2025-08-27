@@ -11,7 +11,11 @@ import json
 
 from .base_agent import BaseWorkerAgent
 from .satellite_integration import get_satellite_data_for_location, format_satellite_summary
+<<<<<<< HEAD
+from ..models.AgriMitr_crop_recommendation import get_optimal_planting_schedule
+=======
 from ..models.agrisens_crop_recommendation import get_optimal_planting_schedule
+>>>>>>> upstream/main
 from ..core.agriculture_models import (
     AgricultureQuery, AgentResponse, CropType, SoilType, SeasonType,
     WeatherData, Location, FarmProfile, QueryDomain, AgricultureCapability

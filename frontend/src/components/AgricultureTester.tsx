@@ -135,8 +135,13 @@ const AgricultureTester: React.FC = () => {
   return (
     <div className="agriculture-tester">
       <div className="header">
+<<<<<<< HEAD
+        <h1>🌾 AgriMitr Agent Tester</h1>
+        <p>Test your Multi-Agent Agriculture System and verify AgriMitr integration</p>
+=======
         <h1>🌾 AgriSens Agent Tester</h1>
         <p>Test your Multi-Agent Agriculture System and verify AgriSens integration</p>
+>>>>>>> upstream/main
       </div>
 
       {/* System Status */}

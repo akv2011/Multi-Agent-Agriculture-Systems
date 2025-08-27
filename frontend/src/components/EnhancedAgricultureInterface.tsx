@@ -307,7 +307,11 @@ const EnhancedAgricultureInterface: React.FC = () => {
       {/* Header with Real-time Dashboard */}
       <div className="interface-header">
         <div className="header-content">
+<<<<<<< HEAD
+          <h1>🌾 Enhanced AgriMitr Intelligence System</h1>
+=======
           <h1>🌾 Enhanced AgriSens Intelligence System</h1>
+>>>>>>> upstream/main
           <p>Advanced Multi-Agent Agriculture Platform with Real-time Analytics</p>
         </div>
         
