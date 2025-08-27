@@ -82,7 +82,10 @@ class EnhancedQueryProcessor:
         query_text: str, 
         location: Optional[str] = None,
         include_satellite: bool = True,
-        agent_preferences: Optional[List[str]] = None
+        agent_preferences: Optional[List[str]] = None,
+        coordinates: Optional[Dict[str, float]] = None,
+        analysis_context: Optional[Dict[str, Any]] = None,
+        vegetation_data: Optional[Dict[str, Any]] = None
     ) -> EnhancedQueryResponse:
         """
         Process query with comprehensive analysis and real-time updates
@@ -99,7 +102,7 @@ class EnhancedQueryProcessor:
             await self._initialize_workflow(response)
             
             # Phase 2: Query analysis and routing
-            await self._analyze_and_route_query(response, query_text, location)
+            await self._analyze_and_route_query(response, query_text, location, coordinates, analysis_context)
             
             # Phase 3: Agent coordination and execution
             await self._coordinate_agent_execution(response, include_satellite, agent_preferences)
@@ -156,7 +159,9 @@ class EnhancedQueryProcessor:
         self, 
         response: EnhancedQueryResponse, 
         query_text: str, 
-        location: Optional[str]
+        location: Optional[str],
+        coordinates: Optional[Dict[str, float]] = None,
+        analysis_context: Optional[Dict[str, Any]] = None
     ):
         """Comprehensive query analysis with multiple agent routing"""
         
@@ -174,8 +179,13 @@ class EnhancedQueryProcessor:
             "complexity": self._assess_complexity(query_text),
             "entities": self._extract_entities(query_text),
             "location_context": location,
+            "coordinates": coordinates,  # Add coordinates for location-specific processing
+            "analysis_context": analysis_context,  # Add additional context
             "text": query_text  # Include original text for analysis
         }
+        
+        # Log coordinates and location info for debugging
+        logger.info(f"Query analysis - Coordinates: {coordinates}, Location: {location}, Analysis Context: {analysis_context}")
         
         # Multi-agent routing decision
         routing_decisions = self._determine_agent_routing(query_analysis)
@@ -227,7 +237,9 @@ class EnhancedQueryProcessor:
         agriculture_query = AgricultureQuery(
             query_text=response.original_query,
             query_id=response.query_id,
-            query_language=language_mapping.get(detected_language, Language.ENGLISH)
+            query_language=language_mapping.get(detected_language, Language.ENGLISH),
+            location=self._create_location_from_context(response.agent_analysis["query_analysis"]),
+            context=self._prepare_query_context(response.agent_analysis["query_analysis"])
         )
         
         # Execute agents in parallel with progress tracking
@@ -329,6 +341,69 @@ class EnhancedQueryProcessor:
             # Return fallback response instead of raising exception
             logger.warning(f"Agent {agent_id} failed, returning fallback response: {e}")
             return self._create_fallback_agent_response(agent_id, query)
+    
+    def _create_location_from_context(self, query_analysis: Dict[str, Any]) -> Optional[Any]:
+        """Create Location object from coordinates and analysis context"""
+        try:
+            # Import Location from agriculture models
+            from src.core.agriculture_models import Location
+            
+            coordinates = query_analysis.get("coordinates")
+            analysis_context = query_analysis.get("analysis_context", {})
+            
+            # If coordinates are available, create location with address info
+            if coordinates and isinstance(coordinates, dict):
+                lat = coordinates.get("lat", 0)
+                lng = coordinates.get("lng", 0)
+                address = analysis_context.get("address", "")
+                
+                # Parse address for state/district info
+                state = "Unknown"
+                district = "Unknown"
+                
+                if address:
+                    # Extract state and district from address
+                    if "tamil nadu" in address.lower():
+                        state = "Tamil Nadu"
+                        if "pudukkottai" in address.lower():
+                            district = "Pudukkottai"
+                    elif "punjab" in address.lower():
+                        state = "Punjab"
+                    elif "maharashtra" in address.lower():
+                        state = "Maharashtra"
+                
+                return Location(
+                    state=state,
+                    district=district,
+                    latitude=lat,
+                    longitude=lng
+                )
+            
+            # Fallback to location context if no coordinates
+            location_context = query_analysis.get("location_context")
+            if location_context:
+                return Location(state=location_context, district="Unknown")
+                
+        except ImportError:
+            logger.warning("Could not import Location class")
+        except Exception as e:
+            logger.error(f"Error creating location: {e}")
+        
+        return None
+    
+    def _prepare_query_context(self, query_analysis: Dict[str, Any]) -> Dict[str, Any]:
+        """Prepare context dictionary for AgricultureQuery"""
+        context = {}
+        
+        # Add coordinates as metadata
+        if query_analysis.get("coordinates"):
+            context["coordinates"] = query_analysis["coordinates"]
+        
+        # Add analysis context
+        if query_analysis.get("analysis_context"):
+            context.update(query_analysis["analysis_context"])
+        
+        return context
     
     def _create_fallback_agent_response(self, agent_id: str, query: AgricultureQuery) -> AgentResponse:
         """Create a fallback response when agent execution fails"""

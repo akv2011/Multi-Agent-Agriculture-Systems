@@ -47,7 +47,7 @@ class GroundSearchService:
                  gemini_api_key: Optional[str] = None, 
                  google_search_api_key: Optional[str] = None,
                  google_search_cx: Optional[str] = None,
-                 model_name: str = "gemini-1.5-flash"):
+                 model_name: str = "gemini-2.5-flash"):
         """Initialize the Ground Search service with Gemini and Google Search API"""
         self.gemini_api_key = gemini_api_key or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
         

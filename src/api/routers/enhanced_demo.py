@@ -28,6 +28,9 @@ class EnhancedQueryRequest(BaseModel):
     agent_preferences: Optional[List[str]] = None
     priority_level: str = "normal"  # low, normal, high
     context: Optional[Dict[str, Any]] = None
+    coordinates: Optional[Dict[str, float]] = None  # Added for location-specific responses
+    analysis_context: Optional[Dict[str, Any]] = None  # Added for additional context
+    vegetation_data: Optional[Dict[str, Any]] = None  # Added for vegetation analysis
 
 class EnhancedQueryResponseModel(BaseModel):
     status: str
@@ -89,7 +92,10 @@ async def process_enhanced_query(
             query_text=request.query_text,
             location=request.location,
             include_satellite=request.include_satellite,
-            agent_preferences=request.agent_preferences
+            agent_preferences=request.agent_preferences,
+            coordinates=request.coordinates,  # Pass coordinates for location-aware responses
+            analysis_context=request.analysis_context,  # Pass additional context
+            vegetation_data=request.vegetation_data  # Pass vegetation data if available
         )
         
         # Add additional processing for high priority requests

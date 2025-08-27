@@ -206,18 +206,24 @@ Remember: Always follow the exact format above. Do not add conversational elemen
     def _enhance_query_with_context(self, query: AgricultureQuery) -> str:
         """Create a simple, effective prompt that leverages Gemini's native multilingual capabilities"""
         
+        # Detect region from location/coordinates for region-specific advice
+        region_context = self._get_regional_context(query)
+        
         # Simple agricultural context prompt that works in any language
         prompt = f"""You are an expert agricultural advisor helping Indian farmers. Please provide practical, actionable advice.
 
 Farmer's Question: {query.query_text}
 
+{region_context}
+
 Please respond in the same language as the question. If the farmer asks in Hindi, respond in Hindi. If they ask in English, respond in English. If they mix languages (Hinglish), you can respond accordingly.
 
 Focus on:
 - Practical, implementable solutions
-- Indian agricultural context
+- Region-specific crops and varieties suitable for the local climate and soil
 - Cost-effective methods
-- Seasonal considerations (current month: {datetime.now().strftime('%B')})"""
+- Seasonal considerations (current month: {datetime.now().strftime('%B')})
+- Local agricultural practices and market conditions"""
 
         # Add farm context if available
         if query.farm_profile:
@@ -237,6 +243,336 @@ Focus on:
             prompt += f"\nLocation: {query.location}"
             
         return prompt
+    
+    def _get_regional_context(self, query: AgricultureQuery) -> str:
+        """Get region-specific agricultural context based on location information"""
+        
+        # Check if location contains state/region information
+        location_text = ""
+        if query.location:
+            location_text = str(query.location).lower()
+            logger.info(f"Location detected from query.location: {query.location}")
+        elif query.farm_profile and query.farm_profile.location:
+            location_text = str(query.farm_profile.location).lower()
+            logger.info(f"Location detected from farm_profile: {query.farm_profile.location}")
+        
+        # Extract coordinates if available (from metadata or other sources)
+        coordinates = getattr(query, 'coordinates', None)
+        if not coordinates and hasattr(query, 'context') and query.context:
+            coordinates = query.context.get('coordinates')
+        
+        logger.info(f"Coordinates detected: {coordinates}")
+        logger.info(f"Query context: {getattr(query, 'context', 'No context')}")
+        
+        if coordinates and isinstance(coordinates, dict):
+            lat = coordinates.get('lat', 0)
+            lng = coordinates.get('lng', 0)
+            
+            # Detect region from coordinates for major agricultural states
+            
+            # Tamil Nadu
+            if 8.0 <= lat <= 13.5 and 76.0 <= lng <= 80.5:
+                return """
+REGIONAL CONTEXT - TAMIL NADU AGRICULTURE:
+- Climate: Tropical climate with SW and NE monsoons
+- Main Crops: Rice (paddy), sugarcane, cotton, groundnut, millet, turmeric, banana
+- Soil Types: Red laterite soil, black cotton soil, alluvial soil
+- Seasons: Kharif (June-September), Rabi (October-January), Summer (February-May)
+- Best varieties: Rice (CO-51, ADT-43, TRY-3), Cotton (MCU-5, SVPR-2), Sugarcane (CO-86032)
+- Agricultural zones: Cauvery delta (rice), Kongu region, Hill regions
+- Irrigation: River systems (Cauvery, Vaigai), tanks, wells
+
+Please provide advice specific to Tamil Nadu's tropical climate, soil conditions, and suitable crop varieties."""
+            
+            # Kerala
+            elif 8.0 <= lat <= 12.0 and 74.5 <= lng <= 77.2:
+                return """
+REGIONAL CONTEXT - KERALA AGRICULTURE:
+- Climate: Tropical humid climate with heavy monsoons
+- Main Crops: Rice, coconut, spices (cardamom, pepper, cinnamon), rubber, tea, coffee
+- Soil Types: Laterite soil, alluvial soil, forest soil
+- Seasons: Two monsoons (SW and NE), year-round cultivation possible
+- Best crops: Rice (Jyothi, Uma, Swetha), Coconut (WCT varieties), Spices, Rubber
+- Agricultural zones: Coastal plains, midlands, highlands
+- Specialty: Spice cultivation, plantation crops
+
+Please provide advice specific to Kerala's tropical humid climate and plantation agriculture."""
+            
+            # Karnataka
+            elif 11.8 <= lat <= 18.5 and 74.0 <= lng <= 78.5:
+                return """
+REGIONAL CONTEXT - KARNATAKA AGRICULTURE:
+- Climate: Tropical to semi-arid climate with varied agro-climatic zones
+- Main Crops: Rice, ragi (finger millet), cotton, sugarcane, coffee, areca nut, tobacco
+- Soil Types: Red soil, black soil, laterite soil, alluvial soil
+- Seasons: Kharif (June-October), Rabi (November-March)
+- Best varieties: Rice (BPT-5204, Intan), Ragi (MR-1, GPU-28), Cotton (Bt varieties)
+- Agricultural zones: Coastal, Malnad (hill), Maidan (plains)
+- Specialty: Coffee (Coorg region), areca nut, sericulture
+
+Please provide advice specific to Karnataka's diverse agro-climatic conditions."""
+            
+            # Andhra Pradesh & Telangana
+            elif 12.5 <= lat <= 19.5 and 77.0 <= lng <= 84.8:
+                return """
+REGIONAL CONTEXT - ANDHRA PRADESH/TELANGANA AGRICULTURE:
+- Climate: Tropical to semi-arid climate
+- Main Crops: Rice, cotton, sugarcane, chili, turmeric, groundnut, maize
+- Soil Types: Black cotton soil, red soil, alluvial soil
+- Seasons: Kharif (June-October), Rabi (November-March)
+- Best varieties: Rice (MTU varieties, BPT-5204), Cotton (Bt varieties), Chili (Guntur varieties)
+- Agricultural zones: Coastal Andhra, Rayalaseema, Telangana
+- Specialty: Spice cultivation (chili, turmeric), aquaculture
+
+Please provide advice specific to Andhra Pradesh/Telangana's semi-arid conditions and spice cultivation."""
+            
+            # Punjab & Haryana
+            elif 28.5 <= lat <= 32.5 and 74.0 <= lng <= 77.5:
+                return """
+REGIONAL CONTEXT - PUNJAB/HARYANA AGRICULTURE:
+- Climate: Semi-arid subtropical climate
+- Main Crops: Wheat, rice, cotton, maize, sugarcane
+- Soil Types: Alluvial soil, well-drained fertile plains
+- Seasons: Rabi (wheat), Kharif (rice, cotton)
+- Best varieties: Wheat (HD-2967, PBW-343, DBW-187), Rice (PR-126, Pusa-44)
+- Agricultural zones: Indo-Gangetic plains
+- Known as: Granary of India
+
+Please provide advice specific to Punjab/Haryana's intensive agriculture and wheat-rice systems."""
+            
+            # Uttar Pradesh
+            elif 23.5 <= lat <= 30.5 and 77.0 <= lng <= 84.5:
+                return """
+REGIONAL CONTEXT - UTTAR PRADESH AGRICULTURE:
+- Climate: Subtropical climate with distinct seasons
+- Main Crops: Wheat, rice, sugarcane, potato, mustard, barley
+- Soil Types: Alluvial soil (Gangetic plains), black soil (Bundelkhand)
+- Seasons: Kharif (rice, sugarcane), Rabi (wheat, potato, mustard)
+- Best varieties: Wheat (HD-2967, K-307), Rice (Sarjoo-52), Sugarcane (Co-0238)
+- Agricultural zones: Eastern, Western, Central, Bundelkhand
+- Specialty: Sugar production, potato cultivation
+
+Please provide advice specific to Uttar Pradesh's diverse agricultural zones and crop systems."""
+            
+            # Madhya Pradesh
+            elif 21.0 <= lat <= 26.5 and 74.0 <= lng <= 82.5:
+                return """
+REGIONAL CONTEXT - MADHYA PRADESH AGRICULTURE:
+- Climate: Tropical to subtropical climate
+- Main Crops: Wheat, soybean, cotton, rice, gram (chickpea), mustard
+- Soil Types: Black cotton soil, red soil, alluvial soil
+- Seasons: Kharif (soybean, cotton), Rabi (wheat, gram)
+- Best varieties: Soybean (JS-335, JS-93-05), Wheat (Lok-1, GW-322), Cotton (Bt varieties)
+- Agricultural zones: Malwa plateau, Nimar, Bundelkhand, Baghelkhand
+- Known as: Soybean state of India
+
+Please provide advice specific to Madhya Pradesh's soybean-wheat systems and black cotton soils."""
+            
+            # Maharashtra
+            elif 15.5 <= lat <= 22.0 and 72.5 <= lng <= 80.5:
+                return """
+REGIONAL CONTEXT - MAHARASHTRA AGRICULTURE:
+- Climate: Tropical to subtropical climate
+- Main Crops: Cotton, sugarcane, soybean, wheat, gram, rice
+- Soil Types: Black cotton soil (regur), red soil, laterite soil
+- Seasons: Kharif (cotton, soybean), Rabi (wheat, gram)
+- Best varieties: Cotton (Bt varieties), Soybean (JS-335), Sugarcane (Co-86032)
+- Agricultural zones: Marathwada, Vidarbha, Western Maharashtra, Konkan
+- Specialty: Cotton production, sugar industry
+
+Please provide advice specific to Maharashtra's cotton-soybean systems and black cotton soils."""
+            
+            # Rajasthan
+            elif 23.0 <= lat <= 30.0 and 69.5 <= lng <= 78.0:
+                return """
+REGIONAL CONTEXT - RAJASTHAN AGRICULTURE:
+- Climate: Arid to semi-arid climate with low rainfall
+- Main Crops: Wheat, barley, mustard, gram, bajra (pearl millet), cotton
+- Soil Types: Desert soil, alluvial soil, red soil
+- Seasons: Rabi (wheat, mustard, gram), Kharif (bajra, cotton)
+- Best varieties: Wheat (Raj-4037, Lok-1), Mustard (Varuna, Kranti), Bajra (Raj-171)
+- Agricultural zones: Arid western, semi-arid eastern, irrigated areas
+- Specialty: Drought-tolerant crops, oilseeds
+
+Please provide advice specific to Rajasthan's arid climate and drought-tolerant agriculture."""
+            
+            # Gujarat
+            elif 20.0 <= lat <= 24.7 and 68.0 <= lng <= 74.5:
+                return """
+REGIONAL CONTEXT - GUJARAT AGRICULTURE:
+- Climate: Semi-arid to arid climate
+- Main Crops: Cotton, groundnut, wheat, sugarcane, bajra, castor
+- Soil Types: Black cotton soil, alluvial soil, sandy soil
+- Seasons: Kharif (cotton, groundnut), Rabi (wheat, mustard)
+- Best varieties: Cotton (Bt varieties), Groundnut (GG-20, TG-37A), Wheat (GW-322)
+- Agricultural zones: Saurashtra, North Gujarat, Central Gujarat, South Gujarat
+- Specialty: Cotton and groundnut production
+
+Please provide advice specific to Gujarat's semi-arid climate and cotton-groundnut systems."""
+            
+            # West Bengal
+            elif 21.5 <= lat <= 27.0 and 85.5 <= lng <= 89.5:
+                return """
+REGIONAL CONTEXT - WEST BENGAL AGRICULTURE:
+- Climate: Humid subtropical climate with heavy monsoons
+- Main Crops: Rice, wheat, jute, potato, tea, mustard
+- Soil Types: Alluvial soil, laterite soil, terai soil
+- Seasons: Aus (summer rice), Aman (monsoon rice), Boro (winter rice), Rabi (wheat)
+- Best varieties: Rice (Swarna, IR-36, Satabdi), Wheat (Sonalika, HD-2687)
+- Agricultural zones: Gangetic plains, hills, coastal areas
+- Specialty: Rice cultivation, jute production, tea (Darjeeling)
+
+Please provide advice specific to West Bengal's rice-based systems and humid climate."""
+            
+            # Bihar
+            elif 24.0 <= lat <= 27.5 and 83.5 <= lng <= 88.0:
+                return """
+REGIONAL CONTEXT - BIHAR AGRICULTURE:
+- Climate: Humid subtropical climate
+- Main Crops: Rice, wheat, maize, sugarcane, potato, pulses
+- Soil Types: Alluvial soil (highly fertile Gangetic plains)
+- Seasons: Kharif (rice, maize), Rabi (wheat, potato, mustard)
+- Best varieties: Rice (Rajshree, Sarjoo-52), Wheat (HD-2967, K-307)
+- Agricultural zones: North Bihar plains, South Bihar plains
+- Known for: Fertile Gangetic alluvium, high productivity potential
+
+Please provide advice specific to Bihar's fertile alluvial soils and rice-wheat systems."""
+            
+            # Odisha
+            elif 17.5 <= lat <= 22.5 and 81.5 <= lng <= 87.5:
+                return """
+REGIONAL CONTEXT - ODISHA AGRICULTURE:
+- Climate: Tropical humid climate with heavy monsoons
+- Main Crops: Rice, wheat, sugarcane, turmeric, groundnut, coconut
+- Soil Types: Red laterite soil, alluvial soil, black soil
+- Seasons: Kharif (rice), Rabi (wheat, mustard, gram)
+- Best varieties: Rice (Swarna, Lalat, Konark), Turmeric (Suroma, Suvarna)
+- Agricultural zones: Coastal plains, central plateaus, northern plateau
+- Specialty: Rice cultivation, turmeric production
+
+Please provide advice specific to Odisha's tropical climate and rice-based agriculture."""
+        
+        # Check location text for state names
+        if any(region in location_text for region in ['tamil nadu', 'tamilnadu', 'tn', 'pudukkottai', 'chennai', 'coimbatore', 'thanjavur']):
+            return """
+REGIONAL CONTEXT - TAMIL NADU AGRICULTURE:
+- Climate: Tropical climate with SW and NE monsoons
+- Main Crops: Rice (paddy), sugarcane, cotton, groundnut, millet, turmeric, banana
+- Soil Types: Red laterite soil, black cotton soil, alluvial soil
+- Seasons: Kharif (June-September), Rabi (October-January), Summer (February-May)
+- Best varieties: Rice (CO-51, ADT-43, TRY-3), Cotton (MCU-5, SVPR-2), Sugarcane (CO-86032)
+- Agricultural zones: Cauvery delta, Kongu region, Hill regions
+- Irrigation: River systems (Cauvery, Vaigai), tanks, wells
+
+Please provide advice specific to Tamil Nadu's tropical climate, soil conditions, and suitable crop varieties."""
+        
+        elif any(region in location_text for region in ['kerala', 'kochi', 'ernakulam', 'trivandrum', 'calicut', 'wayanad']):
+            return """
+REGIONAL CONTEXT - KERALA AGRICULTURE:
+- Climate: Tropical humid climate with heavy monsoons
+- Main Crops: Rice, coconut, spices (cardamom, pepper, cinnamon), rubber, tea, coffee
+- Soil Types: Laterite soil, alluvial soil, forest soil
+- Seasons: Two monsoons (SW and NE), year-round cultivation possible
+- Best crops: Rice (Jyothi, Uma, Swetha), Coconut (WCT varieties), Spices, Rubber
+- Agricultural zones: Coastal plains, midlands, highlands
+- Specialty: Spice cultivation, plantation crops
+
+Please provide advice specific to Kerala's tropical humid climate and plantation agriculture."""
+        
+        elif any(region in location_text for region in ['karnataka', 'bangalore', 'mysore', 'kodagu', 'coorg', 'belgaum', 'dharwad']):
+            return """
+REGIONAL CONTEXT - KARNATAKA AGRICULTURE:
+- Climate: Tropical to semi-arid climate with varied agro-climatic zones
+- Main Crops: Rice, ragi (finger millet), cotton, sugarcane, coffee, areca nut, tobacco
+- Soil Types: Red soil, black soil, laterite soil, alluvial soil
+- Seasons: Kharif (June-October), Rabi (November-March)
+- Best varieties: Rice (BPT-5204, Intan), Ragi (MR-1, GPU-28), Cotton (Bt varieties)
+- Agricultural zones: Coastal, Malnad (hill), Maidan (plains)
+- Specialty: Coffee (Coorg region), areca nut, sericulture
+
+Please provide advice specific to Karnataka's diverse agro-climatic conditions."""
+        
+        elif any(region in location_text for region in ['andhra pradesh', 'telangana', 'hyderabad', 'vijayawada', 'guntur', 'warangal']):
+            return """
+REGIONAL CONTEXT - ANDHRA PRADESH/TELANGANA AGRICULTURE:
+- Climate: Tropical to semi-arid climate
+- Main Crops: Rice, cotton, sugarcane, chili, turmeric, groundnut, maize
+- Soil Types: Black cotton soil, red soil, alluvial soil
+- Seasons: Kharif (June-October), Rabi (November-March)
+- Best varieties: Rice (MTU varieties, BPT-5204), Cotton (Bt varieties), Chili (Guntur varieties)
+- Agricultural zones: Coastal Andhra, Rayalaseema, Telangana
+- Specialty: Spice cultivation (chili, turmeric), aquaculture
+
+Please provide advice specific to Andhra Pradesh/Telangana's semi-arid conditions and spice cultivation."""
+        
+        elif any(region in location_text for region in ['punjab', 'haryana', 'ludhiana', 'chandigarh', 'amritsar', 'patiala']):
+            return """
+REGIONAL CONTEXT - PUNJAB/HARYANA AGRICULTURE:
+- Climate: Semi-arid subtropical
+- Main Crops: Wheat, rice, cotton, maize
+- Best varieties: Wheat (HD-2967, PBW-343), Rice (PR-126)
+- Soil: Alluvial, well-drained
+- Known as India's granary
+
+Please provide advice for Punjab/Haryana agricultural conditions."""
+        
+        elif any(region in location_text for region in ['uttar pradesh', 'up', 'lucknow', 'kanpur', 'agra', 'meerut', 'varanasi']):
+            return """
+REGIONAL CONTEXT - UTTAR PRADESH AGRICULTURE:
+- Climate: Subtropical climate with distinct seasons
+- Main Crops: Wheat, rice, sugarcane, potato, mustard, barley
+- Soil Types: Alluvial soil (Gangetic plains), black soil (Bundelkhand)
+- Seasons: Kharif (rice, sugarcane), Rabi (wheat, potato, mustard)
+- Best varieties: Wheat (HD-2967, K-307), Rice (Sarjoo-52), Sugarcane (Co-0238)
+- Specialty: Sugar production, potato cultivation
+
+Please provide advice specific to Uttar Pradesh's diverse agricultural zones."""
+        
+        elif any(region in location_text for region in ['madhya pradesh', 'mp', 'bhopal', 'indore', 'gwalior', 'jabalpur']):
+            return """
+REGIONAL CONTEXT - MADHYA PRADESH AGRICULTURE:
+- Climate: Tropical to subtropical climate
+- Main Crops: Wheat, soybean, cotton, rice, gram (chickpea), mustard
+- Soil Types: Black cotton soil, red soil, alluvial soil
+- Seasons: Kharif (soybean, cotton), Rabi (wheat, gram)
+- Best varieties: Soybean (JS-335, JS-93-05), Wheat (Lok-1, GW-322), Cotton (Bt varieties)
+- Known as: Soybean state of India
+
+Please provide advice specific to Madhya Pradesh's soybean-wheat systems."""
+        
+        elif any(region in location_text for region in ['maharashtra', 'nagpur', 'pune', 'mumbai', 'nashik', 'aurangabad']):
+            return """
+REGIONAL CONTEXT - MAHARASHTRA AGRICULTURE:
+- Climate: Tropical to subtropical
+- Main Crops: Cotton, soybean, sugarcane, wheat
+- Best varieties: Cotton (Bt varieties), Soybean (JS-335)
+- Soil: Black cotton soil (regur)
+
+Please provide advice for Maharashtra's agricultural conditions."""
+        
+        elif any(region in location_text for region in ['rajasthan', 'jaipur', 'jodhpur', 'kota', 'udaipur', 'bikaner']):
+            return """
+REGIONAL CONTEXT - RAJASTHAN AGRICULTURE:
+- Climate: Arid to semi-arid climate with low rainfall
+- Main Crops: Wheat, barley, mustard, gram, bajra (pearl millet), cotton
+- Soil Types: Desert soil, alluvial soil, red soil
+- Best varieties: Wheat (Raj-4037, Lok-1), Mustard (Varuna, Kranti), Bajra (Raj-171)
+- Specialty: Drought-tolerant crops, oilseeds
+
+Please provide advice specific to Rajasthan's arid climate and drought-tolerant agriculture."""
+        
+        elif any(region in location_text for region in ['gujarat', 'ahmedabad', 'surat', 'rajkot', 'vadodara', 'gandhinagar']):
+            return """
+REGIONAL CONTEXT - GUJARAT AGRICULTURE:
+- Climate: Semi-arid to arid climate
+- Main Crops: Cotton, groundnut, wheat, sugarcane, bajra, castor
+- Soil Types: Black cotton soil, alluvial soil, sandy soil
+- Best varieties: Cotton (Bt varieties), Groundnut (GG-20, TG-37A), Wheat (GW-322)
+- Specialty: Cotton and groundnut production
+
+Please provide advice specific to Gujarat's semi-arid climate."""
+        
+        return "Please provide advice considering Indian agricultural conditions and practices."
         
         if hasattr(query, 'query_domain') and query.query_domain in domain_instructions:
             enhanced_parts.append(f"FOCUS AREA: {domain_instructions[query.query_domain]}")

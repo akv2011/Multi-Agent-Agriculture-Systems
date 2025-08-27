@@ -153,7 +153,7 @@ const EnhancedResponseDisplay: React.FC<EnhancedResponseDisplayProps> = ({
           <p className="query-display">"{originalQuery}"</p>
         </div>
         <div className="enhancement-badge">
-          <span className="badge-text">Enhanced by Gemini AI</span>
+          <span className="badge-text">AI Agent Analysis</span>
         </div>
       </div>
 
@@ -202,7 +202,7 @@ const EnhancedResponseDisplay: React.FC<EnhancedResponseDisplayProps> = ({
       <div className="response-footer">
         <div className="ai-attribution">
           <span className="gemini-logo">✨</span>
-          <span>Enhanced with Google Gemini AI</span>
+          <span>AI Agent Report</span>
         </div>
         <div className="timestamp">
           Generated at {new Date().toLocaleTimeString()}

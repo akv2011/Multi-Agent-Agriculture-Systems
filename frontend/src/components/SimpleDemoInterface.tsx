@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './SimpleDemoInterface.css';
@@ -62,14 +62,20 @@ const SimpleDemoInterface: React.FC = () => {
   const [map, setMap] = useState<L.Map | null>(null);
   const [currentMarker, setCurrentMarker] = useState<L.Marker | null>(null);
   const [selectedPoint, setSelectedPoint] = useState<L.LatLng | null>(null);
-  const [selectedCoords, setSelectedCoords] = useState<string>('Punjab Agricultural Zone: 30.7333°N, 76.7794°E');
-  const [selectedAddress, setSelectedAddress] = useState<string>('Chandigarh, Punjab, India - Primary Wheat & Rice Belt');
+  const [selectedCoords, setSelectedCoords] = useState<string>('');
+  const [selectedAddress, setSelectedAddress] = useState<string>('');
   const [isLoadingAddress, setIsLoadingAddress] = useState<boolean>(false);
   const [analysisDate, setAnalysisDate] = useState<string>('');
   const [satelliteSource, setSatelliteSource] = useState<string>('sentinel2');
   const [cloudCoverage, setCloudCoverage] = useState<string>('20');
   const [analysisProgress, setAnalysisProgress] = useState<string>('');
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
+
+  // Location search states
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState<boolean>(false);
+  const [showSearchResults, setShowSearchResults] = useState<boolean>(false);
 
   // Image upload states
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
@@ -109,9 +115,22 @@ const SimpleDemoInterface: React.FC = () => {
 
   const selectAnalysisPoint = async (latlng: L.LatLng, mapInstance?: L.Map) => {
     const activeMap = mapInstance || map;
-    if (!activeMap) return;
+    if (!activeMap) {
+      return;
+    }
 
     setSelectedPoint(latlng);
+
+    // Immediately store coordinates for API calls
+    const coordinateData = {
+      coordinates: {
+        lat: latlng.lat,
+        lng: latlng.lng
+      },
+      isAnalyzed: false,  // Not analyzed yet, just selected
+      timestamp: Date.now()
+    };
+    localStorage.setItem('mapAnalysis', JSON.stringify(coordinateData));
 
     // Remove ALL existing markers from the map to ensure only one marker exists
     activeMap.eachLayer((layer: any) => {
@@ -121,7 +140,8 @@ const SimpleDemoInterface: React.FC = () => {
     });
 
     // Update coordinates display immediately
-    setSelectedCoords(`Selected: ${latlng.lat.toFixed(5)}°N, ${latlng.lng.toFixed(5)}°E`);
+    const coordsText = `Selected: ${latlng.lat.toFixed(5)}°N, ${latlng.lng.toFixed(5)}°E`;
+    setSelectedCoords(coordsText);
     setSelectedAddress('Loading address...');
 
     // Add new marker
@@ -130,6 +150,18 @@ const SimpleDemoInterface: React.FC = () => {
     // Get address asynchronously
     const address = await reverseGeocode(latlng.lat, latlng.lng);
     setSelectedAddress(address);
+    
+    // Update stored data with address
+    const updatedCoordinateData = {
+      coordinates: {
+        lat: latlng.lat,
+        lng: latlng.lng
+      },
+      address: address,
+      isAnalyzed: false,  // Not analyzed yet, just selected
+      timestamp: Date.now()
+    };
+    localStorage.setItem('mapAnalysis', JSON.stringify(updatedCoordinateData));
     
     // Update popup with address information
     newMarker.bindPopup(`
@@ -201,6 +233,111 @@ const SimpleDemoInterface: React.FC = () => {
     }
   };
 
+  // Function to search for locations and get coordinates
+  const searchLocation = useCallback(async (query: string) => {
+    if (!query.trim() || query.length < 3) {
+      setSearchResults([]);
+      setShowSearchResults(false);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      // Add state/country context to improve search results
+      const searchQuery = query.includes('India') ? query : `${query}, India`;
+      
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=8&addressdetails=1&countrycodes=in`,
+        {
+          headers: {
+            'User-Agent': 'AgriSens-Agriculture-System'
+          }
+        }
+      );
+      
+      if (!response.ok) {
+        throw new Error('Failed to search locations');
+      }
+      
+      const data = await response.json();
+      
+      if (data && data.length > 0) {
+        const formattedResults = data.map((location: any) => {
+          const address = location.address || {};
+          const state = address.state || address.state_district || '';
+          const district = address.state_district || address.county || '';
+          const city = address.city || address.town || address.village || '';
+          
+          return {
+            display_name: location.display_name,
+            lat: parseFloat(location.lat),
+            lng: parseFloat(location.lon),
+            address: location.address,
+            place_id: location.place_id,
+            formatted_location: `${city}${district && city !== district ? `, ${district}` : ''}${state ? `, ${state}` : ''}`,
+            location_type: location.type || location.class || 'location'
+          };
+        });
+        
+        setSearchResults(formattedResults);
+        setShowSearchResults(true);
+      } else {
+        setSearchResults([]);
+        setShowSearchResults(false);
+      }
+    } catch (error) {
+      console.error('Location search failed:', error);
+      setSearchResults([]);
+      setShowSearchResults(false);
+    } finally {
+      setIsSearching(false);
+    }
+  }, []);
+
+  // Function to select a location from search results
+  const selectSearchResult = async (result: any) => {
+    if (!map) {
+      return;
+    }
+    
+    const latlng = L.latLng(result.lat, result.lng);
+    
+    // Center map on selected location
+    map.setView(latlng, 13);
+    
+    // Select the point
+    await selectAnalysisPoint(latlng, map);
+    
+    // Clear search
+    setSearchQuery('');
+    setSearchResults([]);
+    setShowSearchResults(false);
+  };
+
+  // Debounced search effect
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      searchLocation(searchQuery);
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, searchLocation]);
+
+  // Close search results when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.location-search-container')) {
+        setShowSearchResults(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   const analyzeSelectedPoint = async (point?: L.LatLng) => {
     const targetPoint = point || selectedPoint;
     if (!targetPoint) {
@@ -270,6 +407,14 @@ const SimpleDemoInterface: React.FC = () => {
   useEffect(() => {
     (window as any).analyzeCurrentPoint = () => analyzeSelectedPoint();
   }, [selectedPoint]);
+
+  // Auto-set Tamil Nadu coordinates for testing (10°17'29.0"N 78°47'47.6"E)
+  useEffect(() => {
+    if (map && !selectedPoint) {
+      const tamilNaduCoords = L.latLng(10.291388, 78.796555);
+      selectAnalysisPoint(tamilNaduCoords, map);
+    }
+  }, [map, selectedPoint]);
 
   // Function to convert markdown-like formatting to HTML
   const formatResponseText = (text: string) => {
@@ -347,7 +492,7 @@ const SimpleDemoInterface: React.FC = () => {
 
   // Fetch AI Response using backend API first, then AI Assistant as fallback
   // Mock response generator for image-based queries
-  const generateMockImageResponse = (query: string, plantType: string, location: string): DemoResponse => {
+  const generateMockImageResponse = (_query: string, plantType: string, location: string): DemoResponse => {
     const diseases = {
       corn: {
         disease: "Northern Corn Leaf Blight",
@@ -486,6 +631,10 @@ This is an AI-generated analysis. For severe infections, consult with a local ag
         } else {
           // Use JSON for text-only queries
           headers['Content-Type'] = 'application/json';
+          
+          // Get the actual address from stored data or current state
+          const actualAddress = parsedData?.address || selectedAddress || 'Chandigarh, Punjab, India - Primary Wheat & Rice Belt';
+          
           requestBody = JSON.stringify({
             query_text: query.trim(),
             vegetation_data: parsedData?.isAnalyzed ? parsedData.vegetationIndices : null,
@@ -494,7 +643,7 @@ This is an AI-generated analysis. For severe infections, consult with a local ag
               satellite_source: satelliteSource || 'sentinel2',
               cloud_coverage: cloudCoverage || '10',
               analysis_date: parsedData?.analysisDate || null,
-              address: parsedData?.coordinates ? selectedAddress : 'Chandigarh, Punjab, India - Primary Wheat & Rice Belt',
+              address: actualAddress,
               region: parsedData?.coordinates ? 'User Selected Location' : 'Punjab Agricultural Zone',
               crop_seasons: parsedData?.coordinates ? 'Location-specific seasons' : 'Rabi (Wheat), Kharif (Rice, Cotton)',
               soil_type: parsedData?.coordinates ? 'Local soil conditions' : 'Alluvial, well-drained',
@@ -505,8 +654,8 @@ This is an AI-generated analysis. For severe infections, consult with a local ag
           });
         }
 
-        // Use the same endpoint for both text and image queries
-        const endpoint = `${apiBaseUrl}/demo/query`;
+        // Use the enhanced endpoint for location-aware functionality
+        const endpoint = `${apiBaseUrl}/api/enhanced/query`;
         
         const backendResponse = await fetch(endpoint, {
           method: 'POST',
@@ -931,7 +1080,93 @@ To get more specific recommendations, please:
               boxShadow: '0 5px 15px rgba(0,0,0,0.1)',
               border: '1px solid #e0e0e0'
             }}>
-              <h5 style={{ margin: '0 0 15px 0', color: '#333' }}>Analysis Controls</h5>
+              <h5 style={{ margin: '0 0 15px 0', color: '#333' }}>🔍 Location Search & Analysis</h5>
+
+              {/* Location Search */}
+              <div className="location-search-container" style={{ marginBottom: '20px', position: 'relative' }}>
+                <label style={{ display: 'block', fontWeight: '600', marginBottom: '5px', color: '#555' }}>
+                  📍 Search Location:
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search: City, District, State (e.g., Tiruvanamalai, Tamil Nadu)"
+                    style={{
+                      width: '100%',
+                      padding: '10px 40px 10px 12px',
+                      border: '2px solid #ddd',
+                      borderRadius: '8px',
+                      fontSize: '0.9rem',
+                      outline: 'none',
+                      transition: 'border-color 0.3s'
+                    }}
+                    onFocus={() => searchQuery && setShowSearchResults(true)}
+                  />
+                  {isSearching && (
+                    <div style={{
+                      position: 'absolute',
+                      right: '12px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      width: '16px',
+                      height: '16px',
+                      border: '2px solid #f3f3f3',
+                      borderTop: '2px solid #27ae60',
+                      borderRadius: '50%',
+                      animation: 'spin 1s linear infinite'
+                    }}></div>
+                  )}
+                </div>
+                
+                {/* Search Results Dropdown */}
+                {showSearchResults && searchResults.length > 0 && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: '0',
+                    right: '0',
+                    background: 'white',
+                    border: '2px solid #ddd',
+                    borderTop: 'none',
+                    borderRadius: '0 0 8px 8px',
+                    maxHeight: '200px',
+                    overflowY: 'auto',
+                    zIndex: 1000,
+                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                  }}>
+                    {searchResults.map((result, index) => (
+                      <div
+                        key={result.place_id || index}
+                        onClick={() => selectSearchResult(result)}
+                        style={{
+                          padding: '12px',
+                          borderBottom: index < searchResults.length - 1 ? '1px solid #eee' : 'none',
+                          cursor: 'pointer',
+                          transition: 'background-color 0.2s'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = '#f8f9fa';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'white';
+                        }}
+                      >
+                        <div style={{ fontWeight: '500', fontSize: '0.9rem', marginBottom: '2px', color: '#1976d2' }}>
+                          {result.formatted_location || result.address?.city || result.address?.town || result.address?.village || 'Unknown Location'}
+                        </div>
+                        <div style={{ fontSize: '0.8rem', color: '#666', lineHeight: '1.2' }}>
+                          {result.location_type ? `${result.location_type} • ` : ''}{result.display_name.substring(0, 60)}...
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: '#999', marginTop: '2px' }}>
+                          📍 {result.lat.toFixed(5)}, {result.lng.toFixed(5)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               <div style={{ marginBottom: '15px' }}>
                 <label style={{ display: 'block', fontWeight: '600', marginBottom: '5px', color: '#555' }}>
