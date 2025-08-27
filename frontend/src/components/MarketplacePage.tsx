@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import './MarketplacePage.css';
+import AddProductPage from './AddProductPage';
 
 interface Product {
   id: string;
@@ -39,7 +39,6 @@ interface MarketStats {
 }
 
 const MarketplacePage: React.FC = () => {
-  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'b2c' | 'b2b'>('b2c');
   const [products, setProducts] = useState<Product[]>([]);
   const [marketStats, setMarketStats] = useState<MarketStats | null>(null);
@@ -50,6 +49,47 @@ const MarketplacePage: React.FC = () => {
     organic: false
   });
   const [searchTerm, setSearchTerm] = useState('');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  // Function to refresh products data
+  const refreshProducts = async () => {
+    setLoading(true);
+    try {
+      const productsResponse = await fetch('http://localhost:8001/marketplace/products');
+      const productsData = await productsResponse.json();
+      
+      if (productsData.status === 'success' && productsData.products.length > 0) {
+        setProducts(productsData.products);
+      } else {
+        // Fallback to mock data if API returns empty
+        setProducts(mockProducts);
+      }
+    } catch (error) {
+      console.error('Failed to fetch products:', error);
+      // Fallback to mock data
+      setProducts(mockProducts);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Generate placeholder image based on category
+  const getPlaceholderImage = (category: string, productName: string) => {
+    const categoryImages: Record<string, string> = {
+      'Grains': 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200" viewBox="0 0 300 200"><rect width="300" height="200" fill="%23f3f4f6"/><text x="150" y="100" text-anchor="middle" dy=".3em" fill="%236b7280" font-family="Arial" font-size="14">🌾 ' + encodeURIComponent(productName) + '</text></svg>',
+      'Vegetables': 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200" viewBox="0 0 300 200"><rect width="300" height="200" fill="%23ecfdf5"/><text x="150" y="100" text-anchor="middle" dy=".3em" fill="%23065f46" font-family="Arial" font-size="14">🥕 ' + encodeURIComponent(productName) + '</text></svg>',
+      'Fruits': 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200" viewBox="0 0 300 200"><rect width="300" height="200" fill="%23fef3c7"/><text x="150" y="100" text-anchor="middle" dy=".3em" fill="%23d97706" font-family="Arial" font-size="14">🍎 ' + encodeURIComponent(productName) + '</text></svg>',
+      'Processed': 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200" viewBox="0 0 300 200"><rect width="300" height="200" fill="%23e0e7ff"/><text x="150" y="100" text-anchor="middle" dy=".3em" fill="%23312e81" font-family="Arial" font-size="14">🏭 ' + encodeURIComponent(productName) + '</text></svg>',
+      'Cash Crops': 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200" viewBox="0 0 300 200"><rect width="300" height="200" fill="%23fce7f3"/><text x="150" y="100" text-anchor="middle" dy=".3em" fill="%23be185d" font-family="Arial" font-size="14">🌾 ' + encodeURIComponent(productName) + '</text></svg>',
+      'Spices': 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200" viewBox="0 0 300 200"><rect width="300" height="200" fill="%23fff7ed"/><text x="150" y="100" text-anchor="middle" dy=".3em" fill="%23c2410c" font-family="Arial" font-size="14">🌶️ ' + encodeURIComponent(productName) + '</text></svg>',
+      'Grains & Cereals': 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200" viewBox="0 0 300 200"><rect width="300" height="200" fill="%23f3f4f6"/><text x="150" y="100" text-anchor="middle" dy=".3em" fill="%236b7280" font-family="Arial" font-size="14">🌾 ' + encodeURIComponent(productName) + '</text></svg>',
+      'Pulses & Legumes': 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200" viewBox="0 0 300 200"><rect width="300" height="200" fill="%23f0f9ff"/><text x="150" y="100" text-anchor="middle" dy=".3em" fill="%230c4a6e" font-family="Arial" font-size="14">🌰 ' + encodeURIComponent(productName) + '</text></svg>',
+      'Dairy Products': 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200" viewBox="0 0 300 200"><rect width="300" height="200" fill="%23fefce8"/><text x="150" y="100" text-anchor="middle" dy=".3em" fill="%23713f12" font-family="Arial" font-size="14">🥛 ' + encodeURIComponent(productName) + '</text></svg>'
+    };
+    
+    return categoryImages[category] || categoryImages['Grains'];
+  };
 
   // Mock data for demonstration
   const mockProducts: Product[] = [
@@ -66,7 +106,7 @@ const MarketplacePage: React.FC = () => {
         rating: 4.8,
         verified: true
       },
-      images: ['/images/basmati-rice.jpg', '/images/rice-field.jpg'],
+      images: [],
       stock: 500,
       isOrganic: false,
       harvestDate: '2024-11-15',
@@ -94,7 +134,7 @@ const MarketplacePage: React.FC = () => {
         rating: 4.9,
         verified: true
       },
-      images: ['/images/wheat-flour.jpg', '/images/wheat-field.jpg'],
+      images: [],
       stock: 200,
       isOrganic: true,
       harvestDate: '2024-12-01',
@@ -122,7 +162,7 @@ const MarketplacePage: React.FC = () => {
         rating: 4.6,
         verified: true
       },
-      images: ['/images/tomatoes.jpg', '/images/tomato-farm.jpg'],
+      images: [],
       stock: 150,
       isOrganic: false,
       harvestDate: '2024-12-20',
@@ -148,7 +188,7 @@ const MarketplacePage: React.FC = () => {
         rating: 4.7,
         verified: true
       },
-      images: ['/images/cotton-bulk.jpg', '/images/cotton-field.jpg'],
+      images: [],
       stock: 50,
       isOrganic: false,
       harvestDate: '2024-11-30',
@@ -173,33 +213,44 @@ const MarketplacePage: React.FC = () => {
   };
 
   useEffect(() => {
-    // Fetch real data from API
-    const fetchMarketplaceData = async () => {
+    // Initial load
+    const loadData = async () => {
+      // Load products
+      setLoading(true);
       try {
-        // Fetch products
         const productsResponse = await fetch('http://localhost:8001/marketplace/products');
         const productsData = await productsResponse.json();
         
-        // Fetch stats
+        if (productsData.status === 'success' && productsData.products.length > 0) {
+          setProducts(productsData.products);
+        } else {
+          setProducts(mockProducts);
+        }
+      } catch (error) {
+        console.error('Failed to fetch products:', error);
+        setProducts(mockProducts);
+      } finally {
+        setLoading(false);
+      }
+      
+      // Load stats
+      try {
         const statsResponse = await fetch('http://localhost:8001/marketplace/stats');
         const statsData = await statsResponse.json();
         
-        if (productsData.status === 'success') {
-          setProducts(productsData.products);
-        }
-        
         if (statsData.status === 'success') {
           setMarketStats(statsData.stats);
+        } else {
+          setMarketStats(mockStats);
         }
       } catch (error) {
-        console.error('Failed to fetch marketplace data:', error);
-        // Fallback to mock data
-        setProducts(mockProducts);
+        console.error('Failed to fetch stats:', error);
         setMarketStats(mockStats);
       }
     };
     
-    fetchMarketplaceData();
+    loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const filteredProducts = products.filter(product => {
@@ -211,7 +262,7 @@ const MarketplacePage: React.FC = () => {
     return matchesSearch && matchesCategory && matchesOrganic && matchesTab;
   });
 
-  const categories = ['Grains', 'Vegetables', 'Fruits', 'Processed', 'Cash Crops', 'Spices'];
+  const categories = ['Grains & Cereals', 'Vegetables', 'Fruits', 'Pulses & Legumes', 'Spices & Herbs', 'Dairy Products', 'Grains', 'Processed', 'Cash Crops', 'Spices'];
 
   return (
     <div className="marketplace-page">
@@ -223,7 +274,7 @@ const MarketplacePage: React.FC = () => {
           </div>
           <button 
             className="add-product-btn"
-            onClick={() => navigate('/marketplace/add-product')}
+            onClick={() => setShowAddModal(true)}
           >
             ➕ Add Product
           </button>
@@ -320,15 +371,23 @@ const MarketplacePage: React.FC = () => {
 
       {/* Products Grid */}
       <div className="products-grid">
-        {filteredProducts.map(product => (
+        {loading && (
+          <div className="loading-message">
+            <div className="spinner"></div>
+            <p>Loading products...</p>
+          </div>
+        )}
+        {!loading && filteredProducts.map(product => (
           <div key={product.id} className="product-card">
             <div className="product-image">
               <img 
-                src={product.images[0] || '/images/placeholder.jpg'} 
+                src={product.images?.[0] && product.images[0] !== '' ? product.images[0] : getPlaceholderImage(product.category, product.name)} 
                 alt={product.name}
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = '/images/placeholder.jpg';
+                  const target = e.target as HTMLImageElement;
+                  target.src = getPlaceholderImage(product.category, product.name);
                 }}
+                loading="lazy"
               />
               {product.isOrganic && <span className="organic-badge">🌱 Organic</span>}
               {product.seller.verified && <span className="verified-badge">✅ Verified</span>}
@@ -400,6 +459,17 @@ const MarketplacePage: React.FC = () => {
         <span className="fab-icon">+</span>
         <span className="fab-text">Sell Your Products</span>
       </button>
+
+      {showAddModal && (
+        <AddProductPage 
+          isModal 
+          onClose={() => {
+            setShowAddModal(false);
+            // Refresh products after adding new product
+            refreshProducts();
+          }} 
+        />
+      )}
     </div>
   );
 };

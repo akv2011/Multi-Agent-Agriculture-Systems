@@ -1,0 +1,83 @@
+<svg width="300" height="200" viewBox="0 0 300 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="skyGradient3" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#0ea5e9;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7dd3fc;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="groundGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#84cc16;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#65a30d;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Sky -->
+  <rect width="300" height="120" fill="url(#skyGradient3)"/>
+  
+  <!-- Ground -->
+  <rect y="120" width="300" height="80" fill="url(#groundGradient)"/>
+  
+  <!-- Tomato plants/vines -->
+  <g>
+    <!-- Plant stems -->
+    <path d="M50 200 L50 140 Q55 130, 60 140 L65 120" stroke="#16a34a" stroke-width="3" fill="none"/>
+    <path d="M100 200 L100 145 Q105 135, 110 145 L115 125" stroke="#16a34a" stroke-width="3" fill="none"/>
+    <path d="M150 200 L150 140 Q155 130, 160 140 L165 120" stroke="#16a34a" stroke-width="3" fill="none"/>
+    <path d="M200 200 L200 145 Q205 135, 210 145 L215 125" stroke="#16a34a" stroke-width="3" fill="none"/>
+    <path d="M250 200 L250 140 Q255 130, 260 140 L265 120" stroke="#16a34a" stroke-width="3" fill="none"/>
+    
+    <!-- Leaves -->
+    <ellipse cx="45" cy="160" rx="8" ry="12" fill="#22c55e" transform="rotate(-20 45 160)"/>
+    <ellipse cx="55" cy="155" rx="8" ry="12" fill="#16a34a" transform="rotate(15 55 155)"/>
+    <ellipse cx="48" cy="145" rx="6" ry="10" fill="#22c55e" transform="rotate(-30 48 145)"/>
+    
+    <ellipse cx="95" cy="165" rx="8" ry="12" fill="#22c55e" transform="rotate(-25 95 165)"/>
+    <ellipse cx="105" cy="160" rx="8" ry="12" fill="#16a34a" transform="rotate(20 105 160)"/>
+    <ellipse cx="98" cy="150" rx="6" ry="10" fill="#22c55e" transform="rotate(-35 98 150)"/>
+    
+    <ellipse cx="145" cy="160" rx="8" ry="12" fill="#22c55e" transform="rotate(-20 145 160)"/>
+    <ellipse cx="155" cy="155" rx="8" ry="12" fill="#16a34a" transform="rotate(15 155 155)"/>
+    <ellipse cx="148" cy="145" rx="6" ry="10" fill="#22c55e" transform="rotate(-30 148 145)"/>
+    
+    <ellipse cx="195" cy="165" rx="8" ry="12" fill="#22c55e" transform="rotate(-25 195 165)"/>
+    <ellipse cx="205" cy="160" rx="8" ry="12" fill="#16a34a" transform="rotate(20 205 160)"/>
+    <ellipse cx="198" cy="150" rx="6" ry="10" fill="#22c55e" transform="rotate(-35 198 150)"/>
+    
+    <ellipse cx="245" cy="160" rx="8" ry="12" fill="#22c55e" transform="rotate(-20 245 160)"/>
+    <ellipse cx="255" cy="155" rx="8" ry="12" fill="#16a34a" transform="rotate(15 255 155)"/>
+    <ellipse cx="248" cy="145" rx="6" ry="10" fill="#22c55e" transform="rotate(-30 248 145)"/>
+  </g>
+  
+  <!-- Tomatoes on plants -->
+  <g>
+    <circle cx="52" cy="150" r="8" fill="#ef4444"/>
+    <circle cx="58" cy="165" r="6" fill="#dc2626"/>
+    <circle cx="102" cy="155" r="7" fill="#ef4444"/>
+    <circle cx="108" cy="170" r="6" fill="#dc2626"/>
+    <circle cx="152" cy="150" r="8" fill="#ef4444"/>
+    <circle cx="158" cy="165" r="6" fill="#dc2626"/>
+    <circle cx="202" cy="155" r="7" fill="#ef4444"/>
+    <circle cx="208" cy="170" r="6" fill="#dc2626"/>
+    <circle cx="252" cy="150" r="8" fill="#ef4444"/>
+    <circle cx="258" cy="165" r="6" fill="#dc2626"/>
+    
+    <!-- Highlights on tomatoes -->
+    <ellipse cx="50" cy="147" rx="2" ry="3" fill="#fca5a5" opacity="0.8"/>
+    <ellipse cx="100" cy="152" rx="2" ry="3" fill="#fca5a5" opacity="0.8"/>
+    <ellipse cx="150" cy="147" rx="2" ry="3" fill="#fca5a5" opacity="0.8"/>
+    <ellipse cx="200" cy="152" rx="2" ry="3" fill="#fca5a5" opacity="0.8"/>
+    <ellipse cx="250" cy="147" rx="2" ry="3" fill="#fca5a5" opacity="0.8"/>
+  </g>
+  
+  <!-- Support stakes -->
+  <line x1="50" y1="200" x2="50" y2="120" stroke="#92400e" stroke-width="2"/>
+  <line x1="100" y1="200" x2="100" y2="120" stroke="#92400e" stroke-width="2"/>
+  <line x1="150" y1="200" x2="150" y2="120" stroke="#92400e" stroke-width="2"/>
+  <line x1="200" y1="200" x2="200" y2="120" stroke="#92400e" stroke-width="2"/>
+  <line x1="250" y1="200" x2="250" y2="120" stroke="#92400e" stroke-width="2"/>
+  
+  <!-- Clouds -->
+  <ellipse cx="80" cy="40" rx="20" ry="12" fill="white" opacity="0.8"/>
+  <ellipse cx="220" cy="30" rx="25" ry="15" fill="white" opacity="0.8"/>
+  
+  <text x="150" y="195" font-family="Arial, sans-serif" font-size="14" fill="#ffffff" text-anchor="middle">Tomato Farm</text>
+</svg>

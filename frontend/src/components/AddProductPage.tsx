@@ -14,7 +14,9 @@ interface Category {
   examples: string[];
 }
 
-const AddProductPage: React.FC = () => {
+const AddProductPage: React.FC<{ isModal?: boolean; onClose?: () => void }> = (props) => {
+  const { isModal = false, onClose } = props; // reference props to avoid unused lint error
+
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -38,6 +40,79 @@ const AddProductPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Default categories as fallback
+    const defaultCategories: Record<string, Category> = {
+      grains: {
+        name: 'Grains & Cereals',
+        icon: '🌾',
+        examples: ['Rice', 'Wheat', 'Corn', 'Barley']
+      },
+      vegetables: {
+        name: 'Vegetables',
+        icon: '🥕',
+        examples: ['Tomatoes', 'Onions', 'Potatoes', 'Carrots']
+      },
+      fruits: {
+        name: 'Fruits',
+        icon: '🍎',
+        examples: ['Apples', 'Bananas', 'Oranges', 'Mangoes']
+      },
+      pulses: {
+        name: 'Pulses & Legumes',
+        icon: '🌰',
+        examples: ['Lentils', 'Chickpeas', 'Black Beans', 'Kidney Beans']
+      },
+      spices: {
+        name: 'Spices & Herbs',
+        icon: '🌶️',
+        examples: ['Turmeric', 'Coriander', 'Cumin', 'Cardamom']
+      },
+      dairy: {
+        name: 'Dairy Products',
+        icon: '🥛',
+        examples: ['Milk', 'Cheese', 'Butter', 'Yogurt']
+      }
+    };
+
+    // Default sellers as fallback
+    const defaultSellers: Seller[] = [
+      {
+        seller_id: 'seller_001',
+        name: 'Green Valley Farms',
+        location: 'Punjab, India',
+        verified: true
+      },
+      {
+        seller_id: 'seller_002',
+        name: 'Organic Harvest Co.',
+        location: 'Maharashtra, India',
+        verified: true
+      },
+      {
+        seller_id: 'seller_003',
+        name: 'Fresh Fields Agriculture',
+        location: 'Gujarat, India',
+        verified: false
+      },
+      {
+        seller_id: 'seller_004',
+        name: 'Sunrise Produce',
+        location: 'Haryana, India',
+        verified: true
+      },
+      {
+        seller_id: 'seller_005',
+        name: 'Natural Farms India',
+        location: 'Uttar Pradesh, India',
+        verified: false
+      }
+    ];
+
+    // Initialize with default data first
+    setCategories(defaultCategories);
+    setSellers(defaultSellers);
+    
+    // Then try to fetch from API (will override defaults if successful)
     fetchSellers();
     fetchCategories();
   }, []);
@@ -45,20 +120,32 @@ const AddProductPage: React.FC = () => {
   const fetchSellers = async () => {
     try {
       const response = await fetch('http://localhost:8001/marketplace/sellers');
-      const data = await response.json();
-      setSellers(data.sellers || []);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.sellers && data.sellers.length > 0) {
+          setSellers(data.sellers);
+        }
+        // If no sellers from API, keep the default ones
+      }
     } catch (error) {
       console.error('Error fetching sellers:', error);
+      // Keep default sellers on error
     }
   };
 
   const fetchCategories = async () => {
     try {
       const response = await fetch('http://localhost:8001/marketplace/categories');
-      const data = await response.json();
-      setCategories(data.categories || {});
+      if (response.ok) {
+        const data = await response.json();
+        if (data.categories && Object.keys(data.categories).length > 0) {
+          setCategories(data.categories);
+        }
+        // If no categories from API, keep the default ones
+      }
     } catch (error) {
       console.error('Error fetching categories:', error);
+      // Keep default categories on error
     }
   };
 
@@ -148,11 +235,19 @@ const AddProductPage: React.FC = () => {
       setImages([]);
       setImagePreviews([]);
 
-      // Hide success message after 3 seconds
-      setTimeout(() => setSuccess(false), 3000);
+      // If in modal mode, close after successful submission
+      if (isModal && onClose) {
+        setTimeout(() => {
+          setSuccess(false);
+          onClose();
+        }, 1500); // Show success message briefly before closing
+      } else {
+        // Hide success message after 3 seconds for non-modal
+        setTimeout(() => setSuccess(false), 3000);
+      }
 
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'An error occurred');
+    } catch {
+      setError('An error occurred');
     } finally {
       setLoading(false);
     }
@@ -168,16 +263,26 @@ const AddProductPage: React.FC = () => {
         specs[key] = value;
         setFormData(prev => ({ ...prev, specifications: JSON.stringify(specs, null, 2) }));
       }
-    } catch (error) {
+    } catch {
       alert('Invalid JSON in specifications. Please check the format.');
     }
   };
 
   return (
-    <div className="add-product-page">
-      <div className="add-product-container">
-        <h1>🌾 Add New Product</h1>
-        <p className="subtitle">List your agricultural products in the marketplace</p>
+    <div className={isModal ? 'add-product-modal-overlay' : 'add-product-page'}>
+      <div className={isModal ? 'add-product-modal' : 'add-product-container'}>
+        {isModal && (
+          <div className="modal-header">
+            <h2>➕ Add Product</h2>
+            <button className="modal-close-btn" onClick={onClose} aria-label="Close">✕</button>
+          </div>
+        )}
+        {!isModal && (
+          <>
+            <h1>🌾 Add New Product</h1>
+            <p className="subtitle">List your agricultural products in the marketplace</p>
+          </>
+        )}
 
         {success && (
           <div className="success-message">
@@ -233,6 +338,7 @@ const AddProductPage: React.FC = () => {
                     onChange={handleInputChange}
                     required
                   >
+                    <option value="">Select a category</option>
                     {Object.entries(categories).map(([key, category]) => (
                       <option key={key} value={key}>
                         {category.icon} {category.name}

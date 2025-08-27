@@ -1,0 +1,59 @@
+<svg width="300" height="200" viewBox="0 0 300 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="skyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#93c5fd;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="fieldGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#22c55e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#16a34a;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Sky -->
+  <rect width="300" height="120" fill="url(#skyGradient)"/>
+  
+  <!-- Fields -->
+  <rect y="120" width="300" height="80" fill="url(#fieldGradient)"/>
+  
+  <!-- Rice plants -->
+  <g>
+    <path d="M20 120 Q25 110, 30 120 Q35 110, 40 120 Q45 110, 50 120" stroke="#15803d" stroke-width="2" fill="none"/>
+    <path d="M60 120 Q65 110, 70 120 Q75 110, 80 120 Q85 110, 90 120" stroke="#15803d" stroke-width="2" fill="none"/>
+    <path d="M100 120 Q105 110, 110 120 Q115 110, 120 120 Q125 110, 130 120" stroke="#15803d" stroke-width="2" fill="none"/>
+    <path d="M140 120 Q145 110, 150 120 Q155 110, 160 120 Q165 110, 170 120" stroke="#15803d" stroke-width="2" fill="none"/>
+    <path d="M180 120 Q185 110, 190 120 Q195 110, 200 120 Q205 110, 210 120" stroke="#15803d" stroke-width="2" fill="none"/>
+    <path d="M220 120 Q225 110, 230 120 Q235 110, 240 120 Q245 110, 250 120" stroke="#15803d" stroke-width="2" fill="none"/>
+    <path d="M260 120 Q265 110, 270 120 Q275 110, 280 120" stroke="#15803d" stroke-width="2" fill="none"/>
+  </g>
+  
+  <!-- Rice grains on plants -->
+  <g>
+    <circle cx="25" cy="112" r="1" fill="#fbbf24"/>
+    <circle cx="30" cy="110" r="1" fill="#f59e0b"/>
+    <circle cx="35" cy="112" r="1" fill="#fbbf24"/>
+    <circle cx="65" cy="111" r="1" fill="#f59e0b"/>
+    <circle cx="70" cy="109" r="1" fill="#fbbf24"/>
+    <circle cx="75" cy="111" r="1" fill="#f59e0b"/>
+    <circle cx="105" cy="110" r="1" fill="#fbbf24"/>
+    <circle cx="110" cy="112" r="1" fill="#f59e0b"/>
+    <circle cx="115" cy="110" r="1" fill="#fbbf24"/>
+    <circle cx="145" cy="111" r="1" fill="#f59e0b"/>
+    <circle cx="150" cy="109" r="1" fill="#fbbf24"/>
+    <circle cx="155" cy="111" r="1" fill="#f59e0b"/>
+    <circle cx="185" cy="110" r="1" fill="#fbbf24"/>
+    <circle cx="190" cy="112" r="1" fill="#f59e0b"/>
+    <circle cx="195" cy="110" r="1" fill="#fbbf24"/>
+    <circle cx="225" cy="111" r="1" fill="#f59e0b"/>
+    <circle cx="230" cy="109" r="1" fill="#fbbf24"/>
+    <circle cx="235" cy="111" r="1" fill="#f59e0b"/>
+    <circle cx="265" cy="110" r="1" fill="#fbbf24"/>
+    <circle cx="270" cy="112" r="1" fill="#f59e0b"/>
+  </g>
+  
+  <!-- Clouds -->
+  <ellipse cx="80" cy="40" rx="25" ry="15" fill="white" opacity="0.8"/>
+  <ellipse cx="220" cy="30" rx="30" ry="18" fill="white" opacity="0.8"/>
+  
+  <text x="150" y="190" font-family="Arial, sans-serif" font-size="14" fill="#ffffff" text-anchor="middle">Rice Field</text>
+</svg>

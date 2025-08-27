@@ -184,7 +184,7 @@ const SimpleDemoInterface: React.FC = () => {
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=16&addressdetails=1`,
         {
           headers: {
-            'User-Agent': 'AgriSens-Agriculture-System'
+            'User-Agent': 'AgriMitr-Agriculture-System'
           }
         }
       );
