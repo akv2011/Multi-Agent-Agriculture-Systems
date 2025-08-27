@@ -1,15 +1,9 @@
 import React, { useState } from 'react';
 import './LoginPage.css';
-<<<<<<< HEAD
 import { isDemoMode, validateDemoCredentials } from '../utils/authUtils';
 
 interface LoginPageProps {
-  onLogin: (username: string, password: string) => void;
-=======
-
-interface LoginPageProps {
   onLogin: (username: string, password: string) => boolean;
->>>>>>> upstream/main
 }
 
 const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
@@ -26,18 +20,13 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
 
     // Simulate API call delay
     setTimeout(() => {
-<<<<<<< HEAD
-      // Pre-validate credentials to show proper error messages
-      if (isDemoMode()) {
-        const isValid = validateDemoCredentials(username, password);
-        if (isValid) {
-          onLogin(username, password);
-        } else {
-          setError('Invalid username or password');
-        }
-      } else {
-        setError('Demo mode is not enabled. Please configure proper authentication.');
+      // Try to login with the provided credentials
+      const loginSuccess = onLogin(username, password);
+      
+      if (!loginSuccess) {
+        setError('Invalid username or password');
       }
+      
       setIsLoading(false);
     }, 1000);
   };
@@ -51,25 +40,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     } else {
       setError('Demo mode is not enabled');
     }
-=======
-      // Try to login with the provided credentials
-      const loginSuccess = onLogin(username, password);
-      
-      if (!loginSuccess) {
-        // If login failed, try with default credentials as fallback
-        const envUsername = import.meta.env.VITE_DEMO_DEFAULT_USER || 'admin';
-        const envPassword = import.meta.env.VITE_DEMO_DEFAULT_PASSWORD || 'admin123';
-        
-        const fallbackSuccess = onLogin(envUsername, envPassword);
-        
-        if (!fallbackSuccess) {
-          setError('Invalid username or password. Try admin/admin123');
-        }
-      }
-      
-      setIsLoading(false);
-    }, 500);
->>>>>>> upstream/main
   };
 
   return (
@@ -83,22 +53,14 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
           <div className="logo-container">
             <img 
               src="/logo.png" 
-<<<<<<< HEAD
-              alt="AgriMitr Logo" 
-=======
               alt="AgriSens Logo" 
->>>>>>> upstream/main
               className="login-logo"
               onError={(e) => {
                 (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByeD0iMTIiIGZpbGw9IiNERkJBNDciLz4KPHN2ZyB4PSIxNiIgeT0iMTYiIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIj4KPHA=';
               }}
             />
           </div>
-<<<<<<< HEAD
-          <h1 className="login-title">AgriMitr</h1>
-=======
           <h1 className="login-title">AgriSens</h1>
->>>>>>> upstream/main
           <p className="login-subtitle">Smart Agriculture Platform</p>
         </div>
 
@@ -195,7 +157,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
           </button>
         </form>
 
-<<<<<<< HEAD
         <div className="login-demo">
           <p className="demo-text">Demo Mode Available</p>
           <div className="demo-credentials">
@@ -227,11 +188,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         </div>
 
         <div className="login-footer">
-          <p>&copy; 2025 AgriMitr. All rights reserved.</p>
-=======
-        <div className="login-footer">
           <p>&copy; 2025 AgriSens. All rights reserved.</p>
->>>>>>> upstream/main
           <p>Empowering Agriculture with Smart Technology</p>
         </div>
       </div>
