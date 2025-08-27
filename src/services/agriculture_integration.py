@@ -5,11 +5,26 @@ Integrates the agriculture router and agents with the existing AgentWeaver infra
 
 import logging
 import asyncio
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, TYPE_CHECKING
 from datetime import datetime, timedelta
 
+logger = logging.getLogger(__name__)
+
 from ..orchestration.supervisor import SupervisorNode
-from ..agents.agriculture_router import AgricultureRouter, create_agriculture_router
+
+# Optional import to prevent startup failure
+try:
+    from ..agents.agriculture_router import AgricultureRouter, create_agriculture_router
+    AGRICULTURE_ROUTER_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"Agriculture router not available: {e}")
+    if TYPE_CHECKING:
+        from ..agents.agriculture_router import AgricultureRouter
+    else:
+        AgricultureRouter = None
+    create_agriculture_router = None
+    AGRICULTURE_ROUTER_AVAILABLE = False
+
 from ..core.agriculture_models import (
     AgricultureQuery, AgricultureTask, QueryDomain, Language,
     AgricultureCapability, AggregatedResponse, AgentResponse
@@ -29,7 +44,7 @@ class AgricultureIntegrationService:
     
     def __init__(self, supervisor: SupervisorNode):
         self.supervisor = supervisor
-        self.agriculture_router: Optional[AgricultureRouter] = None
+        self.agriculture_router: Optional["AgricultureRouter"] = None
         self.specialist_agents: Dict[str, Any] = {}
         self.active_queries: Dict[str, Dict[str, Any]] = {}
         
@@ -43,10 +58,20 @@ class AgricultureIntegrationService:
     def _initialize_router(self):
         """Initialize the agriculture router and specialist agents"""
         try:
+            if not AGRICULTURE_ROUTER_AVAILABLE or create_agriculture_router is None:
+                logger.warning("Agriculture router not available, skipping initialization")
+                return
+                
             self.agriculture_router = create_agriculture_router()
             
-            # Register router with supervisor
-            self.supervisor.register_agent(self.agriculture_router.agent_state)
+            # Register router with supervisor (convert AgentState to dict)
+            agent_data = {
+                "agent_id": self.agriculture_router.agent_state.agent_id,
+                "name": self.agriculture_router.agent_state.name,
+                "capabilities": self.agriculture_router.agent_state.capabilities,
+                "agent_type": self.agriculture_router.agent_state.agent_type
+            }
+            self.supervisor.register_agent(agent_data)
             
             # Import and initialize specialist agents
             from ..agents.crop_selection_agent import CropSelectionAgent
@@ -432,12 +457,12 @@ class AgricultureIntegrationService:
                 # Add to detailed responses
                 detailed_responses[agent_id] = {
                     "agent_name": agent_name,
-                    "response": response.response,
-                    "confidence": response.confidence,
+                    "response": response.response_text,
+                    "confidence": response.confidence_score,
                     "recommendations": getattr(response, 'recommendations', [])
                 }
                 
-                total_confidence += response.confidence
+                total_confidence += response.confidence_score
         
         # Calculate average confidence
         avg_confidence = total_confidence / len(agent_responses) if agent_responses else 0.0
@@ -555,10 +580,10 @@ class AgricultureIntegrationService:
             # Return fallback response
             return AgentResponse(
                 agent_id=agent_id,
+                agent_name=f"Agricultural Expert ({agent_id})",
                 query_id=agriculture_query.query_id,
                 response_text=f"I encountered an issue processing your agricultural query. Please try rephrasing your question or consult with agricultural experts.",
                 confidence_score=0.1,
-                status="error",
                 recommendations=[],
                 metadata={"error": str(e), "fallback": True}
             )
@@ -579,7 +604,7 @@ class AgricultureIntegrationService:
             ai_agent = GeminiAgricultureAgent()
             
             # Process query with AI agent
-            ai_response = await ai_agent.process_query_async(agriculture_query)
+            ai_response = await ai_agent.process_query(agriculture_query)
             
             # Format the response properly
             if ai_response and hasattr(ai_response, 'response_text'):
@@ -588,10 +613,10 @@ class AgricultureIntegrationService:
                 
                 return AgentResponse(
                     agent_id="gemini_agriculture",
+                    agent_name="Gemini Agriculture Expert",
                     query_id=agriculture_query.query_id,
                     response_text=cleaned_text,
                     confidence_score=ai_response.confidence_score if hasattr(ai_response, 'confidence_score') else 0.7,
-                    status="completed",
                     recommendations=getattr(ai_response, 'recommendations', []),
                     metadata={
                         "source": "ai_fallback",
@@ -661,14 +686,32 @@ class AgricultureIntegrationService:
         
         return AgentResponse(
             agent_id=original_agent_id,
+            agent_name=f"Agricultural Expert ({original_agent_id})",
             query_id=agriculture_query.query_id,
             response_text=message,
             confidence_score=0.3,
-            status="completed",
             recommendations=[
-                "Consult local agricultural extension services",
-                "Contact experienced farmers in your area",
-                "Check with relevant agricultural departments"
+                {
+                    "id": "fallback_1",
+                    "text": "Consult local agricultural extension services",
+                    "type": "general_advice",
+                    "priority": "high",
+                    "category": "Expert Consultation"
+                },
+                {
+                    "id": "fallback_2", 
+                    "text": "Contact experienced farmers in your area",
+                    "type": "peer_consultation",
+                    "priority": "medium",
+                    "category": "Community Support"
+                },
+                {
+                    "id": "fallback_3",
+                    "text": "Check with relevant agricultural departments",
+                    "type": "official_guidance",
+                    "priority": "medium", 
+                    "category": "Government Resources"
+                }
             ],
             metadata={"fallback": True, "type": "generic_advice"}
         )

@@ -49,8 +49,10 @@ interface FarmerLeaderboard {
 }
 
 const FarmerProfilePage: React.FC = () => {
-  const [farmers, setFarmers] = useState<FarmerProfile[]>([]);
-  const [selectedFarmer, setSelectedFarmer] = useState<FarmerProfile | null>(null);
+  // Mock current logged-in farmer ID (in real app, this would come from authentication)
+  const currentFarmerId = 'FARMER_45690318'; // Rajesh Kumar Singh
+  
+  const [currentFarmer, setCurrentFarmer] = useState<FarmerProfile | null>(null);
   const [creditBreakdown, setCreditBreakdown] = useState<CreditScoreBreakdown | null>(null);
   const [leaderboard, setLeaderboard] = useState<FarmerLeaderboard[]>([]);
   const [activeTab, setActiveTab] = useState<'profiles' | 'leaderboard' | 'analytics'>('profiles');
@@ -58,27 +60,40 @@ const FarmerProfilePage: React.FC = () => {
   const [analytics, setAnalytics] = useState<any>(null);
 
   useEffect(() => {
-    fetchFarmers();
+    fetchCurrentFarmer();
     fetchLeaderboard();
     fetchAnalytics();
   }, []);
 
-  const fetchFarmers = async () => {
+  const fetchCurrentFarmer = async () => {
     try {
-      const response = await fetch('http://localhost:8003/farmer-profiles');
+      const response = await fetch(`http://localhost:8000/farmer-profile/${currentFarmerId}`);
+      if (!response.ok) {
+        console.error(`API Error: ${response.status} - ${response.statusText}`);
+        setLoading(false);
+        return;
+      }
       const data = await response.json();
-      setFarmers(data);
+      console.log('Farmer data received:', data);
+      setCurrentFarmer(data);
+      // Also fetch credit breakdown for the current farmer
+      fetchCreditBreakdown(currentFarmerId);
       setLoading(false);
     } catch (error) {
-      console.error('Error fetching farmers:', error);
+      console.error('Error fetching current farmer:', error);
       setLoading(false);
     }
   };
 
   const fetchLeaderboard = async () => {
     try {
-      const response = await fetch('http://localhost:8003/farmer-leaderboard');
+      const response = await fetch('http://localhost:8000/farmer-leaderboard');
+      if (!response.ok) {
+        console.error(`Leaderboard API Error: ${response.status} - ${response.statusText}`);
+        return;
+      }
       const data = await response.json();
+      console.log('Leaderboard data received:', data);
       setLeaderboard(data);
     } catch (error) {
       console.error('Error fetching leaderboard:', error);
@@ -87,8 +102,13 @@ const FarmerProfilePage: React.FC = () => {
 
   const fetchAnalytics = async () => {
     try {
-      const response = await fetch('http://localhost:8003/credit-score-analytics');
+      const response = await fetch('http://localhost:8000/credit-score-analytics');
+      if (!response.ok) {
+        console.error(`Analytics API Error: ${response.status} - ${response.statusText}`);
+        return;
+      }
       const data = await response.json();
+      console.log('Analytics data received:', data);
       setAnalytics(data);
     } catch (error) {
       console.error('Error fetching analytics:', error);
@@ -97,17 +117,12 @@ const FarmerProfilePage: React.FC = () => {
 
   const fetchCreditBreakdown = async (farmerId: string) => {
     try {
-      const response = await fetch(`http://localhost:8003/farmer-profile/${farmerId}/credit-score`);
+      const response = await fetch(`http://localhost:8000/farmer-profile/${farmerId}/credit-score`);
       const data = await response.json();
       setCreditBreakdown(data);
     } catch (error) {
       console.error('Error fetching credit breakdown:', error);
     }
-  };
-
-  const handleFarmerSelect = (farmer: FarmerProfile) => {
-    setSelectedFarmer(farmer);
-    fetchCreditBreakdown(farmer.farmer_id);
   };
 
   const getScoreColor = (score: number) => {
@@ -188,135 +203,121 @@ const FarmerProfilePage: React.FC = () => {
       <div className="profile-content">
         {activeTab === 'profiles' && (
           <div className="profiles-section">
-            <div className="farmers-grid">
-              <div className="farmers-list">
-                <h3>All Farmers ({farmers.length})</h3>
-                <div className="farmer-cards">
-                  {farmers.map(farmer => (
-                    <div 
-                      key={farmer.farmer_id}
-                      className={`farmer-card ${selectedFarmer?.farmer_id === farmer.farmer_id ? 'selected' : ''}`}
-                      onClick={() => handleFarmerSelect(farmer)}
-                    >
-                      <div className="farmer-card-header">
-                        <h4>{farmer.name}</h4>
-                        <span className="verification-status">
-                          {getVerificationIcon(farmer.verification_status)}
-                        </span>
-                      </div>
-                      
-                      <div className="credit-score-display">
-                        <div 
-                          className="score-circle"
-                          style={{ borderColor: getScoreColor(farmer.agriculture_credit_score) }}
-                        >
-                          <span className="score-number">{farmer.agriculture_credit_score}</span>
-                          <span className="score-grade">{getScoreGrade(farmer.agriculture_credit_score)}</span>
-                        </div>
-                        <div className="score-info">
-                          <span className="score-category">
-                            {getCategoryEmoji(farmer.score_category)} {farmer.score_category.replace('_', ' ').toUpperCase()}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="farmer-info">
-                        <p>📍 {farmer.location.district}, {farmer.location.state}</p>
-                        <p>🌾 {farmer.farming_experience}</p>
-                        <p>🚜 {farmer.farm_size_hectares} hectares</p>
-                        <p>🌱 {farmer.primary_crops.join(', ')}</p>
-                      </div>
-
-                      <div className="profile-completeness">
-                        <span>Profile: {farmer.profile_completeness.toFixed(0)}% complete</span>
-                        <div className="progress-bar">
-                          <div 
-                            className="progress-fill"
-                            style={{ width: `${farmer.profile_completeness}%` }}
-                          ></div>
-                        </div>
-                      </div>
+            {currentFarmer ? (
+              <div className="current-farmer-profile">
+                <div className="farmer-profile-header">
+                  <div className="farmer-basic-info">
+                    <h3>👨‍🌾 My Farmer Profile</h3>
+                    <h2>{currentFarmer.name}</h2>
+                    <p className="farmer-location">📍 {currentFarmer.location.village}, {currentFarmer.location.district}, {currentFarmer.location.state}</p>
+                    <div className="verification-badge">
+                      {getVerificationIcon(currentFarmer.verification_status)} 
+                      <span className={`verification-text ${currentFarmer.verification_status.toLowerCase()}`}>
+                        {currentFarmer.verification_status.replace('_', ' ').toUpperCase()}
+                      </span>
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="farmer-details">
-                {selectedFarmer ? (
-                  <div className="farmer-detail-card">
-                    <h3>📋 Detailed Credit Analysis</h3>
-                    <h4>{selectedFarmer.name}</h4>
-                    
-                    <div className="score-breakdown-header">
-                      <div className="main-score">
-                        <span className="large-score">{selectedFarmer.agriculture_credit_score}</span>
-                        <span className="score-category-text">
-                          {getCategoryEmoji(selectedFarmer.score_category)} {selectedFarmer.score_category.replace('_', ' ').toUpperCase()}
-                        </span>
-                      </div>
-                    </div>
-
-                    {creditBreakdown && (
-                      <div className="credit-breakdown">
-                        <h5>📊 Score Components</h5>
-                        <div className="components-grid">
-                          {Object.entries(creditBreakdown.components).map(([key, component]) => (
-                            <div key={key} className="component-card">
-                              <h6>{key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</h6>
-                              <div className="component-score">
-                                <span className="component-value">{component.score}</span>
-                                <span className="component-weight">Weight: {component.weight}</span>
-                              </div>
-                              <span className={`component-status status-${component.status.toLowerCase().replace(' ', '-')}`}>
-                                {component.status}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-
-                        <div className="recommendations-section">
-                          <div className="strengths">
-                            <h6>💪 Strengths</h6>
-                            <ul>
-                              {creditBreakdown.strengths.map((strength, index) => (
-                                <li key={index}>✅ {strength}</li>
-                              ))}
-                            </ul>
-                          </div>
-
-                          <div className="improvements">
-                            <h6>🎯 Areas for Improvement</h6>
-                            <ul>
-                              {creditBreakdown.improvement_areas.map((area, index) => (
-                                <li key={index}>🔸 {area}</li>
-                              ))}
-                            </ul>
-                          </div>
-
-                          <div className="recommendations">
-                            <h6>💡 Recommendations</h6>
-                            <ul>
-                              {creditBreakdown.recommendations.map((rec, index) => (
-                                <li key={index}>🚀 {rec}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        </div>
-
-                        <div className="next-review">
-                          <p>📅 Next Review: {new Date(creditBreakdown.next_review_date).toLocaleDateString()}</p>
-                        </div>
-                      </div>
-                    )}
                   </div>
-                ) : (
-                  <div className="no-selection">
-                    <h3>👈 Select a farmer to view detailed credit analysis</h3>
-                    <p>Click on any farmer card to see their complete agricultural credit score breakdown, including satellite performance metrics, crop history, and personalized recommendations.</p>
+                  
+                  <div className="credit-score-main">
+                    <div 
+                      className="score-circle-large"
+                      style={{ borderColor: getScoreColor(currentFarmer.agriculture_credit_score) }}
+                    >
+                      <span className="score-number-large">{currentFarmer.agriculture_credit_score}</span>
+                      <span className="score-grade-large">{getScoreGrade(currentFarmer.agriculture_credit_score)}</span>
+                    </div>
+                    <div className="score-category-main">
+                      {getCategoryEmoji(currentFarmer.score_category)} {currentFarmer.score_category.replace('_', ' ').toUpperCase()}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="farmer-stats-grid">
+                  <div className="stat-card">
+                    <h4>🚜 Farm Details</h4>
+                    <p><strong>Farm Size:</strong> {currentFarmer.farm_size_hectares.toFixed(1)} hectares</p>
+                    <p><strong>Experience:</strong> {currentFarmer.farming_experience}</p>
+                    <p><strong>Primary Crops:</strong> {currentFarmer.primary_crops.join(', ')}</p>
+                    <p><strong>Phone:</strong> {currentFarmer.phone}</p>
+                  </div>
+
+                  <div className="stat-card">
+                    <h4>📊 Profile Status</h4>
+                    <div className="profile-completeness-large">
+                      <span>Profile Completeness</span>
+                      <div className="progress-bar-large">
+                        <div 
+                          className="progress-fill-large"
+                          style={{ width: `${currentFarmer.profile_completeness}%` }}
+                        ></div>
+                      </div>
+                      <span className="completeness-percentage">{currentFarmer.profile_completeness.toFixed(0)}%</span>
+                    </div>
+                  </div>
+                </div>
+
+                {creditBreakdown && (
+                  <div className="credit-breakdown-detailed">
+                    <h3>� Detailed Credit Score Analysis</h3>
+                    
+                    <div className="components-grid-large">
+                      {Object.entries(creditBreakdown.components).map(([key, component]) => (
+                        <div key={key} className="component-card-large">
+                          <h4>{key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</h4>
+                          <div className="component-details">
+                            <div className="component-score-large">
+                              <span className="score-value">{component.score}</span>
+                              <span className="score-weight">Weight: {component.weight}</span>
+                            </div>
+                            <span className={`status-badge status-${component.status.toLowerCase().replace(' ', '-')}`}>
+                              {component.status}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="recommendations-grid">
+                      <div className="recommendations-card strengths-card">
+                        <h4>💪 Your Strengths</h4>
+                        <ul>
+                          {creditBreakdown.strengths.map((strength, index) => (
+                            <li key={index}>✅ {strength}</li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      <div className="recommendations-card improvements-card">
+                        <h4>🎯 Areas for Improvement</h4>
+                        <ul>
+                          {creditBreakdown.improvement_areas.map((area, index) => (
+                            <li key={index}>🔸 {area}</li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      <div className="recommendations-card recommendations-actions">
+                        <h4>💡 Recommendations</h4>
+                        <ul>
+                          {creditBreakdown.recommendations.map((rec, index) => (
+                            <li key={index}>💡 {rec}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+
+                    <div className="next-review">
+                      <p><strong>📅 Next Review Date:</strong> {new Date(creditBreakdown.next_review_date).toLocaleDateString()}</p>
+                    </div>
                   </div>
                 )}
               </div>
-            </div>
+            ) : (
+              <div className="no-farmer-message">
+                <h3>⚠️ No Farmer Profile Found</h3>
+                <p>Please ensure you are logged in and your profile is set up correctly.</p>
+              </div>
+            )}
           </div>
         )}
 

@@ -498,6 +498,10 @@ sample_farmers = [
                         {"state": "Madhya Pradesh", "district": "Indore", "village": "Sanwer"})
 ]
 
+# Add specific farmer for frontend compatibility
+rajesh_farmer = sample_farmers[0]  # Rajesh Kumar Singh
+rajesh_farmer.farmer_id = "FARMER_45690318"  # Override with specific ID
+
 # In-memory databases
 products_db = {product.product_id: product for product in sample_products}
 sellers_db = {seller.seller_id: seller for seller in sample_sellers}
@@ -983,6 +987,336 @@ async def get_procurement_recommendations():
         "recommendations": recommendations,
         "confidence_level": "High",
         "generated_at": datetime.now().isoformat()
+    }
+
+@app.get("/business-intel/seller-profiles")
+async def get_sellers_business_intelligence(
+    verification_status: Optional[str] = None,
+    business_type: Optional[str] = None,
+    min_rating: float = 0.0,
+    location: Optional[str] = None
+):
+    """Get seller profiles for business intelligence"""
+    
+    # Sample seller data (in production, this would come from a database)
+    sample_sellers = [
+        {
+            "seller_id": "SELLER_78493",
+            "business_name": "Green Valley Organic Farms",
+            "owner_name": "Priya Sharma",
+            "business_type": "individual_farmer",
+            "verification_status": "verified",
+            "overall_rating": 4.8,
+            "total_reviews": 156,
+            "profile_completeness": 95.2,
+            "financial_profile": {
+                "credit_score": 720,
+                "annual_turnover": 850000,
+                "payment_history_score": 92
+            },
+            "quality_metrics": {
+                "consistency_score": 94,
+                "rejection_rate": 3.2,
+                "customer_satisfaction": 4.7,
+                "satellite_quality_index": 8.9
+            },
+            "market_performance": {
+                "delivery_performance": 96,
+                "customer_retention_rate": 87,
+                "total_sales_volume": 2400
+            },
+            "certifications": [
+                {
+                    "certification_type": "Organic",
+                    "certification_number": "ORG-2024-7849",
+                    "verification_status": "verified"
+                }
+            ],
+            "satellite_monitoring": {
+                "current_ndvi": 0.82,
+                "soil_moisture": 65.4,
+                "crop_health_index": 8.7,
+                "weather_risk": "Low"
+            },
+            "ai_risk_assessment": {
+                "overall_risk": "Low",
+                "recommendation": "Excellent supplier for long-term partnerships"
+            }
+        },
+        {
+            "seller_id": "SELLER_65920",
+            "business_name": "Maharashtra Spice Collective",
+            "owner_name": "Rajesh Patil",
+            "business_type": "farmer_collective",
+            "verification_status": "verified",
+            "overall_rating": 4.5,
+            "total_reviews": 89,
+            "profile_completeness": 88.7,
+            "financial_profile": {
+                "credit_score": 680,
+                "annual_turnover": 1200000,
+                "payment_history_score": 88
+            },
+            "quality_metrics": {
+                "consistency_score": 89,
+                "rejection_rate": 5.1,
+                "customer_satisfaction": 4.4,
+                "satellite_quality_index": 8.2
+            },
+            "market_performance": {
+                "delivery_performance": 91,
+                "customer_retention_rate": 82,
+                "total_sales_volume": 3200
+            },
+            "certifications": [
+                {
+                    "certification_type": "Export Quality",
+                    "certification_number": "EXP-2024-6592",
+                    "verification_status": "verified"
+                }
+            ],
+            "satellite_monitoring": {
+                "current_ndvi": 0.78,
+                "soil_moisture": 58.9,
+                "crop_health_index": 8.1,
+                "weather_risk": "Medium"
+            },
+            "ai_risk_assessment": {
+                "overall_risk": "Low-Medium",
+                "recommendation": "Reliable collective with good track record"
+            }
+        },
+        {
+            "seller_id": "SELLER_41287",
+            "business_name": "Tamil Nadu Rice Mills",
+            "owner_name": "Sundar Krishnan",
+            "business_type": "agricultural_enterprise",
+            "verification_status": "pending",
+            "overall_rating": 4.2,
+            "total_reviews": 34,
+            "profile_completeness": 76.3,
+            "financial_profile": {
+                "credit_score": 650,
+                "annual_turnover": 950000,
+                "payment_history_score": 79
+            },
+            "quality_metrics": {
+                "consistency_score": 82,
+                "rejection_rate": 7.8,
+                "customer_satisfaction": 4.1,
+                "satellite_quality_index": 7.6
+            },
+            "market_performance": {
+                "delivery_performance": 86,
+                "customer_retention_rate": 74,
+                "total_sales_volume": 1850
+            },
+            "certifications": [
+                {
+                    "certification_type": "FSSAI",
+                    "certification_number": "FSSAI-2024-4128",
+                    "verification_status": "pending"
+                }
+            ],
+            "satellite_monitoring": {
+                "current_ndvi": 0.72,
+                "soil_moisture": 52.1,
+                "crop_health_index": 7.4,
+                "weather_risk": "Medium"
+            },
+            "ai_risk_assessment": {
+                "overall_risk": "Medium",
+                "recommendation": "Monitor closely, potential for improvement"
+            }
+        }
+    ]
+    
+    # Apply filters
+    filtered_sellers = sample_sellers
+    
+    if verification_status:
+        filtered_sellers = [s for s in filtered_sellers if s["verification_status"] == verification_status]
+    
+    if business_type:
+        filtered_sellers = [s for s in filtered_sellers if s["business_type"] == business_type]
+    
+    if min_rating > 0:
+        filtered_sellers = [s for s in filtered_sellers if s["overall_rating"] >= min_rating]
+    
+    if location:
+        # Simple location filter (in production, would be more sophisticated)
+        filtered_sellers = [s for s in filtered_sellers if location.lower() in s["business_name"].lower()]
+    
+    return {
+        "status": "success",
+        "sellers": filtered_sellers,
+        "total_count": len(filtered_sellers),
+        "filters_applied": {
+            "verification_status": verification_status,
+            "business_type": business_type,
+            "min_rating": min_rating,
+            "location": location
+        }
+    }
+
+@app.get("/business-intel/market-analysis")
+async def get_market_analysis():
+    """Get comprehensive market analysis for business intelligence"""
+    
+    analysis_data = {
+        "market_overview": {
+            "total_market_size": "₹2.4Cr",
+            "growth_rate": "12.5%",
+            "active_suppliers": 1247,
+            "verified_suppliers_percentage": 68.3
+        },
+        "quality_insights": {
+            "average_consistency_score": 87.6,
+            "average_rejection_rate": 5.4,
+            "satellite_quality_average": 8.2
+        },
+        "financial_health": {
+            "average_credit_score": 683,
+            "low_risk_suppliers": 892
+        },
+        "performance_metrics": {
+            "average_delivery_performance": 91.2,
+            "average_customer_satisfaction": 4.4,
+            "high_performance_suppliers": 421
+        }
+    }
+    
+    return {
+        "status": "success",
+        "analysis": analysis_data,
+        "generated_at": datetime.now().isoformat(),
+        "data_points": 1247,
+        "confidence_level": "High"
+    }
+
+@app.get("/business-intel/farmer-profiles")
+async def get_farmers_business_intelligence(
+    verified_only: bool = False,
+    min_credit_score: int = 300,
+    experience_level: Optional[str] = None,
+    location_state: Optional[str] = None
+):
+    """Get farmer profiles integrated into business intelligence system"""
+    
+    filtered_farmers = list(farmers_db.values())
+    
+    # Apply filters
+    if verified_only:
+        filtered_farmers = [f for f in filtered_farmers if f.verification_status == VerificationStatus.VERIFIED]
+    
+    if min_credit_score > 300:
+        filtered_farmers = [f for f in filtered_farmers if f.agriculture_credit_score >= min_credit_score]
+    
+    if experience_level:
+        filtered_farmers = [f for f in filtered_farmers if f.farming_experience == experience_level]
+    
+    if location_state:
+        filtered_farmers = [f for f in filtered_farmers if location_state.lower() in f.location.get('state', '').lower()]
+    
+    # Sort by credit score (descending)
+    filtered_farmers.sort(key=lambda f: f.agriculture_credit_score, reverse=True)
+    
+    # Calculate business intelligence metrics
+    total_farmers = len(filtered_farmers)
+    verified_farmers = len([f for f in filtered_farmers if f.verification_status == VerificationStatus.VERIFIED])
+    high_score_farmers = len([f for f in filtered_farmers if f.agriculture_credit_score >= 700])
+    
+    avg_credit_score = sum(f.agriculture_credit_score for f in filtered_farmers) / total_farmers if total_farmers > 0 else 0
+    avg_completeness = sum(f.profile_completeness for f in filtered_farmers) / total_farmers if total_farmers > 0 else 0
+    
+    # Transform farmers for business intelligence format
+    farmer_profiles = []
+    for farmer in filtered_farmers:
+        # Calculate business score based on multiple factors
+        business_score = (
+            farmer.agriculture_credit_score * 0.4 +
+            farmer.profile_completeness * 0.2 +
+            (100 if farmer.verification_status == VerificationStatus.VERIFIED else 50) * 0.2 +
+            farmer.satellite_metrics.ndvi_score * 100 * 0.2
+        )
+        
+        # Determine risk level
+        if business_score >= 80:
+            risk_level = "LOW"
+        elif business_score >= 60:
+            risk_level = "MEDIUM"
+        else:
+            risk_level = "HIGH"
+        
+        farmer_profile = {
+            "farmer_id": farmer.farmer_id,
+            "name": farmer.name,
+            "business_type": "agricultural_producer",
+            "verification_status": farmer.verification_status.value,
+            "location": farmer.location,
+            "business_score": round(business_score, 1),
+            "risk_level": risk_level,
+            "agriculture_credit_score": farmer.agriculture_credit_score,
+            "score_category": farmer.score_category.value,
+            "profile_completeness": farmer.profile_completeness,
+            "farming_experience": farmer.farming_experience.value,
+            "primary_crops": farmer.primary_crops,
+            "farm_size_hectares": farmer.farm_size_hectares,
+            "satellite_metrics": {
+                "ndvi_score": farmer.satellite_metrics.ndvi_score,
+                "soil_moisture": farmer.satellite_metrics.soil_moisture,
+                "environmental_score": farmer.satellite_metrics.environmental_score,
+                "crop_health_status": "Excellent" if farmer.satellite_metrics.ndvi_score > 0.7 else "Good" if farmer.satellite_metrics.ndvi_score > 0.5 else "Needs Attention"
+            },
+            "financial_profile": {
+                "repayment_success_rate": farmer.financial_history.repayment_success_rate,
+                "current_outstanding": farmer.financial_history.current_outstanding,
+                "total_loans_taken": farmer.financial_history.total_loans_taken,
+                "financial_stability": "High" if farmer.financial_history.repayment_success_rate > 95 else "Medium" if farmer.financial_history.repayment_success_rate > 85 else "Low"
+            },
+            "market_performance": {
+                "total_sales_volume": farmer.market_activity.total_sales_volume,
+                "customer_satisfaction_score": farmer.market_activity.customer_satisfaction_score,
+                "delivery_success_rate": farmer.market_activity.delivery_success_rate,
+                "repeat_customer_rate": farmer.market_activity.repeat_customer_rate
+            },
+            "technology_adoption": {
+                "adoption_score": farmer.technology_adoption.technology_adoption_score,
+                "uses_satellite_monitoring": farmer.technology_adoption.uses_satellite_monitoring,
+                "uses_ai_recommendations": farmer.technology_adoption.uses_ai_recommendations,
+                "uses_precision_agriculture": farmer.technology_adoption.uses_precision_agriculture
+            },
+            "production_capacity": {
+                "estimated_annual_production": farmer.farm_size_hectares * 4.5,  # Estimate based on farm size
+                "crop_diversity_score": len(farmer.primary_crops) * 20,
+                "seasonal_availability": len(farmer.crop_performance_history) > 0
+            }
+        }
+        farmer_profiles.append(farmer_profile)
+    
+    return {
+        "status": "success",
+        "total_farmers": total_farmers,
+        "verified_farmers": verified_farmers,
+        "high_score_farmers": high_score_farmers,
+        "average_credit_score": round(avg_credit_score, 1),
+        "average_profile_completeness": round(avg_completeness, 1),
+        "farmer_profiles": farmer_profiles,
+        "filtering_applied": {
+            "verified_only": verified_only,
+            "min_credit_score": min_credit_score,
+            "experience_level": experience_level,
+            "location_state": location_state
+        },
+        "business_intelligence_insights": {
+            "top_performing_regions": ["Punjab", "Haryana", "Maharashtra"],
+            "recommended_crops": ["Organic Wheat", "Basmati Rice", "Cotton"],
+            "risk_distribution": {
+                "low_risk": len([f for f in farmer_profiles if f["risk_level"] == "LOW"]),
+                "medium_risk": len([f for f in farmer_profiles if f["risk_level"] == "MEDIUM"]),
+                "high_risk": len([f for f in farmer_profiles if f["risk_level"] == "HIGH"])
+            }
+        }
     }
 
 @app.get("/system/status")

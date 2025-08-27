@@ -181,7 +181,7 @@ Remember: Always follow the exact format above. Do not add conversational elemen
             
             logger.info(
                 f"✓ Gemini query processed in {processing_time:.2f}s "
-                f"with confidence: {agricultural_response.confidence:.2f}"
+                f"with confidence: {agricultural_response.confidence_score:.2f}"
             )
             
             return agricultural_response
@@ -608,13 +608,13 @@ async def test_gemini_agent():
             response = await agent.process_query(query)
             
             # Display results
-            print(f"Status: {response.status}")
-            print(f"Confidence: {response.confidence:.2f}")
-            print(f"Processing Time: {response.processing_time:.2f}s")
+            print(f"Agent ID: {response.agent_id}")
+            print(f"Confidence: {response.confidence_score:.2f}")
+            print(f"Processing Time: {response.processing_time_ms or 0}ms")
             print(f"Response Length: {len(response.response_text)} chars")
             print(f"Recommendations: {len(response.recommendations)}")
             
-            if response.status == "completed":
+            if response.confidence_score > 0.0:
                 print("✓ Query processed successfully")
                 # Show first 200 chars of response
                 preview = response.response_text[:200] + "..." if len(response.response_text) > 200 else response.response_text

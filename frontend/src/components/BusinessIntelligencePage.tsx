@@ -43,6 +43,55 @@ interface SellerProfile {
   };
 }
 
+interface FarmerProfile {
+  farmer_id: string;
+  name: string;
+  business_type: string;
+  verification_status: string;
+  location: {
+    state: string;
+    district: string;
+    village: string;
+  };
+  business_score: number;
+  risk_level: string;
+  agriculture_credit_score: number;
+  score_category: string;
+  profile_completeness: number;
+  farming_experience: string;
+  primary_crops: string[];
+  farm_size_hectares: number;
+  satellite_metrics: {
+    ndvi_score: number;
+    soil_moisture: number;
+    environmental_score: number;
+    crop_health_status: string;
+  };
+  financial_profile: {
+    repayment_success_rate: number;
+    current_outstanding: number;
+    total_loans_taken: number;
+    financial_stability: string;
+  };
+  market_performance: {
+    total_sales_volume: number;
+    customer_satisfaction_score: number;
+    delivery_success_rate: number;
+    repeat_customer_rate: number;
+  };
+  technology_adoption: {
+    adoption_score: number;
+    uses_satellite_monitoring: boolean;
+    uses_ai_recommendations: boolean;
+    uses_precision_agriculture: boolean;
+  };
+  production_capacity: {
+    estimated_annual_production: number;
+    crop_diversity_score: number;
+    seasonal_availability: boolean;
+  };
+}
+
 interface MarketAnalysis {
   market_overview: {
     total_market_size: string;
@@ -68,10 +117,13 @@ interface MarketAnalysis {
 
 const BusinessIntelligencePage: React.FC = () => {
   const [sellers, setSellers] = useState<SellerProfile[]>([]);
+  const [farmers, setFarmers] = useState<FarmerProfile[]>([]);
   const [marketAnalysis, setMarketAnalysis] = useState<MarketAnalysis | null>(null);
   const [selectedSeller, setSelectedSeller] = useState<SellerProfile | null>(null);
+  const [selectedFarmer, setSelectedFarmer] = useState<FarmerProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'sellers' | 'analysis' | 'reports'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'sellers' | 'farmers' | 'reports'>('overview');
+  const [supplierView, setSupplierView] = useState<'sellers' | 'farmers'>('farmers');
 
   const [filters, setFilters] = useState({
     verification_status: '',
@@ -80,9 +132,16 @@ const BusinessIntelligencePage: React.FC = () => {
     location: ''
   });
 
+  const [farmerFilters, setFarmerFilters] = useState({
+    verified_only: false,
+    min_credit_score: 300,
+    experience_level: '',
+    location_state: ''
+  });
+
   useEffect(() => {
     fetchBusinessIntelligenceData();
-  }, [filters]);
+  }, [filters, farmerFilters]);
 
   const fetchBusinessIntelligenceData = async () => {
     try {
@@ -95,15 +154,29 @@ const BusinessIntelligencePage: React.FC = () => {
       if (filters.min_rating > 0) sellersParams.append('min_rating', filters.min_rating.toString());
       if (filters.location) sellersParams.append('location', filters.location);
 
-      const sellersResponse = await fetch(`http://localhost:8002/business-intel/seller-profiles?${sellersParams}`);
+      const sellersResponse = await fetch(`http://localhost:8000/business-intel/seller-profiles?${sellersParams}`);
       const sellersData = await sellersResponse.json();
 
+      // Fetch farmer profiles for business intelligence
+      const farmerParams = new URLSearchParams();
+      if (farmerFilters.verified_only) farmerParams.append('verified_only', 'true');
+      if (farmerFilters.min_credit_score > 300) farmerParams.append('min_credit_score', farmerFilters.min_credit_score.toString());
+      if (farmerFilters.experience_level) farmerParams.append('experience_level', farmerFilters.experience_level);
+      if (farmerFilters.location_state) farmerParams.append('location_state', farmerFilters.location_state);
+
+      const farmersResponse = await fetch(`http://localhost:8000/business-intel/farmer-profiles?${farmerParams}`);
+      const farmersData = await farmersResponse.json();
+
       // Fetch market analysis
-      const analysisResponse = await fetch('http://localhost:8002/business-intel/market-analysis');
+      const analysisResponse = await fetch('http://localhost:8000/business-intel/market-analysis');
       const analysisData = await analysisResponse.json();
 
       if (sellersData.status === 'success') {
         setSellers(sellersData.sellers);
+      }
+
+      if (farmersData.status === 'success') {
+        setFarmers(farmersData.farmer_profiles);
       }
 
       if (analysisData.status === 'success') {
@@ -175,13 +248,13 @@ const BusinessIntelligencePage: React.FC = () => {
           className={`tab-btn ${activeTab === 'sellers' ? 'active' : ''}`}
           onClick={() => setActiveTab('sellers')}
         >
-          👥 Verified Suppliers
+          🏢 Verified Suppliers
         </button>
         <button 
-          className={`tab-btn ${activeTab === 'analysis' ? 'active' : ''}`}
-          onClick={() => setActiveTab('analysis')}
+          className={`tab-btn ${activeTab === 'farmers' ? 'active' : ''}`}
+          onClick={() => setActiveTab('farmers')}
         >
-          🔍 Deep Analysis
+          👨‍🌾 Verified Farmers
         </button>
         <button 
           className={`tab-btn ${activeTab === 'reports' ? 'active' : ''}`}
@@ -303,143 +376,246 @@ const BusinessIntelligencePage: React.FC = () => {
 
           {/* Suppliers Grid */}
           <div className="suppliers-grid">
-            {sellers.map(seller => (
-              <div key={seller.seller_id} className="supplier-card">
-                <div className="supplier-header">
-                  <h4>{seller.business_name}</h4>
-                  <span className={`verification-badge ${seller.verification_status}`}>
-                    {getVerificationBadge(seller.verification_status)}
-                  </span>
-                </div>
-
-                <div className="supplier-info">
-                  <div className="info-row">
-                    <span className="label">Owner:</span>
-                    <span>{seller.owner_name}</span>
-                  </div>
-                  <div className="info-row">
-                    <span className="label">Type:</span>
-                    <span>{seller.business_type.replace('_', ' ')}</span>
-                  </div>
-                  <div className="info-row">
-                    <span className="label">Rating:</span>
-                    <span>⭐ {seller.overall_rating} ({seller.total_reviews} reviews)</span>
-                  </div>
-                </div>
-
-                <div className="performance-metrics">
-                  <div className="metric-row">
-                    <span>Credit Score:</span>
-                    <span className={seller.financial_profile.credit_score > 700 ? 'text-green-600' : 'text-yellow-600'}>
-                      {seller.financial_profile.credit_score}
+            {loading ? (
+              <div className="loading-message">Loading suppliers...</div>
+            ) : sellers.length > 0 ? (
+              sellers.map(seller => (
+                <div key={seller.seller_id} className="supplier-card">
+                  <div className="supplier-header">
+                    <h4>{seller.business_name}</h4>
+                    <span className={`verification-badge ${seller.verification_status}`}>
+                      {getVerificationBadge(seller.verification_status)}
                     </span>
                   </div>
-                  <div className="metric-row">
-                    <span>Quality Consistency:</span>
-                    <span>{seller.quality_metrics.consistency_score}%</span>
-                  </div>
-                  <div className="metric-row">
-                    <span>Delivery Performance:</span>
-                    <span>{seller.market_performance.delivery_performance}%</span>
-                  </div>
-                  <div className="metric-row">
-                    <span>Satellite Quality:</span>
-                    <span>{seller.quality_metrics.satellite_quality_index}</span>
-                  </div>
-                </div>
 
-                <div className="risk-assessment">
-                  <span className={`risk-badge ${getRiskColor(seller.ai_risk_assessment.overall_risk)}`}>
-                    Risk: {seller.ai_risk_assessment.overall_risk}
-                  </span>
-                </div>
+                  <div className="supplier-info">
+                    <div className="info-row">
+                      <span className="label">Owner:</span>
+                      <span>{seller.owner_name}</span>
+                    </div>
+                    <div className="info-row">
+                      <span className="label">Type:</span>
+                      <span>{seller.business_type.replace('_', ' ')}</span>
+                    </div>
+                    <div className="info-row">
+                      <span className="label">Rating:</span>
+                      <span>⭐ {seller.overall_rating} ({seller.total_reviews} reviews)</span>
+                    </div>
+                  </div>
 
-                <div className="supplier-actions">
-                  <button 
-                    className="btn-primary"
-                    onClick={() => setSelectedSeller(seller)}
-                  >
-                    📊 View Full Profile
-                  </button>
-                  <button className="btn-secondary">💬 Contact Supplier</button>
+                  <div className="performance-metrics">
+                    <div className="metric-row">
+                      <span>Credit Score:</span>
+                      <span className={seller.financial_profile.credit_score > 700 ? 'text-green-600' : 'text-yellow-600'}>
+                        {seller.financial_profile.credit_score}
+                      </span>
+                    </div>
+                    <div className="metric-row">
+                      <span>Quality Consistency:</span>
+                      <span>{seller.quality_metrics.consistency_score}%</span>
+                    </div>
+                    <div className="metric-row">
+                      <span>Delivery Performance:</span>
+                      <span>{seller.market_performance.delivery_performance}%</span>
+                    </div>
+                    <div className="metric-row">
+                      <span>Satellite Quality:</span>
+                      <span>{seller.quality_metrics.satellite_quality_index}</span>
+                    </div>
+                  </div>
+
+                  <div className="risk-assessment">
+                    <span className={`risk-badge ${getRiskColor(seller.ai_risk_assessment.overall_risk)}`}>
+                      Risk: {seller.ai_risk_assessment.overall_risk}
+                    </span>
+                  </div>
+
+                  <div className="supplier-actions">
+                    <button 
+                      className="btn-primary"
+                      onClick={() => setSelectedSeller(seller)}
+                    >
+                      📊 View Full Profile
+                    </button>
+                    <button className="btn-secondary">💬 Contact Supplier</button>
+                  </div>
                 </div>
+              ))
+            ) : (
+              <div className="no-data-message">
+                <h3>🔍 No Verified Suppliers Found</h3>
+                <p>Try adjusting your filters or check back later for new supplier registrations.</p>
               </div>
-            ))}
+            )}
           </div>
         </div>
       )}
 
-      {/* Deep Analysis Tab */}
-      {activeTab === 'analysis' && marketAnalysis && (
-        <div className="analysis-section">
-          <h3>🔬 Deep Market Analysis</h3>
-          
-          <div className="analysis-grid">
-            <div className="analysis-card">
-              <h4>📈 Quality Trends</h4>
-              <div className="trend-data">
-                <div className="trend-item">
-                  <span>Average Consistency Score:</span>
-                  <span className="highlight">{marketAnalysis.quality_insights.average_consistency_score}%</span>
-                </div>
-                <div className="trend-item">
-                  <span>Average Rejection Rate:</span>
-                  <span className="highlight">{marketAnalysis.quality_insights.average_rejection_rate}%</span>
-                </div>
-                <div className="trend-item">
-                  <span>Satellite Quality Index:</span>
-                  <span className="highlight">{marketAnalysis.quality_insights.satellite_quality_average}</span>
-                </div>
-              </div>
-            </div>
+      {/* Verified Farmers Tab */}
+      {activeTab === 'farmers' && (
+        <div className="farmers-section">
+          {/* Farmer Filters */}
+          <div className="filters-section">
+            <h3>🔍 Filter Farmers</h3>
+            <div className="filters-grid">
+              <label className="filter-checkbox">
+                <input
+                  type="checkbox"
+                  checked={farmerFilters.verified_only}
+                  onChange={(e) => setFarmerFilters({...farmerFilters, verified_only: e.target.checked})}
+                />
+                Verified Only
+              </label>
 
-            <div className="analysis-card">
-              <h4>💰 Financial Health</h4>
-              <div className="trend-data">
-                <div className="trend-item">
-                  <span>Average Credit Score:</span>
-                  <span className="highlight">{marketAnalysis.financial_health.average_credit_score}</span>
-                </div>
-                <div className="trend-item">
-                  <span>Low Risk Suppliers:</span>
-                  <span className="highlight">{marketAnalysis.financial_health.low_risk_suppliers}</span>
-                </div>
-              </div>
-            </div>
+              <input
+                type="number"
+                placeholder="Min Credit Score (300-900)"
+                value={farmerFilters.min_credit_score || ''}
+                onChange={(e) => setFarmerFilters({...farmerFilters, min_credit_score: parseInt(e.target.value) || 300})}
+                className="filter-input"
+                min="300"
+                max="900"
+              />
 
-            <div className="analysis-card">
-              <h4>🚚 Performance Metrics</h4>
-              <div className="trend-data">
-                <div className="trend-item">
-                  <span>Avg Delivery Performance:</span>
-                  <span className="highlight">{marketAnalysis.performance_metrics.average_delivery_performance}%</span>
-                </div>
-                <div className="trend-item">
-                  <span>Avg Customer Satisfaction:</span>
-                  <span className="highlight">{marketAnalysis.performance_metrics.average_customer_satisfaction}/5</span>
-                </div>
-                <div className="trend-item">
-                  <span>High Performers:</span>
-                  <span className="highlight">{marketAnalysis.performance_metrics.high_performance_suppliers}</span>
-                </div>
-              </div>
+              <select 
+                value={farmerFilters.experience_level}
+                onChange={(e) => setFarmerFilters({...farmerFilters, experience_level: e.target.value})}
+                className="filter-select"
+              >
+                <option value="">All Experience Levels</option>
+                <option value="0-2 years">Beginner (0-2 years)</option>
+                <option value="3-7 years">Intermediate (3-7 years)</option>
+                <option value="8-15 years">Experienced (8-15 years)</option>
+                <option value="15+ years">Veteran (15+ years)</option>
+              </select>
+
+              <input
+                type="text"
+                placeholder="Location (State)"
+                value={farmerFilters.location_state}
+                onChange={(e) => setFarmerFilters({...farmerFilters, location_state: e.target.value})}
+                className="filter-input"
+              />
             </div>
           </div>
 
-          <div className="recommendations-section">
-            <h4>💡 Strategic Recommendations</h4>
-            <div className="recommendations-grid">
-              <div className="recommendation-card">
-                <h5>🎯 Supplier Strategy</h5>
-                <p>Focus on building relationships with top 20% performers for consistent quality and reliability.</p>
+          {/* Farmers Grid */}
+          <div className="farmers-grid">
+            {farmers.map(farmer => (
+              <div key={farmer.farmer_id} className="farmer-card">
+                <div className="farmer-header">
+                  <h4>{farmer.name}</h4>
+                  <span className={`verification-badge ${farmer.verification_status}`}>
+                    {getVerificationBadge(farmer.verification_status)}
+                  </span>
+                </div>
+
+                <div className="farmer-info">
+                  <div className="info-row">
+                    <span className="label">Location:</span>
+                    <span>{farmer.location.district}, {farmer.location.state}</span>
+                  </div>
+                  <div className="info-row">
+                    <span className="label">Experience:</span>
+                    <span>{farmer.farming_experience.replace('_', ' ')}</span>
+                  </div>
+                  <div className="info-row">
+                    <span className="label">Farm Size:</span>
+                    <span>{farmer.farm_size_hectares.toFixed(1)} hectares</span>
+                  </div>
+                  <div className="info-row">
+                    <span className="label">Primary Crops:</span>
+                    <span>{farmer.primary_crops.join(', ')}</span>
+                  </div>
+                </div>
+
+                <div className="farmer-metrics">
+                  <div className="metric-row">
+                    <span>Credit Score:</span>
+                    <span className={farmer.agriculture_credit_score > 700 ? 'text-green-600' : farmer.agriculture_credit_score > 600 ? 'text-yellow-600' : 'text-red-600'}>
+                      {farmer.agriculture_credit_score}
+                    </span>
+                  </div>
+                  <div className="metric-row">
+                    <span>Business Score:</span>
+                    <span>{farmer.business_score}/100</span>
+                  </div>
+                  <div className="metric-row">
+                    <span>Profile Complete:</span>
+                    <span>{farmer.profile_completeness.toFixed(1)}%</span>
+                  </div>
+                  <div className="metric-row">
+                    <span>Crop Health:</span>
+                    <span className={farmer.satellite_metrics.crop_health_status === 'Excellent' ? 'text-green-600' : 'text-yellow-600'}>
+                      {farmer.satellite_metrics.crop_health_status}
+                    </span>
+                  </div>
+                  <div className="metric-row">
+                    <span>Financial Stability:</span>
+                    <span className={farmer.financial_profile.financial_stability === 'High' ? 'text-green-600' : 'text-yellow-600'}>
+                      {farmer.financial_profile.financial_stability}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="risk-assessment">
+                  <span className={`risk-badge ${getRiskColor(farmer.risk_level)}`}>
+                    Risk: {farmer.risk_level}
+                  </span>
+                </div>
+
+                <div className="technology-indicators">
+                  <div className="tech-icons">
+                    {farmer.technology_adoption.uses_satellite_monitoring && <span title="Uses Satellite Monitoring">🛰️</span>}
+                    {farmer.technology_adoption.uses_ai_recommendations && <span title="Uses AI Recommendations">🤖</span>}
+                    {farmer.technology_adoption.uses_precision_agriculture && <span title="Uses Precision Agriculture">🎯</span>}
+                  </div>
+                </div>
+
+                <div className="farmer-actions">
+                  <button 
+                    className="btn-primary"
+                    onClick={() => setSelectedFarmer(farmer)}
+                  >
+                    📊 View Full Profile
+                  </button>
+                  <button className="btn-secondary">💬 Contact Farmer</button>
+                </div>
               </div>
-              <div className="recommendation-card">
-                <h5>📊 Quality Assurance</h5>
-                <p>Implement quality-based contracts leveraging satellite monitoring for predictive quality assessment.</p>
+            ))}
+          </div>
+
+          {/* Farmer Business Intelligence Summary */}
+          <div className="farmer-bi-summary">
+            <h3>📈 Farmer Intelligence Summary</h3>
+            <div className="summary-grid">
+              <div className="summary-card">
+                <div className="summary-icon">👨‍🌾</div>
+                <div className="summary-content">
+                  <div className="summary-value">{farmers.length}</div>
+                  <div className="summary-label">Total Farmers</div>
+                </div>
               </div>
-              <div className="recommendation-card">
-                <h5>💰 Cost Optimization</h5>
-                <p>Direct sourcing from verified suppliers offers 15-25% cost savings with better quality control.</p>
+              <div className="summary-card">
+                <div className="summary-icon">✅</div>
+                <div className="summary-content">
+                  <div className="summary-value">{farmers.filter(f => f.verification_status === 'verified').length}</div>
+                  <div className="summary-label">Verified Farmers</div>
+                </div>
+              </div>
+              <div className="summary-card">
+                <div className="summary-icon">🏆</div>
+                <div className="summary-content">
+                  <div className="summary-value">{farmers.filter(f => f.agriculture_credit_score > 700).length}</div>
+                  <div className="summary-label">High Credit Score</div>
+                </div>
+              </div>
+              <div className="summary-card">
+                <div className="summary-icon">🛡️</div>
+                <div className="summary-content">
+                  <div className="summary-value">{farmers.filter(f => f.risk_level === 'LOW').length}</div>
+                  <div className="summary-label">Low Risk Farmers</div>
+                </div>
               </div>
             </div>
           </div>

@@ -10,7 +10,7 @@ from datetime import datetime
 from typing import Dict, Any, List, Optional, Tuple
 import logging
 
-from src.core.agriculture_models import AgricultureQuery, AgentResponse
+from src.core.agriculture_models import AgricultureQuery, AgentResponse, Language
 from src.services.agriculture_integration import AgricultureIntegrationService
 from src.services.websocket_integration import integration_service
 from src.services.response_formatter import response_formatter
@@ -213,11 +213,21 @@ class EnhancedQueryProcessor:
             "Agent Coordination & Execution"
         )
         
-        # Create agriculture query object
+        # Create agriculture query object with proper language mapping
+        detected_language = response.agent_analysis["query_analysis"]["language"]
+        # Map string values to Language enum
+        language_mapping = {
+            "en": Language.ENGLISH,
+            "hi": Language.HINDI, 
+            "mixed": Language.MIXED,
+            "english": Language.ENGLISH,  # Fallback mapping
+            "hindi": Language.HINDI       # Fallback mapping
+        }
+        
         agriculture_query = AgricultureQuery(
             query_text=response.original_query,
             query_id=response.query_id,
-            query_language=response.agent_analysis["query_analysis"]["language"]
+            query_language=language_mapping.get(detected_language, Language.ENGLISH)
         )
         
         # Execute agents in parallel with progress tracking
@@ -338,14 +348,32 @@ class EnhancedQueryProcessor:
         
         return AgentResponse(
             agent_id=agent_id,
+            agent_name=f"Agricultural Expert ({agent_id})",
             query_id=query.query_id,
             response_text=message,
             confidence_score=0.3,
-            status="completed",
             recommendations=[
-                "Consult local agricultural extension services",
-                "Contact experienced farmers in your area",
-                "Check with relevant agricultural departments"
+                {
+                    "id": "fallback_ext",
+                    "text": "Consult local agricultural extension services",
+                    "type": "expert_consultation",
+                    "priority": "high",
+                    "category": "Professional Support"
+                },
+                {
+                    "id": "fallback_peer",
+                    "text": "Contact experienced farmers in your area",
+                    "type": "peer_learning",
+                    "priority": "medium",
+                    "category": "Community Knowledge"
+                },
+                {
+                    "id": "fallback_gov",
+                    "text": "Check with relevant agricultural departments",
+                    "type": "official_guidance",
+                    "priority": "medium",
+                    "category": "Government Resources"
+                }
             ],
             metadata={"fallback": True, "type": "service_unavailable"}
         )
@@ -520,11 +548,11 @@ class EnhancedQueryProcessor:
         english_words = len([word for word in text.split() if word.isalpha() and all(ord(c) < 128 for c in word)])
         
         if hindi_chars and english_words > 0:
-            return "hinglish"
+            return "mixed"
         elif hindi_chars:
-            return "hindi"
+            return "hi"
         else:
-            return "english"
+            return "en"
     
     def _classify_intent(self, text: str) -> str:
         """Classify query intent with higher accuracy"""

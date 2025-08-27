@@ -44,11 +44,14 @@ def start_api_server():
     except subprocess.CalledProcessError as e:
         print(f"Server failed to start: {e}")
         sys.exit(1)
+    except Exception as e:
+        print(f"Server failed to start: {e}")
+        sys.exit(1)
 
 def main():
     """Main startup function."""
     print("=" * 60)
-    print("UNIFIED AGRICULTURAL PLATFORM STARTUP")
+    print("AGENTWEAVER AGRICULTURAL PLATFORM STARTUP")
     print("=" * 60)
     print()
     

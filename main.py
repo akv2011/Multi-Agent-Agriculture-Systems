@@ -167,6 +167,22 @@ app.include_router(query_router)
 app.include_router(config_router)
 app.include_router(enhanced_demo_router)
 
+# Add backward compatibility endpoint for frontend /demo/query
+from src.api.routers.enhanced_demo import EnhancedQueryRequest, EnhancedQueryResponseModel, process_enhanced_query
+from fastapi import BackgroundTasks
+
+@app.post("/demo/query", response_model=EnhancedQueryResponseModel, tags=["Demo"])
+async def demo_query_endpoint(
+    request: EnhancedQueryRequest, 
+    background_tasks: BackgroundTasks
+):
+    """
+    Demo query endpoint for frontend compatibility
+    """
+    # Import the enhanced processor function and call it directly
+    from src.api.routers.enhanced_demo import enhanced_processor
+    return await process_enhanced_query(request, background_tasks)
+
 @app.get("/api/info", tags=["Info"])
 async def api_info():
     return {
@@ -287,7 +303,7 @@ if __name__ == "__main__":
     uvicorn.run(
         "main:app",
         host=config.get("API_HOST", "0.0.0.0"),
-        port=config.get("API_PORT", 8000),
+        port=config.get("WS_PORT", 8001),  # Use WebSocket port for AgentWeaver API
         reload=config.is_development_mode(),
         log_level=config.get("LOG_LEVEL", "INFO").lower()
     )

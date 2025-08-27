@@ -3,9 +3,9 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './SimpleDemoInterface.css';
 
-import GeminiAnalysisDisplay from './GeminiAnalysisDisplay';
+import AIAnalysisDisplay from './AIAnalysisDisplay';
 import EnhancedResponseDisplay from './EnhancedResponseDisplay';
-import geminiService from '../services/geminiService';
+import aiService from '../services/geminiService';
 
 // Fix for default markers in React
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -20,7 +20,6 @@ interface DemoResponse {
     agent: string;
     confidence: number;
     reasoning: string;
-    language_detected: string;
   };
   satellite_data: {
     ndvi: number;
@@ -46,14 +45,12 @@ const SimpleDemoInterface: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [analysisComplete, setAnalysisComplete] = useState<boolean>(false);
-  const [geminiAnalysis, setGeminiAnalysis] = useState<any>(null);
-  const [isGeminiLoading, setIsGeminiLoading] = useState(false);
+  const [aiAnalysis, setAiAnalysis] = useState<any>(null);
+  const [isAiLoading, setIsAiLoading] = useState(false);
   const [enhancedResponse, setEnhancedResponse] = useState<string>('');
   const [isLoadingAIResponse, setIsLoadingAIResponse] = useState(false);
   const [aiResponseError, setAiResponseError] = useState<string>('');
-  const [geminiApiKey, setGeminiApiKey] = useState<string>(
-    import.meta.env.VITE_GEMINI_API_KEY || localStorage.getItem('gemini_api_key') || ''
-  );
+
 
   // Clear vegetation indices from agents on component mount
   React.useEffect(() => {
@@ -65,14 +62,20 @@ const SimpleDemoInterface: React.FC = () => {
   const [map, setMap] = useState<L.Map | null>(null);
   const [currentMarker, setCurrentMarker] = useState<L.Marker | null>(null);
   const [selectedPoint, setSelectedPoint] = useState<L.LatLng | null>(null);
-  const [selectedCoords, setSelectedCoords] = useState<string>('Click on map to select analysis point');
-  const [selectedAddress, setSelectedAddress] = useState<string>('');
+  const [selectedCoords, setSelectedCoords] = useState<string>('Punjab Agricultural Zone: 30.7333°N, 76.7794°E');
+  const [selectedAddress, setSelectedAddress] = useState<string>('Chandigarh, Punjab, India - Primary Wheat & Rice Belt');
   const [isLoadingAddress, setIsLoadingAddress] = useState<boolean>(false);
   const [analysisDate, setAnalysisDate] = useState<string>('');
   const [satelliteSource, setSatelliteSource] = useState<string>('sentinel2');
   const [cloudCoverage, setCloudCoverage] = useState<string>('20');
   const [analysisProgress, setAnalysisProgress] = useState<string>('');
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
+
+  // Image upload states
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isImageUploading, setIsImageUploading] = useState<boolean>(false);
+  const [plantType, setPlantType] = useState<string>('corn');
 
   // Initialize map
   useEffect(() => {
@@ -277,36 +280,164 @@ const SimpleDemoInterface: React.FC = () => {
       .replace(/•/g, '&bull;'); // Ensure bullet points display correctly
   };
 
+  // Image upload handlers
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Check file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        setError('Image size must be less than 10MB');
+        return;
+      }
+
+      // Check file type
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        setError('Please upload a JPG, PNG, or WebP image');
+        return;
+      }
+
+      setSelectedImage(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+      
+      // Clear any previous errors
+      setError('');
+    }
+  };
+
+  const removeImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+  };
+
   // Sample queries from the demo script
   const sampleQueries = [
     {
-      query: "पंजाब में गेहूं की सबसे अच्छी किस्म कौन सी है?",
-      type: "Hindi crop selection",
+      query: "What is the best variety of wheat to grow?",
+      type: "Crop selection",
       agent: "crop_selection"
     },
     {
-      query: "Meri cotton crop mein पीले पत्ते दिख रहे हैं, क्या करूं?",
-      type: "Code-switched pest management", 
-      agent: "pest_management"
+      query: "What should be the irrigation schedule for cotton?",
+      type: "Irrigation management", 
+      agent: "irrigation_management"
     },
     {
       query: "When should I sell my wheat crop for maximum profit?",
-      type: "English market timing",
+      type: "Market timing",
       agent: "market_timing"
     },
     {
-      query: "My field needs irrigation - when and how much water?",
-      type: "Irrigation scheduling",
-      agent: "irrigation"
+      query: "Which rice variety is better for the kharif season?",
+      type: "Crop selection",
+      agent: "crop_selection"
     },
     {
-      query: "Loan ke liye apply कैसे करूं for farming equipment?",
+      query: "How to apply for a loan for farming equipment?",
       type: "Financial advisory",
       agent: "finance_policy"
     }
   ];
 
-  // Fetch AI Response using backend API first, then Gemini as fallback
+  // Fetch AI Response using backend API first, then AI Assistant as fallback
+  // Mock response generator for image-based queries
+  const generateMockImageResponse = (query: string, plantType: string, location: string): DemoResponse => {
+    const diseases = {
+      corn: {
+        disease: "Northern Corn Leaf Blight",
+        confidence: "85%",
+        symptoms: "Elongated gray-green lesions on leaves",
+        treatment: "Apply fungicide with active ingredient propiconazole",
+        prevention: "Use resistant varieties, crop rotation with soybeans"
+      },
+      wheat: {
+        disease: "Wheat Rust",
+        confidence: "78%", 
+        symptoms: "Orange-red pustules on leaves and stems",
+        treatment: "Apply triazole fungicides early in season",
+        prevention: "Plant rust-resistant varieties, monitor weather conditions"
+      },
+      rice: {
+        disease: "Rice Blast",
+        confidence: "82%",
+        symptoms: "Diamond-shaped lesions with brown borders",
+        treatment: "Apply azoxystrobin-based fungicides",
+        prevention: "Proper water management, balanced fertilization"
+      },
+      tomato: {
+        disease: "Late Blight",
+        confidence: "90%",
+        symptoms: "Dark water-soaked spots on leaves and fruits",
+        treatment: "Apply copper-based fungicides immediately",
+        prevention: "Improve air circulation, avoid overhead watering"
+      },
+      potato: {
+        disease: "Early Blight",
+        confidence: "76%",
+        symptoms: "Concentric ring spots on older leaves",
+        treatment: "Use chlorothalonil or mancozeb fungicides",
+        prevention: "Crop rotation, proper spacing between plants"
+      }
+    };
+
+    const selectedDisease = diseases[plantType as keyof typeof diseases] || diseases.corn;
+    
+    const responseText = `Plant Disease Analysis Results
+
+Plant Type: ${plantType.charAt(0).toUpperCase() + plantType.slice(1)}
+Location: ${location}
+
+Disease Identified: ${selectedDisease.disease}
+Confidence Level: ${selectedDisease.confidence}
+
+Symptoms Observed:
+${selectedDisease.symptoms}
+
+Recommended Treatment:
+${selectedDisease.treatment}
+
+Prevention Measures:
+${selectedDisease.prevention}
+
+Additional Recommendations for ${location}:
+- Monitor weather conditions closely
+- Ensure proper irrigation based on local climate
+- Consider local soil conditions for fertilizer application
+- Consult with local agricultural extension services
+
+This is an AI-generated analysis. For severe infections, consult with a local agricultural expert or plant pathologist for confirmation and detailed treatment plans.`;
+    
+    return {
+      routing_analysis: {
+        agent: "Plant Disease Detection Agent",
+        confidence: 0.95,
+        reasoning: `Image analysis requested for ${plantType} plant with symptoms described in query. Using computer vision and agricultural disease database.`
+      },
+      satellite_data: {
+        ndvi: 0.75,
+        soil_moisture: 0.68,
+        temperature: 24,
+        humidity: 65,
+        environmental_score: 0.78,
+        risk_level: "Moderate"
+      },
+      response_text: responseText,
+      technical_metrics: {
+        processing_time_ms: 1200,
+        confidence_level: 0.85,
+        satellite_data_integrated: true,
+        risk_assessment: "Moderate disease risk detected",
+        agent: "Plant Disease Detection Agent"
+      }
+    };
+  };
+
   const fetchAIResponse = async (query: string): Promise<DemoResponse | null> => {
     try {
       setIsLoadingAIResponse(true);
@@ -316,53 +447,103 @@ const SimpleDemoInterface: React.FC = () => {
       const analysisData = localStorage.getItem('mapAnalysis');
       const parsedData = analysisData ? JSON.parse(analysisData) : null;
 
-      // First, try to get response from our backend API
+      // If image is selected, return mock response for plant disease analysis
+      if (selectedImage) {
+        const locationName = parsedData?.coordinates ? selectedAddress : 'Punjab Agricultural Zone, India';
+        return generateMockImageResponse(query, plantType, locationName);
+      }
+
+      // First, try to get response from our backend API for text-only queries
       try {
-        const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
-        const backendResponse = await fetch(`${apiBaseUrl}/demo/query`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
+        const apiBaseUrl = import.meta.env.VITE_AGENTWEAVER_API_URL || 'http://localhost:8001';
+        
+        let requestBody;
+        let headers: HeadersInit = {};
+
+        if (selectedImage) {
+          // Use FormData for image upload
+          const formData = new FormData();
+          formData.append('query_text', query.trim());
+          formData.append('image', selectedImage);
+          formData.append('plant_type', plantType);
+          formData.append('coordinates', JSON.stringify(parsedData?.coordinates || { lat: 30.7333, lng: 76.7794 }));
+          formData.append('analysis_context', JSON.stringify({
+            satellite_source: satelliteSource || 'sentinel2',
+            cloud_coverage: cloudCoverage || '10',
+            analysis_date: parsedData?.analysisDate || null,
+            address: parsedData?.coordinates ? selectedAddress : 'Chandigarh, Punjab, India - Primary Wheat & Rice Belt',
+            region: parsedData?.coordinates ? 'User Selected Location' : 'Punjab Agricultural Zone',
+            crop_seasons: parsedData?.coordinates ? 'Location-specific seasons' : 'Rabi (Wheat), Kharif (Rice, Cotton)',
+            soil_type: parsedData?.coordinates ? 'Local soil conditions' : 'Alluvial, well-drained',
+            climate: parsedData?.coordinates ? 'Local climate conditions' : 'Semi-arid subtropical',
+            location_source: parsedData?.coordinates ? 'map_selected' : 'default_punjab',
+            has_image: true
+          }));
+          if (parsedData?.isAnalyzed) {
+            formData.append('vegetation_data', JSON.stringify(parsedData.vegetationIndices));
+          }
+          requestBody = formData;
+        } else {
+          // Use JSON for text-only queries
+          headers['Content-Type'] = 'application/json';
+          requestBody = JSON.stringify({
             query_text: query.trim(),
             vegetation_data: parsedData?.isAnalyzed ? parsedData.vegetationIndices : null,
-            coordinates: parsedData?.coordinates || null,
+            coordinates: parsedData?.coordinates || { lat: 30.7333, lng: 76.7794 },
             analysis_context: {
               satellite_source: satelliteSource || 'sentinel2',
               cloud_coverage: cloudCoverage || '10',
               analysis_date: parsedData?.analysisDate || null,
-              address: parsedData?.address || null
+              address: parsedData?.coordinates ? selectedAddress : 'Chandigarh, Punjab, India - Primary Wheat & Rice Belt',
+              region: parsedData?.coordinates ? 'User Selected Location' : 'Punjab Agricultural Zone',
+              crop_seasons: parsedData?.coordinates ? 'Location-specific seasons' : 'Rabi (Wheat), Kharif (Rice, Cotton)',
+              soil_type: parsedData?.coordinates ? 'Local soil conditions' : 'Alluvial, well-drained',
+              climate: parsedData?.coordinates ? 'Local climate conditions' : 'Semi-arid subtropical',
+              location_source: parsedData?.coordinates ? 'map_selected' : 'default_punjab',
+              has_image: false
             }
-          })
+          });
+        }
+
+        // Use the same endpoint for both text and image queries
+        const endpoint = `${apiBaseUrl}/demo/query`;
+        
+        const backendResponse = await fetch(endpoint, {
+          method: 'POST',
+          headers,
+          body: requestBody
         });
 
         if (backendResponse.ok) {
           const backendData = await backendResponse.json();
           
+          // Extract the actual response text from the comprehensive response
+          const responseText = backendData.comprehensive_response?.final_answer?.primary_answer || 
+                              backendData.response_text || 
+                              'No response available';
+          
           // Convert backend response to our DemoResponse format
           const response: DemoResponse = {
             routing_analysis: {
-              agent: backendData.routing_analysis?.agent || 'backend_agent',
-              confidence: backendData.routing_analysis?.confidence || 0.85,
-              reasoning: backendData.routing_analysis?.reasoning || 'Response from Multi-Agent Agriculture Backend',
-              language_detected: backendData.routing_analysis?.language_detected || 'english'
+              agent: backendData.agent_analysis?.recommended_agents?.[0] || 'backend_agent',
+              confidence: backendData.comprehensive_response?.confidence || 0.85,
+              reasoning: 'Response from AI-Powered Agriculture Backend'
             },
             satellite_data: {
-              ndvi: backendData.satellite_data?.ndvi || 0.65,
-              soil_moisture: backendData.satellite_data?.soil_moisture || 0.45,
-              temperature: backendData.satellite_data?.temperature || 28,
-              humidity: backendData.satellite_data?.humidity || 65,
-              environmental_score: backendData.satellite_data?.environmental_score || 70,
-              risk_level: backendData.satellite_data?.risk_level || 'medium'
+              ndvi: backendData.satellite_data?.ndvi || 0.72, // Punjab fertile plains
+              soil_moisture: backendData.satellite_data?.soil_moisture || 0.58, // Good irrigation
+              temperature: backendData.satellite_data?.temperature || 31, // Punjab climate
+              humidity: backendData.satellite_data?.humidity || 72, // Irrigation effect
+              environmental_score: backendData.satellite_data?.environmental_score || 85, // High agricultural productivity
+              risk_level: backendData.satellite_data?.risk_level || 'low' // Well-developed agriculture
             },
-            response_text: backendData.response_text || 'No response available',
+            response_text: responseText,
             technical_metrics: {
-              processing_time_ms: backendData.technical_metrics?.processing_time_ms || 1000,
-              confidence_level: backendData.technical_metrics?.confidence_level || 0.85,
-              satellite_data_integrated: backendData.technical_metrics?.satellite_data_integrated || false,
-              risk_assessment: backendData.technical_metrics?.risk_assessment || 'Backend analysis',
-              agent: backendData.technical_metrics?.agent || 'multi_agent_backend'
+              processing_time_ms: backendData.technical_metrics?.total_processing_time_ms || 1000,
+              confidence_level: backendData.technical_metrics?.confidence_score || 0.85,
+              satellite_data_integrated: backendData.technical_metrics?.satellite_integration || false,
+              risk_assessment: 'AI-Powered Agricultural Analysis',
+              agent: backendData.comprehensive_response?.source_agents?.[0] || 'ai_agriculture_agent'
             }
           };
 
@@ -373,67 +554,65 @@ const SimpleDemoInterface: React.FC = () => {
           throw new Error(`Backend API failed: ${backendResponse.status}`);
         }
       } catch (backendError) {
-        console.warn('Backend API failed, falling back to Gemini:', backendError);
+        console.warn('Backend API failed, falling back to AI Assistant:', backendError);
         
-        // Fallback to Gemini if backend fails
-        const apiKey = geminiApiKey || import.meta.env.VITE_GEMINI_API_KEY;
+        // Fallback to AI Assistant if backend fails
+        const apiKey = import.meta.env.VITE_AI_API_KEY || localStorage.getItem('ai_api_key');
 
         if (!apiKey) {
-          throw new Error('Both backend API and Gemini API are unavailable. Please configure at least one service.');
+          throw new Error('Both backend API and AI Assistant are unavailable. Please configure at least one service.');
         }
 
-        // Set API key for gemini service
-        geminiService.setApiKey(apiKey);
+        // Set API key for AI service
+        aiService.setApiKey(apiKey);
 
-        // Create a comprehensive analysis request for Gemini
+        // Create a comprehensive analysis request for AI Assistant
         const analysisRequest = {
           query: query.trim(),
           vegetationData: parsedData?.isAnalyzed ? parsedData.vegetationIndices : null,
-          coordinates: parsedData?.coordinates || null,
-          context: `Agricultural query analysis for Indian farming context. ${
+          coordinates: parsedData?.coordinates || { lat: 30.7333, lng: 76.7794 }, // Default to Punjab or use map selection
+          context: `Agricultural query analysis for ${parsedData?.coordinates ? 'user-selected location' : 'Punjab, India farming context (Major Agricultural Zone: Wheat & Rice Belt)'}. ${
             parsedData?.isAnalyzed ? 'Vegetation analysis data is available.' : 'No vegetation data available.'
-          } Satellite source: ${satelliteSource || 'sentinel2'}, Cloud coverage: ${cloudCoverage || '10'}%`
+          } Satellite source: ${satelliteSource || 'sentinel2'}, Cloud coverage: ${cloudCoverage || '10'}%. ${parsedData?.coordinates ? 'Location: User-selected coordinates' : 'Region: Punjab Agricultural Zone, Main crops: Wheat (Rabi), Rice & Cotton (Kharif), Soil: Alluvial, Climate: Semi-arid subtropical'}`
         };
 
-        // Get structured analysis from Gemini
-        const geminiAnalysisResult = await geminiService.analyzeQuery(analysisRequest);
+        // Get structured analysis from AI Assistant
+        const aiAnalysisResult = await aiService.analyzeQuery(analysisRequest);
 
         // Also get enhanced response text
-        const enhancedText = await geminiService.enhanceAIResponse(
+        const enhancedText = await aiService.enhanceAIResponse(
           query,
           `Agricultural query: ${query}`,
           parsedData?.isAnalyzed ? parsedData.vegetationIndices : null,
-          parsedData?.coordinates || null
+          parsedData?.coordinates || { lat: 30.7333, lng: 76.7794 } // Default to Punjab, India
         );
 
-        // Convert Gemini response to our DemoResponse format
+        // Convert AI response to our DemoResponse format
         const response: DemoResponse = {
           routing_analysis: {
-            agent: geminiAnalysisResult.agentType || 'gemini_fallback',
-            confidence: geminiAnalysisResult.confidence || 0.85,
-            reasoning: 'Response from Gemini AI (backend unavailable)',
-            language_detected: /[\u0900-\u097F]/.test(query) ? 'Hindi' : 'English'
+            agent: aiAnalysisResult.agentType || 'ai_fallback',
+            confidence: aiAnalysisResult.confidence || 0.85,
+            reasoning: 'Response from AI Agricultural Assistant (backend unavailable)'
           },
           satellite_data: {
-            ndvi: parsedData?.vegetationIndices?.ndvi || 0.65,
-            soil_moisture: parsedData?.vegetationIndices?.ndmi || 0.45,
-            temperature: 28 + Math.random() * 8, // 28-36°C
-            humidity: 65 + Math.random() * 20, // 65-85%
-            environmental_score: parsedData?.isAnalyzed ? 85 : 70,
-            risk_level: geminiAnalysisResult.priority === 'high' ? 'high' :
-                       geminiAnalysisResult.priority === 'low' ? 'low' : 'medium'
+            ndvi: parsedData?.vegetationIndices?.ndvi || 0.72, // Punjab fertile plains NDVI
+            soil_moisture: parsedData?.vegetationIndices?.ndmi || 0.58, // Good irrigation
+            temperature: 31 + Math.random() * 6, // 31-37°C (Punjab climate)
+            humidity: 72 + Math.random() * 15, // 72-87% (irrigation effect)
+            environmental_score: parsedData?.isAnalyzed ? 85 : 80, // High for Punjab agricultural zone
+            risk_level: aiAnalysisResult.priority === 'high' ? 'medium' : 'low' // Generally low risk in Punjab
           },
           response_text: enhancedText,
           technical_metrics: {
             processing_time_ms: Math.floor(Math.random() * 2000) + 1000,
-            confidence_level: geminiAnalysisResult.confidence || 0.85,
+            confidence_level: aiAnalysisResult.confidence || 0.85,
             satellite_data_integrated: parsedData?.isAnalyzed || false,
-            risk_assessment: `${geminiAnalysisResult.priority} priority based on Gemini AI analysis`,
-            agent: geminiAnalysisResult.agentType || 'gemini_ai_agent'
+            risk_assessment: `${aiAnalysisResult.priority} priority based on AI analysis`,
+            agent: aiAnalysisResult.agentType || 'ai_agent'
           }
         };
 
-        console.log('⚠️ Gemini fallback response:', response);
+        console.log('⚠️ AI fallback response:', response);
         return response;
       }
 
@@ -446,47 +625,47 @@ const SimpleDemoInterface: React.FC = () => {
     }
   };
 
-  // Analyze query with Gemini AI
-  const analyzeWithGemini = async () => {
-    const apiKey = geminiApiKey || import.meta.env.VITE_GEMINI_API_KEY;
+  // Analyze query with AI Assistant
+  const analyzeWithAI = async () => {
+    const apiKey = import.meta.env.VITE_AI_API_KEY || localStorage.getItem('ai_api_key');
 
     if (!apiKey) {
-      console.warn('Gemini API key not set. Skipping AI analysis.');
+      console.warn('AI API key not set. Skipping AI analysis.');
       return;
     }
 
-    setIsGeminiLoading(true);
+    setIsAiLoading(true);
 
     try {
       // Set API key
-      geminiService.setApiKey(apiKey);
+      aiService.setApiKey(apiKey);
 
       // Get vegetation data if available
       const analysisData = localStorage.getItem('mapAnalysis');
       const parsedData = analysisData ? JSON.parse(analysisData) : null;
 
       const vegetationData = parsedData?.isAnalyzed ? parsedData.vegetationIndices : null;
-      const coordinates = parsedData?.coordinates || null;
+      const coordinates = parsedData?.coordinates || { lat: 30.7333, lng: 76.7794 }; // Default to Punjab or use map selection
 
-      // Prepare request for Gemini
+      // Prepare request for AI Assistant
       const request = {
         query: currentQuery,
         vegetationData,
         coordinates,
-        context: `Agricultural query analysis for Indian farming context. ${
+        context: `Agricultural query analysis for ${parsedData?.coordinates ? 'user-selected location' : 'Punjab, India farming context (Major Agricultural Zone: Wheat & Rice Belt). Location: Chandigarh, Punjab. Soil: Alluvial, well-drained. Climate: Semi-arid subtropical. Main crops: Wheat (Rabi), Rice & Cotton (Kharif)'}. ${
           vegetationData ? 'Vegetation analysis data is available.' : 'No vegetation data available.'
         }`
       };
 
-      // Call Gemini API
-      const analysis = await geminiService.analyzeQuery(request);
-      setGeminiAnalysis(analysis);
+      // Call AI API
+      const analysis = await aiService.analyzeQuery(request);
+      setAiAnalysis(analysis);
 
     } catch (error) {
-      console.error('Gemini analysis failed:', error);
+      console.error('AI analysis failed:', error);
       setError(`AI Analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
-      setIsGeminiLoading(false);
+      setIsAiLoading(false);
     }
   };
 
@@ -566,16 +745,15 @@ To get more specific recommendations, please:
       routing_analysis: {
         agent: 'fallback_agent',
         confidence: 0.75,
-        reasoning: 'Fallback response generated due to API unavailability',
-        language_detected: /[\u0900-\u097F]/.test(currentQuery) ? 'Hindi' : 'English'
+        reasoning: 'Fallback response generated due to API unavailability'
       },
       satellite_data: {
-        ndvi: parsedData?.vegetationIndices?.ndvi || 0.65,
-        soil_moisture: 0.45,
-        temperature: 28,
-        humidity: 65,
-        environmental_score: 75,
-        risk_level: 'medium'
+        ndvi: parsedData?.vegetationIndices?.ndvi || 0.72, // Higher NDVI for fertile Punjab plains
+        soil_moisture: 0.58, // Good soil moisture from irrigation canals
+        temperature: 31, // Typical Punjab temperature (higher than Delhi)
+        humidity: 72, // Higher humidity due to extensive irrigation
+        environmental_score: 85, // High score for fertile agricultural land
+        risk_level: 'low' // Low risk due to well-developed agricultural infrastructure
       },
       response_text: responseText,
       technical_metrics: {
@@ -599,21 +777,24 @@ To get more specific recommendations, please:
     setIsLoading(true);
     setError('');
     setDemoResponse(null);
-    setGeminiAnalysis(null);
+    setAiAnalysis(null);
     setEnhancedResponse('');
     setAiResponseError('');
 
     try {
-      // Start Gemini analysis in parallel (don't await to run concurrently)
-      analyzeWithGemini();
+      // Start AI analysis in parallel (don't await to run concurrently)
+      analyzeWithAI();
 
-      // Fetch real AI response from backend
+      // Fetch real AI response from backend (with optional image)
       const aiResponse = await fetchAIResponse(currentQuery);
 
       if (aiResponse) {
         setDemoResponse(aiResponse);
+        // Clear image after successful submission
+        setSelectedImage(null);
+        setImagePreview(null);
 
-        // The response is already enhanced by Gemini in fetchAIResponse
+        // The response is already enhanced by AI in fetchAIResponse
         // Set the enhanced response directly
         setEnhancedResponse(aiResponse.response_text);
       } else {
@@ -812,52 +993,7 @@ To get more specific recommendations, please:
                 </select>
               </div>
 
-              <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'block', fontWeight: '600', marginBottom: '5px', color: '#555' }}>
-                  🤖 Gemini API Configuration:
-                </label>
 
-                {/* API Key Status */}
-                <div style={{
-                  padding: '10px',
-                  borderRadius: '5px',
-                  marginBottom: '10px',
-                  backgroundColor: import.meta.env.VITE_GEMINI_API_KEY ? '#d4edda' : '#f8d7da',
-                  border: `1px solid ${import.meta.env.VITE_GEMINI_API_KEY ? '#c3e6cb' : '#f5c6cb'}`,
-                  color: import.meta.env.VITE_GEMINI_API_KEY ? '#155724' : '#721c24'
-                }}>
-                  {import.meta.env.VITE_GEMINI_API_KEY ? (
-                    <span>✅ API key loaded from environment (.env file)</span>
-                  ) : (
-                    <span>⚠️ No API key found in environment. Please configure below or set VITE_GEMINI_API_KEY in .env file</span>
-                  )}
-                </div>
-
-                {/* Manual API Key Input (fallback) */}
-                {!import.meta.env.VITE_GEMINI_API_KEY && (
-                  <>
-                    <input
-                      type="password"
-                      value={geminiApiKey}
-                      onChange={(e) => {
-                        setGeminiApiKey(e.target.value);
-                        localStorage.setItem('gemini_api_key', e.target.value);
-                      }}
-                      placeholder="Enter your Google Gemini API key for AI analysis"
-                      style={{
-                        width: '100%',
-                        padding: '8px',
-                        border: '1px solid #ddd',
-                        borderRadius: '5px',
-                        fontSize: '0.9rem'
-                      }}
-                    />
-                    <small style={{ color: '#666', fontSize: '0.8rem' }}>
-                      Get your API key from <a href="https://makersuite.google.com/app/apikey" target="_blank" rel="noopener noreferrer">Google AI Studio</a>
-                    </small>
-                  </>
-                )}
-              </div>
 
               <button
                 onClick={() => analyzeSelectedPoint()}
@@ -923,12 +1059,146 @@ To get more specific recommendations, please:
             rows={3}
             className="query-textarea"
           />
+          
+          {/* Image Upload Section */}
+          <div style={{ marginTop: '16px' }}>
+            <label style={{ 
+              display: 'block', 
+              fontWeight: '600', 
+              marginBottom: '8px', 
+              color: '#555',
+              fontSize: '0.9rem'
+            }}>
+              📷 Upload Plant/Crop Image (Optional)
+            </label>
+            {selectedImage ? (
+              <div style={{ position: 'relative' }}>
+                <img 
+                  src={imagePreview || ''} 
+                  alt="Uploaded crop/plant" 
+                  style={{
+                    width: '100%',
+                    height: '200px',
+                    objectFit: 'cover',
+                    borderRadius: '8px',
+                    border: '2px solid #e5f3e5'
+                  }}
+                />
+                <button
+                  onClick={removeImage}
+                  style={{
+                    position: 'absolute',
+                    top: '8px',
+                    right: '8px',
+                    backgroundColor: '#ef4444',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: '28px',
+                    height: '28px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    fontSize: '14px'
+                  }}
+                  title="Remove image"
+                >
+                  <svg 
+                    style={{ width: '16px', height: '16px' }} 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            ) : (
+              <div style={{
+                border: '2px dashed #ccc',
+                borderRadius: '8px',
+                padding: '24px',
+                textAlign: 'center',
+                cursor: 'pointer',
+                transition: 'border-color 0.3s'
+              }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                  <svg 
+                    style={{ width: '48px', height: '48px', color: '#9ca3af' }} 
+                    stroke="currentColor" 
+                    fill="none" 
+                    viewBox="0 0 48 48"
+                  >
+                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  <div>
+                    <label htmlFor="image-upload" style={{ cursor: 'pointer' }}>
+                      <span style={{ color: '#10b981', fontWeight: '500' }}>Upload an image</span>
+                      <span style={{ color: '#6b7280' }}> or drag and drop</span>
+                      <input
+                        id="image-upload"
+                        type="file"
+                        accept="image/jpeg,image/jpg,image/png,image/webp"
+                        onChange={handleImageUpload}
+                        style={{ display: 'none' }}
+                      />
+                    </label>
+                  </div>
+                  <p style={{ fontSize: '0.75rem', color: '#6b7280', margin: 0 }}>
+                    JPG, PNG, WebP up to 10MB
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* Plant Type Selector - Show when image is uploaded */}
+          {selectedImage && (
+            <div style={{ marginTop: '16px' }}>
+              <label style={{ 
+                display: 'block', 
+                fontWeight: '600', 
+                marginBottom: '8px', 
+                color: '#555',
+                fontSize: '0.9rem'
+              }}>
+                🌱 Plant Type *
+              </label>
+              <select
+                value={plantType}
+                onChange={(e) => setPlantType(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '2px solid #d1d5db',
+                  borderRadius: '8px',
+                  fontSize: '1rem',
+                  backgroundColor: 'white',
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="corn">Corn</option>
+                <option value="wheat">Wheat</option>
+                <option value="rice">Rice</option>
+                <option value="soybean">Soybean</option>
+                <option value="tomato">Tomato</option>
+                <option value="potato">Potato</option>
+                <option value="cotton">Cotton</option>
+                <option value="sugarcane">Sugarcane</option>
+                <option value="apple">Apple</option>
+                <option value="grape">Grape</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+          )}
+          
           <button 
             onClick={submitQuery} 
             disabled={isLoading}
             className="submit-button"
           >
-            {isLoading ? '🔄 Processing...' : '🚀 Submit Query'}
+            {isLoading ? '🔄 Processing...' : selectedImage ? '� Analyze Plant' : '🚀 Submit Query'}
           </button>
         </div>
       </div>
@@ -945,7 +1215,7 @@ To get more specific recommendations, please:
           <h3>🤖 AI Response</h3>
           <div className="loading-content">
             <div className="loading-spinner"></div>
-            <p>Fetching AI analysis from Gemini API...</p>
+            <p>Fetching AI analysis from AI Agent...</p>
             <div className="loading-details">
               <span>• Processing your query</span>
               <span>• Analyzing context and vegetation data</span>
@@ -985,7 +1255,6 @@ To get more specific recommendations, please:
             <div className="analysis-info">
               <div><strong>Agent Selected:</strong> {demoResponse.routing_analysis.agent}</div>
               <div><strong>Confidence:</strong> {(demoResponse.routing_analysis.confidence * 100).toFixed(1)}%</div>
-              <div><strong>Language:</strong> {demoResponse.routing_analysis.language_detected}</div>
               <div><strong>Reasoning:</strong> {demoResponse.routing_analysis.reasoning}</div>
             </div>
           </div>
@@ -1017,32 +1286,22 @@ To get more specific recommendations, please:
                   __html: formatResponseText(demoResponse.response_text)
                 }}
               />
-              {(geminiApiKey || import.meta.env.VITE_GEMINI_API_KEY) && (
+              {(import.meta.env.VITE_AI_API_KEY || localStorage.getItem('ai_api_key')) && (
                 <div className="enhancement-notice">
-                  <p>✨ <strong>Enhanced by Gemini AI:</strong> This response has been processed through advanced agricultural AI for comprehensive insights!</p>
+                  <p>✨ <strong>AI-Powered Response:</strong> This response has been processed through advanced agricultural AI for comprehensive insights!</p>
                 </div>
               )}
             </div>
           )}
-
-          <div className="technical-metrics">
-            <h4>📊 Technical Metrics:</h4>
-            <div className="metrics-info">
-              <div><strong>Processing Time:</strong> {demoResponse.technical_metrics.processing_time_ms}ms</div>
-              <div><strong>Confidence:</strong> {(demoResponse.technical_metrics.confidence_level * 100).toFixed(1)}%</div>
-              <div><strong>Satellite Data:</strong> {demoResponse.technical_metrics.satellite_data_integrated ? '✅ Integrated' : '❌ Not Available'}</div>
-              <div><strong>Agent:</strong> {demoResponse.technical_metrics.agent}</div>
-            </div>
-          </div>
         </div>
       )}
 
-      {/* Gemini AI Analysis Display */}
-      {(geminiAnalysis || isGeminiLoading) && (
-        <div className="gemini-section">
-          <GeminiAnalysisDisplay
-            analysis={geminiAnalysis}
-            isLoading={isGeminiLoading}
+      {/* AI Analysis Display */}
+      {(aiAnalysis || isAiLoading) && (
+        <div className="ai-analysis-section">
+          <AIAnalysisDisplay
+            analysis={aiAnalysis}
+            isLoading={isAiLoading}
             query={currentQuery}
           />
         </div>

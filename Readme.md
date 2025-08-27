@@ -1,8 +1,46 @@
-# 🌾 Unified Agricultural Platform
+# 🌾🤖 Unified Agricultural Platform
 
-A comprehensive agricultural technology platform integrating marketplace, farmer credit scoring, and business intelligence systems.
+A comprehensive agricultural technology platform integrating marketplace, farmer credit scoring, business intelligence, and AI-powered agricultural assistance systems.
+
+## 🏗️ Dual API Architecture
+
+This platform runs **two complementary APIs** for complete agricultural ecosystem coverage:
+
+### 🌾 Port 8000 - Unified Agricultural API
+**Core Business Operations**
+- 🛒 Marketplace (B2B/B2C)
+- 👨‍🌾 Farmer Credit Scoring
+- 📈 Business Intelligence
+- 🔍 Supplier Verification
+
+### 🤖 Port 8001 - AgentWeaver API  
+**AI & Advanced Analytics**
+- 🔍 Agricultural Query Processing
+- 🛰️ Satellite Data Analysis
+- 🤖 Multi-Agent AI System
+- 🌐 Real-time WebSocket Updates
 
 ## 🚀 Quick Start
+
+### One-Command Startup (Recommended)
+```bash
+# Start both APIs simultaneously
+python start_both.py
+```
+
+**Available Services:**
+- 🌾 Unified API: http://localhost:8000
+- 🤖 AgentWeaver API: http://localhost:8001
+- 📊 Documentation: /docs on both ports
+
+### Individual API Startup
+```bash
+# Unified Agricultural API only
+python start.py
+
+# AgentWeaver API only  
+python main.py
+```
 
 ### Prerequisites
 - Python 3.8+
@@ -243,7 +281,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🛰️ Satellite-Enhanced Agent Portfolio
 
-### ✅ **COMPLETED AGENTS (5/7 - 71% Progress)**
+### ✅ **COMPLETED AGENTS (7/7 - 100% Progress)**
 
 | Agent | Status | Satellite Features | Capabilities |
 |-------|--------|-------------------|--------------|
@@ -252,13 +290,26 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 | **🐛 Pest Management Agent** | ✅ DONE | Weather-based outbreak prediction, environmental risk | Pest identification, treatment recommendations |
 | **💰 Finance Policy Agent** | ✅ DONE | Environmental risk assessment, weather-adjusted loans | Loan eligibility, subsidy guidance, insurance advice |
 | **📈 Market Timing Agent** | ✅ DONE | Yield forecasting, supply-demand modeling | Price predictions, optimal selling timing |
+| **🚜 Harvest Planning Agent** | ✅ DONE | NDVI crop maturity monitoring, weather integration | Optimal harvest timing, quality forecasting |
+| **🌱 Input Materials Agent** | ✅ DONE | Satellite nutrient deficiency detection, soil health analysis | Fertilizer optimization, seed recommendations |
 
-### ⏳ **PENDING AGENTS (2/7)**
+### ✅ **ADDITIONAL AgriSens AI FEATURES (Fully Integrated)**
 
-| Agent | Status | Planned Satellite Features | Target Capabilities |
-|-------|--------|---------------------------|-------------------|
-| **🚜 Harvest Planning Agent** | 🔄 PLANNED | Crop maturity monitoring, harvest window optimization | Optimal harvest timing, quality forecasting |
-| **🌱 Input Materials Agent** | 🔄 PLANNED | Nutrient deficiency detection, soil health analysis | Fertilizer recommendations, seed selection |
+| Feature | Status | Technology | Capabilities |
+|---------|--------|-----------|-------------|
+| **� Disease Identification Agent** | ✅ DONE | CNN (38 diseases, 14 crops) | Image-based disease detection, treatment recommendations |
+| **🧪 Fertilizer Recommendation Agent** | ✅ DONE | ML with soil science models | NPK-based fertilizer optimization, application guidance |
+| **📊 Smart Farming Guidance Agent** | ✅ DONE | Best practices database | Planting schedules, sustainable farming practices |
+| **�️ Weather Forecast Agent** | ✅ DONE | Agricultural weather APIs | Real-time weather with farming implications |
+
+### 🚀 **NEXT PHASE - Platform Enhancement**
+
+| Enhancement | Focus | Status |
+|-------------|-------|--------|
+| **🌐 Web Dashboard** | React interface with real-time satellite visualization | 🔄 In Progress |
+| **📱 Mobile Optimization** | Farmer-friendly mobile interface | 📋 Planned |
+| **🔊 Voice Integration** | Hindi/English voice commands | 📋 Planned |
+| **🖼️ Computer Vision** | Advanced image analysis | 📋 Planned |
 
 ---
 
