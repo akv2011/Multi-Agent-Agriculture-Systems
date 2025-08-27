@@ -37,4 +37,10 @@ __pycache__/
 
 # Task files
 # tasks.json
-# tasks/ 
+# tasks/
+
+# Ignore sensitive credentials
+LOGIN_CREDENTIALS.md
+
+# Ignore archived development files
+development/archive/
