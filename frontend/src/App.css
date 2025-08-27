@@ -1787,3 +1787,64 @@ body::-webkit-scrollbar-thumb:hover {
     justify-content: space-between;
   }
 }
+
+/* === Refined Sidebar System Overview (high-contrast redesign) === */
+.dashboard .sidebar .system-stats .stat-item { 
+  background: linear-gradient(140deg, rgba(9,12,16,0.9), rgba(28,38,52,0.92));
+  border: 1px solid rgba(255,214,10,0.25);
+  border-radius: 22px;
+  padding: 0.9rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+.dashboard .sidebar .system-stats .stat-item:hover { 
+  background: linear-gradient(140deg, rgba(12,16,22,0.95), rgba(34,46,62,0.96));
+  border-color: rgba(255,214,10,0.5);
+}
+.dashboard .sidebar .system-stats .stat-icon { 
+  width:44px; height:44px; flex-shrink:0; border-radius:14px; 
+  background: rgba(255,255,255,0.05); 
+  backdrop-filter: blur(6px) saturate(140%);
+  border:1.5px solid rgba(255,214,10,0.55); 
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 2px 6px rgba(0,0,0,0.55), inset 0 1px 2px rgba(255,255,255,0.06);
+}
+.dashboard .sidebar .system-stats .stat-icon svg { stroke:#FFD60A; filter:drop-shadow(0 0 6px rgba(255,214,10,.45)); }
+.dashboard .sidebar .system-stats .stat-label { 
+  flex:1; margin:0; font-size:0.68rem; letter-spacing:0.14em; font-weight:700; 
+  text-transform:uppercase; color:#FFFFFF; opacity:1; line-height:1.1; 
+}
+.dashboard .sidebar .system-stats .stat-value { 
+  font-family:'Inter',sans-serif; font-size:1.7rem; line-height:1; font-weight:800; 
+  min-width:2.6rem; text-align:right; padding:0 .25rem; color:#FFC400; 
+  text-shadow:0 2px 6px rgba(0,0,0,0.85),0 0 8px rgba(255,196,0,0.7);
+}
+.dashboard .sidebar .system-stats .stat-value.ready { 
+  color:#57FFA8; text-shadow:0 2px 6px rgba(0,0,0,0.85),0 0 10px rgba(87,255,168,0.9);
+}
+.dashboard .sidebar .stats-header h4 { color:#FFFFFF; }
+.dashboard .sidebar .stats-header .stats-indicator { color:#57FFA8; background:rgba(87,255,168,0.08); border:1px solid rgba(87,255,168,0.35); padding:0.25rem .6rem; border-radius:12px; font-weight:600; font-size:0.7rem; }
+
+/* Deprecated old per-stat classes no longer used (kept commented for reference) */
+/*
+.dashboard .sidebar .stat-active-workflows,
+.dashboard .sidebar .stat-total-workflows,
+.dashboard .sidebar .stat-connected-clients,
+.dashboard .sidebar .stat-active-agents,
+.dashboard .sidebar .stat-system-status.connected { }
+*/
+
+/* === FINAL NUMBER COLOR OVERRIDE === */
+.dashboard .sidebar .system-stats .stat-item .stat-value { 
+  color:#FFC400 !important; /* bright yellow */
+  -webkit-text-fill-color:#FFC400 !important;
+  opacity:1 !important;
+  filter:none !important;
+  mix-blend-mode:normal !important;
+  text-shadow:none !important;
+}
+.dashboard .sidebar .system-stats .stat-item .stat-value.ready { 
+  color:#32D68A !important; -webkit-text-fill-color:#32D68A !important; 
+}

@@ -107,9 +107,25 @@ const Layout = () => {
       {/* ChatBot positioned at the end for proper layering */}
       <nav className="sidebar">
         <div className="logo-container">
-          <img src="/logo.png" alt="AgriSens Logo" className="sidebar-logo" />
+          <div className="sidebar-logo">
+            {/* Updated professional AgriMitr logo: leaf + circuit motif */}
+            <svg width="40" height="40" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="agLeaf" x1="8" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
+                  <stop stopColor="#FFD60A"/>
+                  <stop offset="1" stopColor="#F5B400"/>
+                </linearGradient>
+              </defs>
+              <circle cx="32" cy="32" r="30" fill="rgba(255,214,10,0.08)" stroke="#FFD60A" strokeWidth="2" />
+              <path d="M32 10C24 18 20 26 20 34C20 44 26 52 32 54C38 52 44 44 44 34C44 26 40 18 32 10Z" fill="url(#agLeaf)" stroke="#0F172A" strokeWidth="1.5" strokeLinejoin="round"/>
+              <path d="M32 18V46" stroke="#0F172A" strokeWidth="2" strokeLinecap="round"/>
+              <path d="M26 28H32M32 38H38" stroke="#0F172A" strokeWidth="2" strokeLinecap="round"/>
+              <circle cx="32" cy="28" r="3" fill="#0F172A"/>
+              <circle cx="32" cy="38" r="3" fill="#0F172A"/>
+            </svg>
+          </div>
           <div className="user-info">
-            <h3>AgriSens</h3>
+            <h3>AgriMitr</h3>
             <p>Smart Agriculture Platform</p>
           </div>
         </div>
@@ -123,12 +139,6 @@ const Layout = () => {
                 `nav-item ${isActive ? 'active' : ''}`
               }
               end={item.path === '/'}
-              onClick={() => {
-                // Direct navigation using window.location to ensure it works
-                // This is a fallback solution if React Router isn't handling links properly
-                console.log(`Navigating to: ${item.path}`);
-                window.location.href = item.path;
-              }}
             >
               <span className="nav-icon">{item.icon}</span>
               <span className="nav-name">{item.name}</span>
@@ -137,30 +147,65 @@ const Layout = () => {
         </div>
         
         <div className="system-stats">
+          <div className="stats-header">
+            <h4>System Overview</h4>
+            <div className="stats-indicator">
+              <div className="indicator-dot"></div>
+              <span>Live</span>
+            </div>
+          </div>
+          {/* Stat Cards - updated icons (outlined, professional) */}
           <div className="stat-item">
-            <span className="stat-icon">🔄</span>
+            <span className="stat-icon" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFD60A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="5" ry="5" strokeOpacity="0.9" />
+                <path d="M12 7.5L13.05 10.45L16 11.5L13.05 12.55L12 15.5L10.95 12.55L8 11.5L10.95 10.45L12 7.5Z" />
+              </svg>
+            </span>
             <span className="stat-label">Active Workflows:</span>
-            <span className="stat-value" style={{color: '#FFD700', fontWeight: '700', fontSize: '1.9rem', textShadow: '0 0 2px rgba(255,215,0,0.8)'}}>3</span>
+            <span className="stat-value" style={{color:'#FFC400'}}>3</span>
           </div>
           <div className="stat-item">
-            <span className="stat-icon">📊</span>
+            <span className="stat-icon" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFD60A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="5" ry="5" strokeOpacity="0.9" />
+                <path d="M8 12l3 3 5-6" />
+              </svg>
+            </span>
             <span className="stat-label">Total Workflows:</span>
-            <span className="stat-value" style={{color: '#FFD700', fontWeight: '700', fontSize: '1.9rem', textShadow: '0 0 2px rgba(255,215,0,0.8)'}}>7</span>
+            <span className="stat-value" style={{color:'#FFC400'}}>7</span>
           </div>
           <div className="stat-item">
-            <span className="stat-icon">🔌</span>
+            <span className="stat-icon" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFD60A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="5" ry="5" strokeOpacity="0.9" />
+                <path d="M12 11c1.657 0 3-1.567 3-3.5S13.657 4 12 4 9 5.567 9 7.5 10.343 11 12 11z" />
+                <path d="M6.5 18c1.3-2 3.3-3 5.5-3s4.2 1 5.5 3" />
+              </svg>
+            </span>
             <span className="stat-label">Connected Clients:</span>
-            <span className="stat-value" style={{color: '#FFD700', fontWeight: '700', fontSize: '1.9rem', textShadow: '0 0 2px rgba(255,215,0,0.8)'}}>1</span>
+            <span className="stat-value" style={{color:'#FFC400'}}>1</span>
           </div>
           <div className="stat-item">
-            <span className="stat-icon">🤖</span>
+            <span className="stat-icon" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFD60A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="5" ry="5" strokeOpacity="0.9" />
+                <rect x="9" y="8" width="6" height="4" rx="1" />
+                <path d="M8 15h8" />
+              </svg>
+            </span>
             <span className="stat-label">Active Agents:</span>
-            <span className="stat-value" style={{color: '#FFD700', fontWeight: '700', fontSize: '1.9rem', textShadow: '0 0 2px rgba(255,215,0,0.8)'}}>6</span>
+            <span className="stat-value" style={{color:'#FFC400'}}>6</span>
           </div>
           <div className="stat-item">
-            <span className="stat-icon">⚡</span>
-            <span className="stat-label">System Status:</span>
-            <span className="stat-value connected" style={{color: '#00FF7F', fontWeight: '700', fontSize: '1.9rem', textShadow: '0 0 2px rgba(0,255,127,0.8)'}}>Ready</span>
+            <span className="stat-icon" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFD60A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="5" ry="5" strokeOpacity="0.9" />
+                <path d="M12 4l-2 7h4l-2 7" />
+              </svg>
+            </span>
+            <span className="stat-label multi-line">System Status:</span>
+            <span className="stat-value ready" style={{color:'#32D68A'}}>Ready</span>
           </div>
         </div>
         

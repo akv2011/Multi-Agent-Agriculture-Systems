@@ -1,0 +1,64 @@
+<svg width="300" height="200" viewBox="0 0 300 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="cottonGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fefefe;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f1f5f9;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="300" height="200" fill="url(#cottonGradient)"/>
+  
+  <!-- Cotton bolls -->
+  <g transform="translate(50, 40)">
+    <!-- Large cotton boll -->
+    <g>
+      <circle cx="50" cy="40" r="15" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+      <circle cx="45" cy="35" r="8" fill="#ffffff" opacity="0.9"/>
+      <circle cx="55" cy="35" r="8" fill="#ffffff" opacity="0.9"/>
+      <circle cx="45" cy="45" r="8" fill="#ffffff" opacity="0.9"/>
+      <circle cx="55" cy="45" r="8" fill="#ffffff" opacity="0.9"/>
+      <circle cx="50" cy="40" r="6" fill="#ffffff"/>
+    </g>
+    
+    <!-- Medium cotton boll -->
+    <g>
+      <circle cx="120" cy="35" r="12" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+      <circle cx="116" cy="32" r="6" fill="#ffffff" opacity="0.9"/>
+      <circle cx="124" cy="32" r="6" fill="#ffffff" opacity="0.9"/>
+      <circle cx="116" cy="38" r="6" fill="#ffffff" opacity="0.9"/>
+      <circle cx="124" cy="38" r="6" fill="#ffffff" opacity="0.9"/>
+      <circle cx="120" cy="35" r="4" fill="#ffffff"/>
+    </g>
+    
+    <!-- Small cotton boll -->
+    <g>
+      <circle cx="180" cy="50" r="10" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+      <circle cx="177" cy="47" r="5" fill="#ffffff" opacity="0.9"/>
+      <circle cx="183" cy="47" r="5" fill="#ffffff" opacity="0.9"/>
+      <circle cx="177" cy="53" r="5" fill="#ffffff" opacity="0.9"/>
+      <circle cx="183" cy="53" r="5" fill="#ffffff" opacity="0.9"/>
+      <circle cx="180" cy="50" r="3" fill="#ffffff"/>
+    </g>
+    
+    <!-- Another cotton boll -->
+    <g>
+      <circle cx="90" cy="70" r="13" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+      <circle cx="86" cy="66" r="7" fill="#ffffff" opacity="0.9"/>
+      <circle cx="94" cy="66" r="7" fill="#ffffff" opacity="0.9"/>
+      <circle cx="86" cy="74" r="7" fill="#ffffff" opacity="0.9"/>
+      <circle cx="94" cy="74" r="7" fill="#ffffff" opacity="0.9"/>
+      <circle cx="90" cy="70" r="5" fill="#ffffff"/>
+    </g>
+    
+    <!-- Cotton fibers -->
+    <path d="M40 40 Q35 35, 30 40 Q25 45, 30 50" stroke="#f8fafc" stroke-width="2" fill="none" opacity="0.7"/>
+    <path d="M60 40 Q65 35, 70 40 Q75 45, 70 50" stroke="#f8fafc" stroke-width="2" fill="none" opacity="0.7"/>
+    <path d="M110 35 Q105 30, 100 35 Q95 40, 100 45" stroke="#f8fafc" stroke-width="2" fill="none" opacity="0.7"/>
+    <path d="M130 35 Q135 30, 140 35 Q145 40, 140 45" stroke="#f8fafc" stroke-width="2" fill="none" opacity="0.7"/>
+    
+    <!-- B2B Badge -->
+    <rect x="10" y="10" width="40" height="15" rx="7" fill="#3b82f6" opacity="0.9"/>
+    <text x="30" y="20" font-family="Arial, sans-serif" font-size="8" fill="white" text-anchor="middle" font-weight="bold">B2B</text>
+  </g>
+  
+  <text x="150" y="180" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#64748b" text-anchor="middle">Bulk Cotton</text>
+</svg>

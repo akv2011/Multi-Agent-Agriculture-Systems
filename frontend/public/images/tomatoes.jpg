@@ -1,0 +1,46 @@
+<svg width="300" height="200" viewBox="0 0 300 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="tomatoGradient" cx="50%" cy="30%" r="70%">
+      <stop offset="0%" style="stop-color:#fca5a5;stop-opacity:1" />
+      <stop offset="70%" style="stop-color:#ef4444;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#dc2626;stop-opacity:1" />
+    </radialGradient>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fef2f2;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#fee2e2;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="300" height="200" fill="url(#bgGradient)"/>
+  
+  <!-- Large tomato -->
+  <circle cx="120" cy="90" r="35" fill="url(#tomatoGradient)"/>
+  <path d="M120 55 C115 50, 125 50, 120 55" stroke="#22c55e" stroke-width="3" fill="none"/>
+  <ellipse cx="118" cy="52" rx="3" ry="6" fill="#22c55e"/>
+  <ellipse cx="122" cy="52" rx="3" ry="6" fill="#22c55e"/>
+  
+  <!-- Medium tomato -->
+  <circle cx="190" cy="80" r="28" fill="url(#tomatoGradient)"/>
+  <path d="M190 52 C186 48, 194 48, 190 52" stroke="#22c55e" stroke-width="2" fill="none"/>
+  <ellipse cx="188" cy="50" rx="2" ry="4" fill="#22c55e"/>
+  <ellipse cx="192" cy="50" rx="2" ry="4" fill="#22c55e"/>
+  
+  <!-- Small tomato -->
+  <circle cx="80" cy="110" r="22" fill="url(#tomatoGradient)"/>
+  <path d="M80 88 C77 85, 83 85, 80 88" stroke="#22c55e" stroke-width="2" fill="none"/>
+  <ellipse cx="79" cy="86" rx="1.5" ry="3" fill="#22c55e"/>
+  <ellipse cx="81" cy="86" rx="1.5" ry="3" fill="#22c55e"/>
+  
+  <!-- Another small tomato -->
+  <circle cx="220" cy="120" r="20" fill="url(#tomatoGradient)"/>
+  <path d="M220 100 C217 97, 223 97, 220 100" stroke="#22c55e" stroke-width="2" fill="none"/>
+  <ellipse cx="219" cy="98" rx="1.5" ry="3" fill="#22c55e"/>
+  <ellipse cx="221" cy="98" rx="1.5" ry="3" fill="#22c55e"/>
+  
+  <!-- Highlights on tomatoes -->
+  <ellipse cx="110" cy="75" rx="8" ry="12" fill="#fca5a5" opacity="0.8"/>
+  <ellipse cx="180" cy="68" rx="6" ry="9" fill="#fca5a5" opacity="0.8"/>
+  <ellipse cx="74" cy="98" rx="4" ry="6" fill="#fca5a5" opacity="0.8"/>
+  <ellipse cx="214" cy="108" rx="4" ry="5" fill="#fca5a5" opacity="0.8"/>
+  
+  <text x="150" y="180" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#dc2626" text-anchor="middle">Fresh Tomatoes</text>
+</svg>

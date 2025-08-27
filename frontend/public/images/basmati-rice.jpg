@@ -1,0 +1,40 @@
+<svg width="300" height="200" viewBox="0 0 300 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="riceGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fef3c7;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f59e0b;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="300" height="200" fill="url(#riceGradient)"/>
+  <g transform="translate(50, 40)">
+    <!-- Rice grains -->
+    <ellipse cx="40" cy="30" rx="3" ry="8" fill="#fbbf24" opacity="0.9"/>
+    <ellipse cx="60" cy="25" rx="3" ry="8" fill="#f59e0b" opacity="0.8"/>
+    <ellipse cx="80" cy="35" rx="3" ry="8" fill="#fbbf24" opacity="0.9"/>
+    <ellipse cx="100" cy="28" rx="3" ry="8" fill="#f59e0b" opacity="0.8"/>
+    <ellipse cx="120" cy="32" rx="3" ry="8" fill="#fbbf24" opacity="0.9"/>
+    <ellipse cx="140" cy="26" rx="3" ry="8" fill="#f59e0b" opacity="0.8"/>
+    <ellipse cx="160" cy="30" rx="3" ry="8" fill="#fbbf24" opacity="0.9"/>
+    <ellipse cx="180" cy="33" rx="3" ry="8" fill="#f59e0b" opacity="0.8"/>
+    
+    <!-- More rice grains scattered -->
+    <ellipse cx="35" cy="50" rx="3" ry="8" fill="#f59e0b" opacity="0.7"/>
+    <ellipse cx="55" cy="55" rx="3" ry="8" fill="#fbbf24" opacity="0.8"/>
+    <ellipse cx="75" cy="52" rx="3" ry="8" fill="#f59e0b" opacity="0.9"/>
+    <ellipse cx="95" cy="58" rx="3" ry="8" fill="#fbbf24" opacity="0.7"/>
+    <ellipse cx="115" cy="54" rx="3" ry="8" fill="#f59e0b" opacity="0.8"/>
+    <ellipse cx="135" cy="51" rx="3" ry="8" fill="#fbbf24" opacity="0.9"/>
+    <ellipse cx="155" cy="56" rx="3" ry="8" fill="#f59e0b" opacity="0.7"/>
+    <ellipse cx="175" cy="53" rx="3" ry="8" fill="#fbbf24" opacity="0.8"/>
+    
+    <!-- Even more scattered -->
+    <ellipse cx="45" cy="75" rx="3" ry="8" fill="#fbbf24" opacity="0.6"/>
+    <ellipse cx="65" cy="78" rx="3" ry="8" fill="#f59e0b" opacity="0.7"/>
+    <ellipse cx="85" cy="72" rx="3" ry="8" fill="#fbbf24" opacity="0.8"/>
+    <ellipse cx="105" cy="76" rx="3" ry="8" fill="#f59e0b" opacity="0.6"/>
+    <ellipse cx="125" cy="74" rx="3" ry="8" fill="#fbbf24" opacity="0.7"/>
+    <ellipse cx="145" cy="77" rx="3" ry="8" fill="#f59e0b" opacity="0.8"/>
+    <ellipse cx="165" cy="73" rx="3" ry="8" fill="#fbbf24" opacity="0.6"/>
+  </g>
+  <text x="150" y="180" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#92400e" text-anchor="middle">Premium Basmati Rice</text>
+</svg>
