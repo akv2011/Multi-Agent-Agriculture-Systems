@@ -1,4 +1,3 @@
-
 import sys
 import os
 import asyncio
@@ -46,15 +45,13 @@ async def lifespan(app: FastAPI):
     logger.info(f"Using region: {config.get_region_name()}")
     
     # Initialize Redis connection with config
-    redis_host = config.get("REDIS_HOST")
-    redis_port = config.get("REDIS_PORT")
-    redis_db = config.get("REDIS_DB")
-    app.state.redis_manager = RedisConnectionManager(
-        host=redis_host,
-        port=redis_port,
-        db=redis_db
-    )
-    logger.info(f"Redis manager connected to {redis_host}:{redis_port}")
+    from src.redis_config import RedisConfig
+    redis_config = RedisConfig()
+    app.state.redis_manager = RedisConnectionManager(redis_config)
+    if redis_config.demo_mode:
+        logger.info("Redis manager running in demo mode with local storage")
+    else:
+        logger.info(f"Redis manager connected to {redis_config.redis_host}:{redis_config.redis_port}")
     
     # Initialize supervisor
     app.state.supervisor = SupervisorNode()
@@ -155,6 +152,7 @@ async def health_check():
 from src.api.routers import agents, workflows, websocket
 from src.api.routers.agriculture import router as agriculture_router
 from src.api.satellite_api import router as satellite_router
+from src.api.routers.query_handler import router as query_router
 from src.api.config_routes import router as config_router
 
 # Import enhanced routers
@@ -165,6 +163,7 @@ app.include_router(workflows.router)
 app.include_router(websocket.router)
 app.include_router(agriculture_router)
 app.include_router(satellite_router)
+app.include_router(query_router)
 app.include_router(config_router)
 app.include_router(enhanced_demo_router)
 

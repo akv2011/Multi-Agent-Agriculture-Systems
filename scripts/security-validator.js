@@ -81,7 +81,11 @@ function checkFile(filePath) {
 }
 
 function validateProject() {
+<<<<<<< HEAD
   console.log('🔍 AgriMitr Security Validator');
+=======
+  console.log('🔍 AgriSens Security Validator');
+>>>>>>> upstream/main
   console.log('=============================');
   console.log('Checking for potential hardcoded secrets...\n');
 

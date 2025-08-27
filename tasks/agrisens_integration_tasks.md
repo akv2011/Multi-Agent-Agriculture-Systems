@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 # AgriMitr Integration Task List
+=======
+# AgriSens Integration Task List
+>>>>>>> upstream/main
 
 ## 1. Model Implementation Tasks
 

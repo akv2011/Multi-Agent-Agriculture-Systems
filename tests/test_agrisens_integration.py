@@ -1,6 +1,11 @@
 """
+<<<<<<< HEAD
 AgriMitr Integration Tests
 Test suite for validating the integration of AgriMitr models with our agent system.
+=======
+AgriSens Integration Tests
+Test suite for validating the integration of AgriSens models with our agent system.
+>>>>>>> upstream/main
 """
 
 import unittest
@@ -22,6 +27,7 @@ from src.agents.crop_selection_agent import CropSelectionAgent
 from src.agents.irrigation_agent import IrrigationAgent
 from src.agents.disease_identification_agent import DiseaseIdentificationAgent
 from src.core.agriculture_models import AgricultureQuery, Location, SoilType, CropType
+<<<<<<< HEAD
 from src.models.AgriMitr_crop_recommendation import AgriMitrCropModel
 from src.models.AgriMitr_disease_identification import AgriMitrDiseaseModel
 from src.models.AgriMitr_irrigation_scheduling import IrrigationModel
@@ -29,6 +35,15 @@ from src.models.AgriMitr_irrigation_scheduling import IrrigationModel
 
 class TestAgriMitrIntegration(unittest.TestCase):
     """Test suite for AgriMitr model integration"""
+=======
+from src.models.agrisens_crop_recommendation import AgriSensCropModel
+from src.models.agrisens_disease_identification import AgriSensDiseaseModel
+from src.models.agrisens_irrigation_scheduling import IrrigationModel
+
+
+class TestAgriSensIntegration(unittest.TestCase):
+    """Test suite for AgriSens model integration"""
+>>>>>>> upstream/main
     
     def setUp(self):
         """Set up test environment"""
@@ -78,9 +93,15 @@ class TestAgriMitrIntegration(unittest.TestCase):
         
         return base64.b64encode(img_bytes.read()).decode('utf-8')
         
+<<<<<<< HEAD
     @patch('src.models.AgriMitr_crop_recommendation.get_crop_recommendation_model')
     def test_crop_selection_agent_with_AgriMitr(self, mock_get_model):
         """Test that crop selection agent uses AgriMitr models"""
+=======
+    @patch('src.models.agrisens_crop_recommendation.get_crop_recommendation_model')
+    def test_crop_selection_agent_with_agrisens(self, mock_get_model):
+        """Test that crop selection agent uses AgriSens models"""
+>>>>>>> upstream/main
         # Mock the model
         mock_model = MagicMock()
         mock_model.predict.return_value = {
@@ -110,12 +131,21 @@ class TestAgriMitrIntegration(unittest.TestCase):
         self.assertEqual(response.response_type, "crop_selection")
         self.assertIn('recommendations', response.data)
         
+<<<<<<< HEAD
         # Check if AgriMitr model was used
         mock_get_model.assert_called_once()
         
     @patch('src.models.AgriMitr_irrigation_scheduling.get_irrigation_model')
     def test_irrigation_agent_with_AgriMitr(self, mock_get_model):
         """Test that irrigation agent uses AgriMitr models"""
+=======
+        # Check if AgriSens model was used
+        mock_get_model.assert_called_once()
+        
+    @patch('src.models.agrisens_irrigation_scheduling.get_irrigation_model')
+    def test_irrigation_agent_with_agrisens(self, mock_get_model):
+        """Test that irrigation agent uses AgriSens models"""
+>>>>>>> upstream/main
         # Mock the model
         mock_model = MagicMock()
         mock_model.optimize_schedule.return_value = {
@@ -149,12 +179,21 @@ class TestAgriMitrIntegration(unittest.TestCase):
         self.assertEqual(response.response_type, "irrigation_schedule")
         self.assertIn('schedule', response.data)
         
+<<<<<<< HEAD
         # Check if AgriMitr model was used
         mock_get_model.assert_called_once()
         
     @patch('src.models.AgriMitr_disease_identification.load_disease_model')
     def test_disease_identification_agent(self, mock_load_model):
         """Test disease identification with AgriMitr model"""
+=======
+        # Check if AgriSens model was used
+        mock_get_model.assert_called_once()
+        
+    @patch('src.models.agrisens_disease_identification.load_disease_model')
+    def test_disease_identification_agent(self, mock_load_model):
+        """Test disease identification with AgriSens model"""
+>>>>>>> upstream/main
         # Mock the model
         mock_model = MagicMock()
         mock_model.predict.return_value = np.array([[0.01, 0.02, 0.85, 0.05, 0.07]])  # Mostly class 2
@@ -186,6 +225,7 @@ class TestAgriMitrIntegration(unittest.TestCase):
         self.assertIn('disease', response.data)
         self.assertIn('recommendations', response.data)
         
+<<<<<<< HEAD
         # Check if AgriMitr model was used
         mock_load_model.assert_called_once()
 
@@ -193,6 +233,15 @@ class TestAgriMitrIntegration(unittest.TestCase):
     @patch('src.models.AgriMitr_crop_recommendation.get_crop_recommendation_model')
     def test_satellite_data_integration(self, mock_get_crop_model, mock_get_satellite):
         """Test that satellite data is properly integrated with AgriMitr models"""
+=======
+        # Check if AgriSens model was used
+        mock_load_model.assert_called_once()
+
+    @patch('src.agents.satellite_integration.get_satellite_data_for_location')
+    @patch('src.models.agrisens_crop_recommendation.get_crop_recommendation_model')
+    def test_satellite_data_integration(self, mock_get_crop_model, mock_get_satellite):
+        """Test that satellite data is properly integrated with AgriSens models"""
+>>>>>>> upstream/main
         # Mock satellite data
         mock_get_satellite.return_value = {
             'soil_moisture': {'value': 65.0, 'unit': '%'},

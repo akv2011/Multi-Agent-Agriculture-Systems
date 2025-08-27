@@ -14,8 +14,8 @@ import re
 
 from .base_agent import BaseWorkerAgent
 from .satellite_integration import get_satellite_data_for_location, format_satellite_summary
-# AgriMitr Disease Identification Integration
-from ..models.AgriMitr_disease_identification import enhance_pest_management_with_disease_id, DiseaseIdentification
+# AgriSens Disease Identification Integration
+from ..models.agrisens_disease_identification import enhance_pest_management_with_disease_id, DiseaseIdentification
 from ..core.agriculture_models import (
     AgricultureQuery, AgentResponse, CropType, SeasonType, WeatherData,
     Location, FarmProfile, QueryDomain, AgentCapability
@@ -647,9 +647,9 @@ class PestManagementAgent(BaseWorkerAgent):
         return context
     
     async def _identify_pest(self, context: Dict[str, Any], satellite_data: Optional[Dict] = None) -> List[PestIdentification]:
-        """Integrated pest identification combining AgriMitr CNN, symptom/database matching, and weather risk augmentation.
+        """Integrated pest identification combining AgriSens CNN, symptom/database matching, and weather risk augmentation.
         Order of operations:
-        1. Attempt AgriMitr image-based (or symptom) disease identification
+        1. Attempt AgriSens image-based (or symptom) disease identification
         2. Match against internal pest database (legacy logic)
         3. Add weather-based elevated risk pests (humidity / temperature / soil moisture)
         4. De-duplicate and rank by confidence
@@ -657,7 +657,7 @@ class PestManagementAgent(BaseWorkerAgent):
         pest_identifications: List[PestIdentification] = []
         added_keys = set()
 
-        # Collect location data for AgriMitr
+        # Collect location data for AgriSens
         location_obj = context.get("location")
         location_data = self._serialize_location(location_obj) if location_obj else None
 
@@ -673,7 +673,7 @@ class PestManagementAgent(BaseWorkerAgent):
             except Exception:
                 pass
 
-        # Weather (from satellite) for AgriMitr severity context
+        # Weather (from satellite) for AgriSens severity context
         weather_data = None
         if satellite_data:
             weather = satellite_data.get("weather") or {}
@@ -683,31 +683,31 @@ class PestManagementAgent(BaseWorkerAgent):
                 "rainfall": weather.get("rainfall") or satellite_data.get("precipitation")
             }
 
-        # 1. AgriMitr disease identification
+        # 1. AgriSens disease identification
         try:
-            AgriMitr_result = enhance_pest_management_with_disease_id(
+            agrisens_result = enhance_pest_management_with_disease_id(
                 image_data=image_data,
                 symptoms=symptoms if symptoms else None,
                 crop_type=(context.get("crop_type") or "") if context.get("crop_type") else "",
                 location_data=location_data,
                 weather_data=weather_data
             )
-            if AgriMitr_result and AgriMitr_result.confidence > 0.25:
-                mapped_crop = self._map_crop_name_to_type(AgriMitr_result.crop_type)
+            if agrisens_result and agrisens_result.confidence > 0.25:
+                mapped_crop = self._map_crop_name_to_type(agrisens_result.crop_type)
                 pest_id = PestIdentification(
-                    pest_name=AgriMitr_result.disease_name,
+                    pest_name=agrisens_result.disease_name,
                     pest_type=PestType.DISEASE,
-                    confidence=min(1.0, AgriMitr_result.confidence + 0.05 if image_data else AgriMitr_result.confidence),
-                    symptoms=AgriMitr_result.symptoms or symptoms,
+                    confidence=min(1.0, agrisens_result.confidence + 0.05 if image_data else agrisens_result.confidence),
+                    symptoms=agrisens_result.symptoms or symptoms,
                     affected_crops=[mapped_crop] if mapped_crop else [],
-                    severity_indicators=[AgriMitr_result.severity_assessment],
-                    common_names=[AgriMitr_result.disease_name],
-                    description=f"AgriMitr identification ({'image' if image_data else 'symptom'} based)"
+                    severity_indicators=[agrisens_result.severity_assessment],
+                    common_names=[agrisens_result.disease_name],
+                    description=f"AgriSens identification ({'image' if image_data else 'symptom'} based)"
                 )
                 pest_identifications.append(pest_id)
                 added_keys.add(pest_id.pest_name.lower())
         except Exception as e:
-            logger.warning(f"AgriMitr identification failed: {e}")
+            logger.warning(f"AgriSens identification failed: {e}")
 
         # 2. Internal database symptom matching (legacy logic adapted)
         try:
@@ -716,7 +716,7 @@ class PestManagementAgent(BaseWorkerAgent):
                 if legacy_conf > 0.30:
                     key = pest_name.lower()
                     if key in added_keys:
-                        # If already present (AgriMitr match), boost confidence moderately
+                        # If already present (AgriSens match), boost confidence moderately
                         for existing in pest_identifications:
                             if existing.pest_name.lower() == key:
                                 existing.confidence = min(1.0, max(existing.confidence, legacy_conf) + 0.05)
@@ -744,9 +744,9 @@ class PestManagementAgent(BaseWorkerAgent):
         return pest_identifications[:5]
 
     async def _recommend_treatments(self, pest_identifications: List[PestIdentification], context: Dict[str, Any], satellite_data: Optional[Dict] = None) -> List[TreatmentRecommendation]:
-        """Generate treatment recommendations with weather & AgriMitr augmentation.
+        """Generate treatment recommendations with weather & AgriSens augmentation.
         - Pull from treatment_database
-        - If AgriMitr identification present but not in DB, add generic disease management steps
+        - If AgriSens identification present but not in DB, add generic disease management steps
         - Adjust timing & safety based on satellite weather
         """
         treatments: List[TreatmentRecommendation] = []
@@ -775,7 +775,7 @@ class PestManagementAgent(BaseWorkerAgent):
                     self._augment_treatments_with_weather(treatment, humidity, wind_speed)
                     treatments.append(treatment)
             else:
-                # Generic disease management (for AgriMitr diseases not in DB)
+                # Generic disease management (for AgriSens diseases not in DB)
                 generic = TreatmentRecommendation(
                     treatment_type=TreatmentType.INTEGRATED,
                     method="Integrated disease management (sanitation + resistant varieties + preventive spray)",
@@ -853,7 +853,7 @@ class PestManagementAgent(BaseWorkerAgent):
     def _calculate_confidence(self, context: Dict[str, Any], pest_identifications: List[PestIdentification], satellite_data: Optional[Dict] = None) -> float:
         """Composite confidence using:
         - Symptom detail
-        - Top pest confidence (legacy or AgriMitr)
+        - Top pest confidence (legacy or AgriSens)
         - Satellite data quality (presence & key fields)
         - Image contribution
         """
@@ -873,7 +873,7 @@ class PestManagementAgent(BaseWorkerAgent):
         return round(min(confidence, 0.95), 2)
 
     def _generate_prevention_advice(self, context: Dict[str, Any], satellite_data: Optional[Dict] = None) -> List[str]:
-        """Merge generic, crop-specific, AgriMitr (if any), and weather-based preventive guidance."""
+        """Merge generic, crop-specific, AgriSens (if any), and weather-based preventive guidance."""
         advice = [
             "Regular scouting 2-3 times per week",
             "Rotate crops to break pest cycles",
@@ -915,7 +915,7 @@ class PestManagementAgent(BaseWorkerAgent):
             summary.append("Satellite weather integrated into risk & timing")
         return summary[:4]
 
-    # ----------------- Helper Methods (AgriMitr & Weather Integration) -----------------
+    # ----------------- Helper Methods (AgriSens & Weather Integration) -----------------
     def _map_crop_name_to_type(self, crop_name: str) -> Optional[CropType]:
         if not crop_name:
             return None

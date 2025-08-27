@@ -20,7 +20,7 @@ from ..core.agriculture_models import (
     AgricultureQuery, QueryDomain, Language, RoutingDecision, 
     AgricultureCapability, AgricultureTask, Location, FarmProfile
 )
-from ..core.models import Task, TaskPriority, TaskStatus
+from ..core.models import Task, TaskPriority, TaskStatus, AgentCapability
 
 
 logger = logging.getLogger(__name__)
@@ -36,8 +36,8 @@ class AgricultureRouter(BaseWorkerAgent):
         super().__init__(
             name="Agriculture Router",
             capabilities=[
-                AgricultureCapability.QUERY_ROUTING,
-                AgricultureCapability.MULTILINGUAL_NLP
+                AgentCapability.TEXT_PROCESSING,
+                AgentCapability.ANALYSIS
             ],
             agent_type="router"
         )

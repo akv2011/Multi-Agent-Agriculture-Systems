@@ -13,7 +13,11 @@ const AuthDebug: React.FC = () => {
     VITE_DEMO_ADMIN_HASH: import.meta.env.VITE_DEMO_ADMIN_HASH ? 'Present' : 'Missing',
     VITE_DEMO_USER_HASH: import.meta.env.VITE_DEMO_USER_HASH ? 'Present' : 'Missing',
     VITE_DEMO_FARMER_HASH: import.meta.env.VITE_DEMO_FARMER_HASH ? 'Present' : 'Missing',
+<<<<<<< HEAD
     VITE_DEMO_AgriMitr_HASH: import.meta.env.VITE_DEMO_AgriMitr_HASH ? 'Present' : 'Missing',
+=======
+    VITE_DEMO_AGRISENS_HASH: import.meta.env.VITE_DEMO_AGRISENS_HASH ? 'Present' : 'Missing',
+>>>>>>> upstream/main
   });
 
   return (
@@ -37,6 +41,7 @@ const AuthDebug: React.FC = () => {
       <p><strong>Available users:</strong> {Object.keys(credentials).join(', ') || 'None'}</p>
       <div style={{ marginTop: '10px', padding: '10px', background: '#fff3e0', borderRadius: '4px' }}>
         <p style={{ margin: '0', fontSize: '12px' }}>
+<<<<<<< HEAD
           <strong>Demo Login Instructions:</strong><br/>
           {demoMode ? (
             <>
@@ -48,6 +53,11 @@ const AuthDebug: React.FC = () => {
               Demo mode is disabled. Enable by setting VITE_DEMO_MODE=true in your environment.
             </>
           )}
+=======
+          <strong>Try logging in with:</strong><br/>
+          Username: admin<br/>
+          Password: admin123
+>>>>>>> upstream/main
         </p>
       </div>
     </div>

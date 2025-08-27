@@ -18,8 +18,8 @@ from ..core.agriculture_models import (
     AgricultureQuery, AgentResponse, CropType, SoilType, Location, QueryDomain, Language
 )
 from ..core.models import AgentCapability, Task
-from ..models.AgriMitr_fertilizer_recommendation import (
-    enhance_input_materials_with_fertilizer_recommend as AgriMitr_fertilizer_recommend,
+from ..models.agrisens_fertilizer_recommendation import (
+    enhance_input_materials_with_fertilizer_recommend as agrisens_fertilizer_recommend,
     NutrientPlan as AgriNutrientPlan,
     FertilizerRecommendation, SoilAnalysis
 )
@@ -335,7 +335,7 @@ class InputMaterialsAgent(BaseWorkerAgent):
         }
     
     async def process_query(self, query: AgricultureQuery) -> AgentResponse:
-        """Process an input materials query with AgriMitr model integration"""
+        """Process an input materials query with AgriSens model integration"""
         try:
             query_text = query.query_text.lower()
             location = query.location
@@ -379,9 +379,9 @@ class InputMaterialsAgent(BaseWorkerAgent):
                 response_parts.append("Note: Satellite data is temporarily unavailable.")
                 confidence *= 0.9
                 
-            # Use AgriMitr fertilizer recommendation model
+            # Use AgriSens fertilizer recommendation model
             crop_type_str = str(crop_type.value) if isinstance(crop_type, Enum) else str(crop_type)
-            nutrient_plan = AgriMitr_fertilizer_recommend(
+            nutrient_plan = agrisens_fertilizer_recommend(
                 crop_type=crop_type_str,
                 soil_data=soil_data,
                 growth_stage=growth_stage,
@@ -617,7 +617,7 @@ class InputMaterialsAgent(BaseWorkerAgent):
         }
     
     async def process_query(self, query: AgricultureQuery) -> AgentResponse:
-        """Process an input materials query with AgriMitr model integration"""
+        """Process an input materials query with AgriSens model integration"""
         try:
             query_text = query.query_text.lower()
             location = query.location
@@ -661,9 +661,9 @@ class InputMaterialsAgent(BaseWorkerAgent):
                 response_parts.append("Note: Satellite data is temporarily unavailable.")
                 confidence *= 0.9
                 
-            # Use AgriMitr fertilizer recommendation model
+            # Use AgriSens fertilizer recommendation model
             crop_type_str = str(crop_type.value) if isinstance(crop_type, Enum) else str(crop_type)
-            nutrient_plan = AgriMitr_fertilizer_recommend(
+            nutrient_plan = agrisens_fertilizer_recommend(
                 crop_type=crop_type_str,
                 soil_data=soil_data,
                 growth_stage=growth_stage,
@@ -935,8 +935,8 @@ class InputMaterialsAgent(BaseWorkerAgent):
         return alternatives[:3]  # Limit to 3 alternatives
     
     def _create_agent_response(self, recommendation: InputRecommendation, 
-                             query: AgricultureQuery, nutrient_plan: Optional[AgriNutrientPlan] = None, AgriMitr_used: bool = False) -> AgentResponse:
-        """Create structured agent response (extended to include AgriMitr nutrient plan)."""
+                             query: AgricultureQuery, nutrient_plan: Optional[AgriNutrientPlan] = None, agrisens_used: bool = False) -> AgentResponse:
+        """Create structured agent response (extended to include AgriSens nutrient plan)."""
         summary = self._create_summary(recommendation, query.query_language)
         recommendations_list = self._create_recommendations_list(recommendation)
 
@@ -952,26 +952,26 @@ class InputMaterialsAgent(BaseWorkerAgent):
 
         sources = ["Fertilizer Database", "Pesticide Registry", "Seed Catalog", "Market Price Data"]
         if nutrient_plan:
-            sources.append("AgriMitr Fertilizer Model")
+            sources.append("AgriSens Fertilizer Model")
 
         metadata_extra = {}
         if nutrient_plan:
             metadata_extra = {
-                "AgriMitr_soil_health": nutrient_plan.current_status.health_score,
-                "AgriMitr_total_cost": nutrient_plan.total_cost,
-                "AgriMitr_expected_roi": nutrient_plan.expected_roi,
-                "AgriMitr_growth_stage": nutrient_plan.growth_stage,
-                "AgriMitr_used": AgriMitr_used
+                "agrisens_soil_health": nutrient_plan.current_status.health_score,
+                "agrisens_total_cost": nutrient_plan.total_cost,
+                "agrisens_expected_roi": nutrient_plan.expected_roi,
+                "agrisens_growth_stage": nutrient_plan.growth_stage,
+                "agrisens_used": agrisens_used
             }
 
         return AgentResponse(
             agent_id=self.name,
             agent_name="Input Materials Advisor",
             query_id=query.query_id,
-            response_text=summary + (" | AgriMitr nutrient optimization applied" if nutrient_plan else ""),
+            response_text=summary + (" | AgriSens nutrient optimization applied" if nutrient_plan else ""),
             response_language=query.query_language,
             confidence_score=0.88 if nutrient_plan else 0.85,
-            reasoning=(f"Based on {recommendation.crop_type.value} requirements, soil conditions, and AgriMitr analysis" if nutrient_plan else f"Based on {recommendation.crop_type.value} requirements and {recommendation.soil_type.value} soil conditions"),
+            reasoning=(f"Based on {recommendation.crop_type.value} requirements, soil conditions, and AgriSens analysis" if nutrient_plan else f"Based on {recommendation.crop_type.value} requirements and {recommendation.soil_type.value} soil conditions"),
             recommendations=recommendations_list,
             sources=sources,
             next_steps=["Purchase recommended inputs", "Apply as per schedule", "Monitor crop response"] + (["Follow nutrient monitoring schedule"] if nutrient_plan else []),
@@ -1071,7 +1071,7 @@ class InputMaterialsAgent(BaseWorkerAgent):
             metadata={"error": True, "error_message": error}
         )
     
-    # ---------------- AgriMitr Integration Helpers ----------------
+    # ---------------- AgriSens Integration Helpers ----------------
     def _extract_soil_data(self, query: AgricultureQuery) -> Dict[str, float]:
         soil_ctx = query.context.get("soil_data") if query.context else None
         if isinstance(soil_ctx, dict):

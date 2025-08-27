@@ -1,5 +1,9 @@
 """
+<<<<<<< HEAD
 Test file for the AgriMitr fertilizer recommendation integration
+=======
+Test file for the AgriSens fertilizer recommendation integration
+>>>>>>> upstream/main
 """
 
 import unittest
@@ -12,7 +16,11 @@ from typing import Dict, Any
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from src.agents.fertilizer_recommendation_agent import FertilizerRecommendationAgent
+<<<<<<< HEAD
 from src.models.AgriMitr_fertilizer_recommendation import (
+=======
+from src.models.agrisens_fertilizer_recommendation import (
+>>>>>>> upstream/main
     FertilizerRecommendationModel, FertilizerRecommendationData
 )
 from src.core.agriculture_models import AgricultureQuery, Location, SoilType, CropType

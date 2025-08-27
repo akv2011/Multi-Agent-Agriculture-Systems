@@ -1,5 +1,9 @@
 """
+<<<<<<< HEAD
 Enhanced Crop Selection Agent with AgriMitr Integration
+=======
+Enhanced Crop Selection Agent with AgriSens Integration
+>>>>>>> upstream/main
 Integrates the 99.55% accuracy Random Forest model with NPK analysis
 """
 
@@ -23,12 +27,21 @@ from ..core.agriculture_models import (
 logger = logging.getLogger(__name__)
 
 @dataclass
+<<<<<<< HEAD
 class AgriMitrCropRecommendation:
     """Enhanced crop recommendation with AgriMitr ML predictions"""
     crop_type: CropType
     variety: str
     AgriMitr_prediction: str  # Primary ML prediction
     AgriMitr_confidence: float  # ML model confidence
+=======
+class AgriSensCropRecommendation:
+    """Enhanced crop recommendation with AgriSens ML predictions"""
+    crop_type: CropType
+    variety: str
+    agrisens_prediction: str  # Primary ML prediction
+    agrisens_confidence: float  # ML model confidence
+>>>>>>> upstream/main
     npk_suitability: Dict[str, str]  # NPK analysis results
     suitability_score: float  # Combined satellite + ML score
     expected_yield: float
@@ -43,7 +56,11 @@ class AgriMitrCropRecommendation:
 
 class EnhancedCropSelectionAgent(BaseWorkerAgent):
     """
+<<<<<<< HEAD
     Enhanced Crop Selection Agent with AgriMitr ML Model Integration
+=======
+    Enhanced Crop Selection Agent with AgriSens ML Model Integration
+>>>>>>> upstream/main
     
     New Capabilities:
     - 99.55% accuracy Random Forest crop prediction
@@ -64,8 +81,13 @@ class EnhancedCropSelectionAgent(BaseWorkerAgent):
             agent_type="agriculture_specialist"
         )
         
+<<<<<<< HEAD
         # Initialize AgriMitr ML models
         self.AgriMitr_models = {}
+=======
+        # Initialize AgriSens ML models
+        self.agrisens_models = {}
+>>>>>>> upstream/main
         self.model_accuracies = {
             'RandomForest': 0.9955,
             'NBClassifier': 0.9909,
@@ -78,6 +100,7 @@ class EnhancedCropSelectionAgent(BaseWorkerAgent):
         self._load_crop_database()
         self._load_regional_data()
         
+<<<<<<< HEAD
         # Load AgriMitr models
         self._load_AgriMitr_models()
         
@@ -89,6 +112,19 @@ class EnhancedCropSelectionAgent(BaseWorkerAgent):
     def _load_AgriMitr_models(self):
         """Load pre-trained AgriMitr ML models"""
         model_path = "/home/hari/Music/Multi-Agent-Agriculture-Systems/models/AgriMitr/CROP-RECOMMENDATION"
+=======
+        # Load AgriSens models
+        self._load_agrisens_models()
+        
+        # Load AgriSens dataset for reference
+        self._load_agrisens_dataset()
+        
+        logger.info(f"Enhanced Crop Selection Agent initialized with {len(self.agrisens_models)} ML models")
+    
+    def _load_agrisens_models(self):
+        """Load pre-trained AgriSens ML models"""
+        model_path = "/home/hari/Music/Multi-Agent-Agriculture-Systems/models/agrisens/CROP-RECOMMENDATION"
+>>>>>>> upstream/main
         
         model_files = {
             'RandomForest': 'RF.pkl',
@@ -102,12 +138,17 @@ class EnhancedCropSelectionAgent(BaseWorkerAgent):
             model_file_path = os.path.join(model_path, filename)
             if os.path.exists(model_file_path):
                 try:
+<<<<<<< HEAD
                     self.AgriMitr_models[model_name] = joblib.load(model_file_path)
+=======
+                    self.agrisens_models[model_name] = joblib.load(model_file_path)
+>>>>>>> upstream/main
                     logger.info(f"Loaded {model_name} model (Accuracy: {self.model_accuracies[model_name]:.4f})")
                 except Exception as e:
                     logger.error(f"Error loading {model_name}: {e}")
         
         # Set Random Forest as primary model (best accuracy)
+<<<<<<< HEAD
         self.primary_model = self.AgriMitr_models.get('RandomForest')
         if self.primary_model:
             logger.info("Random Forest set as primary model (99.55% accuracy)")
@@ -123,11 +164,32 @@ class EnhancedCropSelectionAgent(BaseWorkerAgent):
         except Exception as e:
             logger.error(f"Error loading AgriMitr dataset: {e}")
             self.AgriMitr_dataset = None
+=======
+        self.primary_model = self.agrisens_models.get('RandomForest')
+        if self.primary_model:
+            logger.info("Random Forest set as primary model (99.55% accuracy)")
+    
+    def _load_agrisens_dataset(self):
+        """Load AgriSens crop recommendation dataset for reference"""
+        dataset_path = "/home/hari/Music/Multi-Agent-Agriculture-Systems/models/agrisens/CROP-RECOMMENDATION/Crop_recommendation.csv"
+        
+        try:
+            self.agrisens_dataset = pd.read_csv(dataset_path)
+            self.crop_labels = list(self.agrisens_dataset['label'].unique())
+            logger.info(f"Loaded AgriSens dataset: {len(self.agrisens_dataset)} samples, {len(self.crop_labels)} crops")
+        except Exception as e:
+            logger.error(f"Error loading AgriSens dataset: {e}")
+            self.agrisens_dataset = None
+>>>>>>> upstream/main
             self.crop_labels = []
     
     async def process_query(self, query: AgricultureQuery) -> AgentResponse:
         """
+<<<<<<< HEAD
         Enhanced query processing with AgriMitr ML integration
+=======
+        Enhanced query processing with AgriSens ML integration
+>>>>>>> upstream/main
         """
         try:
             logger.info(f"Processing enhanced crop selection query: {query.query_text}")
@@ -148,6 +210,7 @@ class EnhancedCropSelectionAgent(BaseWorkerAgent):
                 except Exception as e:
                     logger.warning(f"[SATELLITE] Could not fetch satellite data: {e}")
             
+<<<<<<< HEAD
             # Enhanced processing with AgriMitr ML
             if context.get("soil_data") and self.primary_model:
                 # Use AgriMitr ML prediction
@@ -157,6 +220,17 @@ class EnhancedCropSelectionAgent(BaseWorkerAgent):
                 # Combine AgriMitr ML with satellite insights
                 recommendations = self._combine_ml_and_satellite_recommendations(
                     AgriMitr_recommendations, satellite_recommendations, context, satellite_data
+=======
+            # Enhanced processing with AgriSens ML
+            if context.get("soil_data") and self.primary_model:
+                # Use AgriSens ML prediction
+                agrisens_recommendations = await self._get_agrisens_predictions(context, satellite_data)
+                satellite_recommendations = self._get_satellite_enhanced_recommendations(context, satellite_data)
+                
+                # Combine AgriSens ML with satellite insights
+                recommendations = self._combine_ml_and_satellite_recommendations(
+                    agrisens_recommendations, satellite_recommendations, context, satellite_data
+>>>>>>> upstream/main
                 )
             else:
                 # Fallback to traditional method with satellite enhancement
@@ -168,19 +242,32 @@ class EnhancedCropSelectionAgent(BaseWorkerAgent):
             # Format enhanced response
             response_data = {
                 "recommendations": [rec.__dict__ for rec in recommendations],
+<<<<<<< HEAD
                 "AgriMitr_integration": {
                     "ml_models_used": list(self.AgriMitr_models.keys()),
+=======
+                "agrisens_integration": {
+                    "ml_models_used": list(self.agrisens_models.keys()),
+>>>>>>> upstream/main
                     "primary_model": "RandomForest",
                     "model_accuracy": self.model_accuracies.get('RandomForest', 0.0),
                     "npk_analysis_enabled": True
                 },
                 "satellite_enhancement": satellite_data is not None,
                 "confidence_score": confidence,
+<<<<<<< HEAD
                 "analysis_method": "AgriMitr ML + Satellite Data" if satellite_data else "AgriMitr ML Only"
             }
             
             # Include satellite summary in sources
             sources = ["AgriMitr_ml_models", "crop_database", "regional_data"]
+=======
+                "analysis_method": "AgriSens ML + Satellite Data" if satellite_data else "AgriSens ML Only"
+            }
+            
+            # Include satellite summary in sources
+            sources = ["agrisens_ml_models", "crop_database", "regional_data"]
+>>>>>>> upstream/main
             if satellite_data:
                 sources.append("satellite_data")
             
@@ -188,7 +275,11 @@ class EnhancedCropSelectionAgent(BaseWorkerAgent):
                 agent_id=self.agent_id,
                 agent_name=self.name,
                 query_id=query.query_id,
+<<<<<<< HEAD
                 response_text=f"Enhanced crop recommendations using AgriMitr ML (99.55% accuracy) + Satellite Data",
+=======
+                response_text=f"Enhanced crop recommendations using AgriSens ML (99.55% accuracy) + Satellite Data",
+>>>>>>> upstream/main
                 confidence_score=confidence,
                 reasoning=f"Analysis based on Random Forest ML model with {len(sources)} data sources",
                 sources=sources,
@@ -201,6 +292,7 @@ class EnhancedCropSelectionAgent(BaseWorkerAgent):
             logger.error(f"Error in enhanced crop selection processing: {e}")
             return self._create_error_response(query, str(e))
     
+<<<<<<< HEAD
     async def _get_AgriMitr_predictions(self, context: Dict[str, Any], 
                                       satellite_data: Optional[Dict] = None) -> List[AgriMitrCropRecommendation]:
         """Get crop predictions using AgriMitr ML models"""
@@ -208,6 +300,15 @@ class EnhancedCropSelectionAgent(BaseWorkerAgent):
         
         if not self.primary_model:
             logger.warning("No AgriMitr model available")
+=======
+    async def _get_agrisens_predictions(self, context: Dict[str, Any], 
+                                      satellite_data: Optional[Dict] = None) -> List[AgriSensCropRecommendation]:
+        """Get crop predictions using AgriSens ML models"""
+        recommendations = []
+        
+        if not self.primary_model:
+            logger.warning("No AgriSens model available")
+>>>>>>> upstream/main
             return recommendations
         
         try:
@@ -235,7 +336,11 @@ class EnhancedCropSelectionAgent(BaseWorkerAgent):
                             crop_confidence = probabilities[idx]
                             
                             # Create enhanced recommendation
+<<<<<<< HEAD
                             recommendation = await self._create_AgriMitr_recommendation(
+=======
+                            recommendation = await self._create_agrisens_recommendation(
+>>>>>>> upstream/main
                                 crop_name, crop_confidence, features, context, satellite_data
                             )
                             
@@ -243,20 +348,32 @@ class EnhancedCropSelectionAgent(BaseWorkerAgent):
                                 recommendations.append(recommendation)
                 else:
                     # For models without probability
+<<<<<<< HEAD
                     recommendation = await self._create_AgriMitr_recommendation(
+=======
+                    recommendation = await self._create_agrisens_recommendation(
+>>>>>>> upstream/main
                         prediction, 0.95, features, context, satellite_data
                     )
                     if recommendation:
                         recommendations.append(recommendation)
         
         except Exception as e:
+<<<<<<< HEAD
             logger.error(f"Error getting AgriMitr predictions: {e}")
+=======
+            logger.error(f"Error getting AgriSens predictions: {e}")
+>>>>>>> upstream/main
         
         return recommendations
     
     def _prepare_ml_features(self, soil_data: Dict, context: Dict, 
                            satellite_data: Optional[Dict] = None) -> Optional[List[float]]:
+<<<<<<< HEAD
         """Prepare features for AgriMitr ML model [N, P, K, temperature, humidity, ph, rainfall]"""
+=======
+        """Prepare features for AgriSens ML model [N, P, K, temperature, humidity, ph, rainfall]"""
+>>>>>>> upstream/main
         
         try:
             # NPK values from soil data or defaults
@@ -290,6 +407,7 @@ class EnhancedCropSelectionAgent(BaseWorkerAgent):
             logger.error(f"Error preparing ML features: {e}")
             return None
     
+<<<<<<< HEAD
     async def _create_AgriMitr_recommendation(self, crop_name: str, confidence: float, 
                                             features: List[float], context: Dict, 
                                             satellite_data: Optional[Dict] = None) -> Optional[AgriMitrCropRecommendation]:
@@ -298,6 +416,16 @@ class EnhancedCropSelectionAgent(BaseWorkerAgent):
         try:
             # Map AgriMitr crop name to our CropType
             crop_type = self._map_AgriMitr_crop_to_type(crop_name)
+=======
+    async def _create_agrisens_recommendation(self, crop_name: str, confidence: float, 
+                                            features: List[float], context: Dict, 
+                                            satellite_data: Optional[Dict] = None) -> Optional[AgriSensCropRecommendation]:
+        """Create enhanced recommendation with AgriSens ML prediction"""
+        
+        try:
+            # Map AgriSens crop name to our CropType
+            crop_type = self._map_agrisens_crop_to_type(crop_name)
+>>>>>>> upstream/main
             if not crop_type:
                 return None
             
@@ -316,11 +444,19 @@ class EnhancedCropSelectionAgent(BaseWorkerAgent):
             satellite_insights = self._generate_satellite_insights(satellite_data) if satellite_data else {}
             
             # Create enhanced recommendation
+<<<<<<< HEAD
             recommendation = AgriMitrCropRecommendation(
                 crop_type=crop_type,
                 variety=variety_info.get('variety', 'Standard'),
                 AgriMitr_prediction=crop_name,
                 AgriMitr_confidence=confidence,
+=======
+            recommendation = AgriSensCropRecommendation(
+                crop_type=crop_type,
+                variety=variety_info.get('variety', 'Standard'),
+                agrisens_prediction=crop_name,
+                agrisens_confidence=confidence,
+>>>>>>> upstream/main
                 npk_suitability=npk_suitability,
                 suitability_score=combined_score,
                 expected_yield=variety_info.get('yield_potential', 3000),
@@ -337,11 +473,19 @@ class EnhancedCropSelectionAgent(BaseWorkerAgent):
             return recommendation
             
         except Exception as e:
+<<<<<<< HEAD
             logger.error(f"Error creating AgriMitr recommendation: {e}")
             return None
     
     def _map_AgriMitr_crop_to_type(self, AgriMitr_crop: str) -> Optional[CropType]:
         """Map AgriMitr crop names to our CropType enum"""
+=======
+            logger.error(f"Error creating AgriSens recommendation: {e}")
+            return None
+    
+    def _map_agrisens_crop_to_type(self, agrisens_crop: str) -> Optional[CropType]:
+        """Map AgriSens crop names to our CropType enum"""
+>>>>>>> upstream/main
         mapping = {
             'rice': CropType.RICE,
             'wheat': CropType.WHEAT,
@@ -368,10 +512,17 @@ class EnhancedCropSelectionAgent(BaseWorkerAgent):
             'coffee': CropType.OTHER
         }
         
+<<<<<<< HEAD
         return mapping.get(AgriMitr_crop.lower())
     
     def _analyze_npk_suitability(self, features: List[float]) -> Dict[str, str]:
         """Analyze NPK suitability based on AgriMitr standards"""
+=======
+        return mapping.get(agrisens_crop.lower())
+    
+    def _analyze_npk_suitability(self, features: List[float]) -> Dict[str, str]:
+        """Analyze NPK suitability based on AgriSens standards"""
+>>>>>>> upstream/main
         if len(features) < 3:
             return {"analysis": "insufficient_data"}
         
@@ -457,7 +608,11 @@ class EnhancedCropSelectionAgent(BaseWorkerAgent):
         reason_parts = []
         
         # ML confidence
+<<<<<<< HEAD
         reason_parts.append(f"AgriMitr ML model predicts {crop_name} with {confidence:.1%} confidence")
+=======
+        reason_parts.append(f"AgriSens ML model predicts {crop_name} with {confidence:.1%} confidence")
+>>>>>>> upstream/main
         
         # NPK analysis
         balance = npk_analysis.get('balance', 'unknown')
@@ -595,7 +750,11 @@ class EnhancedCropSelectionAgent(BaseWorkerAgent):
             return 0.3
         
         # Base confidence from ML model
+<<<<<<< HEAD
         ml_confidence = recommendations[0].AgriMitr_confidence if recommendations else 0.8
+=======
+        ml_confidence = recommendations[0].agrisens_confidence if recommendations else 0.8
+>>>>>>> upstream/main
         
         # Satellite data bonus
         satellite_bonus = 0.1 if satellite_data else 0.0
@@ -620,9 +779,15 @@ class EnhancedCropSelectionAgent(BaseWorkerAgent):
         """Get recommendations enhanced with satellite data"""
         return []
     
+<<<<<<< HEAD
     def _combine_ml_and_satellite_recommendations(self, AgriMitr_recs: List, satellite_recs: List, context: Dict, satellite_data: Optional[Dict]) -> List:
         """Combine ML and satellite recommendations"""
         return AgriMitr_recs  # Prioritize AgriMitr ML recommendations
+=======
+    def _combine_ml_and_satellite_recommendations(self, agrisens_recs: List, satellite_recs: List, context: Dict, satellite_data: Optional[Dict]) -> List:
+        """Combine ML and satellite recommendations"""
+        return agrisens_recs  # Prioritize AgriSens ML recommendations
+>>>>>>> upstream/main
     
     def _get_traditional_recommendations_with_satellite(self, context: Dict, satellite_data: Optional[Dict]) -> List:
         """Get traditional recommendations with satellite enhancement"""

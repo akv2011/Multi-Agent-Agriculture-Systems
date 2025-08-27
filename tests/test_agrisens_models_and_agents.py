@@ -1,7 +1,13 @@
 """
+<<<<<<< HEAD
 Test AgriMitr Models and Agents Functionality
 
 This script tests the following AgriMitr components:
+=======
+Test AgriSens Models and Agents Functionality
+
+This script tests the following AgriSens components:
+>>>>>>> upstream/main
 1. Disease Prediction Agent
 2. Crop Recommendation Agent
 3. Weather Forecast Functionality
@@ -34,8 +40,13 @@ from src.core.agriculture_models import (
 )
 
 
+<<<<<<< HEAD
 class TestAgriMitrModelsAndAgents(unittest.TestCase):
     """Test functionality of the main AgriMitr models and agents"""
+=======
+class TestAgriSensModelsAndAgents(unittest.TestCase):
+    """Test functionality of the main AgriSens models and agents"""
+>>>>>>> upstream/main
 
     def setUp(self):
         """Set up test environment with agent instances and sample queries"""
@@ -107,7 +118,11 @@ class TestAgriMitrModelsAndAgents(unittest.TestCase):
             self.fail(f"Agent query failed with error: {str(e)}")
             return None
 
+<<<<<<< HEAD
     @patch('src.models.AgriMitr_disease_identification.identify_disease_from_text')
+=======
+    @patch('src.models.agrisens_disease_identification.identify_disease_from_text')
+>>>>>>> upstream/main
     async def test_disease_prediction_agent(self, mock_identify):
         """Test disease prediction agent with text-based identification"""
         print("\n===== Testing Disease Prediction Agent =====")
@@ -127,7 +142,11 @@ class TestAgriMitrModelsAndAgents(unittest.TestCase):
         self.assertTrue(response.success)
         self.assertIn("Blight", str(response.data))
     
+<<<<<<< HEAD
     @patch('src.models.AgriMitr_crop_recommendation.AgriMitrCropModel.get_model')
+=======
+    @patch('src.models.agrisens_crop_recommendation.AgriSensCropModel.get_model')
+>>>>>>> upstream/main
     async def test_crop_recommendation_agent(self, mock_get_model):
         """Test crop recommendation agent"""
         print("\n===== Testing Crop Recommendation Agent =====")
@@ -181,7 +200,11 @@ class TestAgriMitrModelsAndAgents(unittest.TestCase):
         self.assertTrue(response.success)
         self.assertIn("temperature", str(response.data))
     
+<<<<<<< HEAD
     @patch('src.models.AgriMitr_irrigation_scheduling.IrrigationModel.get_model')
+=======
+    @patch('src.models.agrisens_irrigation_scheduling.IrrigationModel.get_model')
+>>>>>>> upstream/main
     async def test_irrigation_model(self, mock_get_model):
         """Test irrigation model integration"""
         print("\n===== Testing Irrigation Model Integration =====")
@@ -205,7 +228,11 @@ class TestAgriMitrModelsAndAgents(unittest.TestCase):
         self.assertTrue(response.success)
         self.assertIn("water", str(response.data).lower())
     
+<<<<<<< HEAD
     @patch('src.models.AgriMitr_market_timing.MarketTimingModel.get_model')
+=======
+    @patch('src.models.agrisens_market_timing.MarketTimingModel.get_model')
+>>>>>>> upstream/main
     async def test_market_timing_model(self, mock_get_model):
         """Test market timing model integration"""
         print("\n===== Testing Market Timing Model Integration =====")
@@ -236,7 +263,11 @@ class TestAgriMitrModelsAndAgents(unittest.TestCase):
 def run_tests():
     """Run all tests"""
     loader = unittest.TestLoader()
+<<<<<<< HEAD
     suite = loader.loadTestsFromTestCase(TestAgriMitrModelsAndAgents)
+=======
+    suite = loader.loadTestsFromTestCase(TestAgriSensModelsAndAgents)
+>>>>>>> upstream/main
     runner = unittest.TextTestRunner(verbosity=2)
     runner.run(suite)
 

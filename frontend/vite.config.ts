@@ -17,5 +17,17 @@ export default defineConfig(({ mode }) => {
       'import.meta.env.VITE_ENABLE_MULTILINGUAL_SUPPORT': JSON.stringify(env.VITE_ENABLE_MULTILINGUAL_SUPPORT || false),
       'import.meta.env.VITE_ANALYTICS_KEY': JSON.stringify(env.VITE_ANALYTICS_KEY || ''),
     },
+    server: {
+      proxy: {
+        '/api': {
+          target: 'http://localhost:8000',
+          changeOrigin: true
+        },
+        '/ws': {
+          target: 'ws://localhost:8000',
+          ws: true
+        }
+      }
+    }
   }
 })

@@ -2,7 +2,7 @@
 Crop Selection Agent
 Specialized agent for recommending optimal crop varieties based on location, soil, and weather conditions.
 Provides yield predictions and cultivation advice with satellite data integration.
-Enhanced with AgriMitr ML models (99.55% accuracy Random Forest).
+Enhanced with AgriSens ML models (99.55% accuracy Random Forest).
 """
 
 import asyncio
@@ -14,10 +14,10 @@ import json
 
 from .base_agent import BaseWorkerAgent
 from .satellite_integration import get_satellite_data_for_location, format_satellite_summary
-# AgriMitr Integration
-from ..models.AgriMitr_crop_recommendation import (
-    AgriMitrCropModel, AgriMitrRecommendation, NPKAnalysis,
-    get_crop_recommendation_model, analyze_npk_data, enhance_crop_selection_with_AgriMitr
+# AgriSens Integration
+from ..models.agrisens_crop_recommendation import (
+    AgriSensCropModel, AgriSensRecommendation, NPKAnalysis,
+    get_crop_recommendation_model, analyze_npk_data, enhance_crop_selection_with_agrisens
 )
 from ..core.agriculture_models import (
     AgricultureQuery, AgentResponse, CropType, SoilType, SeasonType, 
@@ -466,13 +466,13 @@ class CropSelectionAgent(BaseWorkerAgent):
                 context["soil_type"] = soil_type
                 break
         
-        # **AgriMitr INTEGRATION**: Enhance context with NPK data
+        # **AGRISENS INTEGRATION**: Enhance context with NPK data
         context = self._enhance_context_with_npk_data(context)
         
         return context
     
     async def _generate_crop_recommendations(self, context: Dict[str, Any], satellite_data: Optional[Dict] = None) -> List[CropRecommendation]:
-        """Generate crop recommendations based on context and satellite data with AgriMitr ML integration"""
+        """Generate crop recommendations based on context and satellite data with AgriSens ML integration"""
         recommendations = []
         
         # Determine current season if not specified
@@ -483,49 +483,49 @@ class CropSelectionAgent(BaseWorkerAgent):
             elif current_month in [4, 5, 6, 7, 8, 9]:
                 context["season"] = SeasonType.KHARIF
         
-        # **AgriMitr INTEGRATION**: Get ML-based crop recommendation first
-        AgriMitr_recommendation = None
+        # **AGRISENS INTEGRATION**: Get ML-based crop recommendation first
+        agrisens_recommendation = None
         try:
             if context.get("soil_data") and context.get("weather_data"):
-                logger.info("Using AgriMitr ML model for enhanced crop recommendation")
+                logger.info("Using AgriSens ML model for enhanced crop recommendation")
                 # Import here to avoid circular dependencies
-                from ..models.AgriMitr_crop_recommendation import enhance_crop_selection_with_AgriMitr
+                from ..models.agrisens_crop_recommendation import enhance_crop_selection_with_agrisens
                 
-                AgriMitr_recommendation = enhance_crop_selection_with_AgriMitr(
+                agrisens_recommendation = enhance_crop_selection_with_agrisens(
                     location_data=context.get("location_data", {}),
                     soil_data=context["soil_data"],
                     weather_data=context["weather_data"],
                     satellite_data=satellite_data
                 )
-                logger.info(f"AgriMitr ML recommendation: {AgriMitr_recommendation.crop} ({AgriMitr_recommendation.confidence:.2%})")
+                logger.info(f"AgriSens ML recommendation: {agrisens_recommendation.crop} ({agrisens_recommendation.confidence:.2%})")
         except Exception as e:
-            logger.warning(f"AgriMitr ML recommendation failed: {e}")
+            logger.warning(f"AgriSens ML recommendation failed: {e}")
         
         # If specific crop requested, focus on that
         if context["specific_crop"]:
             crop_recommendations = self._analyze_specific_crop(
-                context["specific_crop"], context, satellite_data, AgriMitr_recommendation
+                context["specific_crop"], context, satellite_data, agrisens_recommendation
             )
             recommendations.extend(crop_recommendations)
         else:
             # General recommendations based on season and location
             for crop_type, crop_data in self.crop_database.items():
                 if context["season"] in crop_data["seasons"]:
-                    crop_recommendations = self._analyze_specific_crop(crop_type, context, satellite_data, AgriMitr_recommendation)
+                    crop_recommendations = self._analyze_specific_crop(crop_type, context, satellite_data, agrisens_recommendation)
                     recommendations.extend(crop_recommendations)
         
-        # If AgriMitr provided a recommendation, boost its priority
-        if AgriMitr_recommendation:
-            self._boost_AgriMitr_recommendation(recommendations, AgriMitr_recommendation)
+        # If AgriSens provided a recommendation, boost its priority
+        if agrisens_recommendation:
+            self._boost_agrisens_recommendation(recommendations, agrisens_recommendation)
         
-        # Sort by suitability score (enhanced with satellite data and AgriMitr)
+        # Sort by suitability score (enhanced with satellite data and AgriSens)
         recommendations.sort(key=lambda x: x.suitability_score, reverse=True)
         
         # Return top 5 recommendations
         return recommendations[:5]
     
-    def _analyze_specific_crop(self, crop_type: CropType, context: Dict[str, Any], satellite_data: Optional[Dict] = None, AgriMitr_recommendation: Optional[Any] = None) -> List[CropRecommendation]:
-        """Analyze suitability of a specific crop type with satellite data and AgriMitr ML"""
+    def _analyze_specific_crop(self, crop_type: CropType, context: Dict[str, Any], satellite_data: Optional[Dict] = None, agrisens_recommendation: Optional[Any] = None) -> List[CropRecommendation]:
+        """Analyze suitability of a specific crop type with satellite data and AgriSens ML"""
         recommendations = []
         
         if crop_type not in self.crop_database:
@@ -538,10 +538,10 @@ class CropSelectionAgent(BaseWorkerAgent):
                 variety_data, context, satellite_data
             )
             
-            # **AgriMitr ENHANCEMENT**: Boost score if AgriMitr ML recommends this crop
-            if AgriMitr_recommendation and self._matches_AgriMitr_crop(crop_type, AgriMitr_recommendation):
-                logger.info(f"Boosting {crop_type.value} score due to AgriMitr ML recommendation")
-                suitability_score = min(1.0, suitability_score * 1.2 + AgriMitr_recommendation.confidence * 0.3)
+            # **AGRISENS ENHANCEMENT**: Boost score if AgriSens ML recommends this crop
+            if agrisens_recommendation and self._matches_agrisens_crop(crop_type, agrisens_recommendation):
+                logger.info(f"Boosting {crop_type.value} score due to AgriSens ML recommendation")
+                suitability_score = min(1.0, suitability_score * 1.2 + agrisens_recommendation.confidence * 0.3)
             
             if suitability_score > 0.3:  # Only include reasonably suitable crops
                 recommendation = CropRecommendation(
@@ -555,7 +555,7 @@ class CropSelectionAgent(BaseWorkerAgent):
                     market_demand=variety_data["market_demand"],
                     risk_factors=self._identify_risk_factors(variety_data, context, satellite_data),
                     cultivation_tips=self._generate_cultivation_tips(variety_data, context, satellite_data),
-                    reason=self._generate_recommendation_reason(variety_data, context, suitability_score, satellite_data, AgriMitr_recommendation)
+                    reason=self._generate_recommendation_reason(variety_data, context, suitability_score, satellite_data, agrisens_recommendation)
                 )
                 recommendations.append(recommendation)
         
@@ -847,20 +847,20 @@ class CropSelectionAgent(BaseWorkerAgent):
         
         return summary
     
-    def _boost_AgriMitr_recommendation(self, recommendations: List[CropRecommendation], AgriMitr_recommendation: Any):
-        """Boost the priority of AgriMitr ML recommended crops"""
+    def _boost_agrisens_recommendation(self, recommendations: List[CropRecommendation], agrisens_recommendation: Any):
+        """Boost the priority of AgriSens ML recommended crops"""
         for rec in recommendations:
-            if self._matches_AgriMitr_crop(rec.crop_type, AgriMitr_recommendation):
+            if self._matches_agrisens_crop(rec.crop_type, agrisens_recommendation):
                 rec.suitability_score = min(1.0, rec.suitability_score * 1.15)
-                rec.reason += f" (Enhanced by AgriMitr ML: {AgriMitr_recommendation.confidence:.1%} confidence)"
+                rec.reason += f" (Enhanced by AgriSens ML: {agrisens_recommendation.confidence:.1%} confidence)"
     
-    def _matches_AgriMitr_crop(self, crop_type: CropType, AgriMitr_recommendation: Any) -> bool:
-        """Check if crop type matches AgriMitr recommendation"""
-        if not AgriMitr_recommendation:
+    def _matches_agrisens_crop(self, crop_type: CropType, agrisens_recommendation: Any) -> bool:
+        """Check if crop type matches AgriSens recommendation"""
+        if not agrisens_recommendation:
             return False
         
-        # Map AgriMitr crop names to our CropType enum
-        AgriMitr_crop_mapping = {
+        # Map AgriSens crop names to our CropType enum
+        agrisens_crop_mapping = {
             'Rice': CropType.RICE,
             'Wheat': CropType.WHEAT,
             'Cotton': CropType.COTTON,
@@ -871,11 +871,11 @@ class CropSelectionAgent(BaseWorkerAgent):
             'Black Gram': CropType.PULSES,
         }
         
-        AgriMitr_crop_type = AgriMitr_crop_mapping.get(AgriMitr_recommendation.crop)
-        return AgriMitr_crop_type == crop_type
+        agrisens_crop_type = agrisens_crop_mapping.get(agrisens_recommendation.crop)
+        return agrisens_crop_type == crop_type
     
     def _enhance_context_with_npk_data(self, context: Dict[str, Any]) -> Dict[str, Any]:
-        """Enhance context with NPK data for AgriMitr integration"""
+        """Enhance context with NPK data for AgriSens integration"""
         if not context.get("soil_data"):
             # Provide default NPK values if not available
             context["soil_data"] = {

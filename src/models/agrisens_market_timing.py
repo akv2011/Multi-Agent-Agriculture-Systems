@@ -1,5 +1,9 @@
 """
+<<<<<<< HEAD
 AgriMitr Market Timing Model
+=======
+AgriSens Market Timing Model
+>>>>>>> upstream/main
 ===========================
 
 Advanced predictive model for agricultural market analysis and optimal selling time determination.
@@ -64,7 +68,11 @@ class MarketTimingModel:
     
     def __init__(self):
         """Initialize the market timing model"""
+<<<<<<< HEAD
         logger.info("Initializing AgriMitr Market Timing Model")
+=======
+        logger.info("Initializing AgriSens Market Timing Model")
+>>>>>>> upstream/main
         
     def forecast_price_trends(self, 
                             crop_type: str,
