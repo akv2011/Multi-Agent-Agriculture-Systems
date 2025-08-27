@@ -296,6 +296,111 @@
   100% { transform: rotate(360deg); }
 }
 
+/* Modal Styles */
+.add-product-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.55);
+  backdrop-filter: blur(6px) saturate(140%);
+  -webkit-backdrop-filter: blur(6px) saturate(140%);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 48px 24px 64px;
+  overflow-y: auto;
+  z-index: 2000;
+}
+
+.add-product-modal {
+  width: 100%;
+  max-width: 1120px;
+  background: #ffffff;
+  border-radius: 28px;
+  box-shadow: 0 24px 60px -10px rgba(0,0,0,0.35), 0 4px 16px rgba(0,0,0,0.15);
+  position: relative;
+  animation: modalIn 0.45s cubic-bezier(.16,.84,.44,1) both;
+  overflow: hidden;
+}
+
+@keyframes modalIn {
+  0% { opacity: 0; transform: translateY(24px) scale(.97); }
+  60% { opacity: 1; transform: translateY(-4px) scale(1.005); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 32px 12px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 600;
+  letter-spacing: .5px;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+
+.modal-close-btn {
+  appearance: none;
+  border: none;
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+  width: 42px;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  font-weight: 600;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all .25s ease;
+  backdrop-filter: blur(4px);
+}
+
+.modal-close-btn:hover {
+  background: rgba(255,255,255,0.25);
+  transform: rotate(90deg);
+}
+
+.modal-close-btn:focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 2px;
+}
+
+/* Adjust internal padding when used as modal */
+.add-product-modal .product-form { padding: 0 32px 32px 32px; }
+.add-product-modal .form-grid { margin-top: 8px; }
+.add-product-modal .success-message,
+.add-product-modal .error-message { margin-left: 32px; margin-right: 32px; }
+
+/* Scrollbar styling inside modal */
+.add-product-modal-overlay::-webkit-scrollbar { width: 10px; }
+.add-product-modal-overlay::-webkit-scrollbar-track { background: transparent; }
+.add-product-modal-overlay::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.25); border-radius: 20px; }
+.add-product-modal-overlay::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.4); }
+
+/* Mobile tweaks for modal */
+@media (max-width: 900px) {
+  .add-product-modal { border-radius: 22px; }
+  .modal-header { padding: 18px 22px 10px; }
+  .add-product-modal .product-form { padding: 0 22px 26px; }
+  .modal-close-btn { width: 38px; height: 38px; }
+}
+
+@media (max-width: 640px) {
+  .add-product-modal-overlay { padding: 32px 12px 48px; }
+  .add-product-modal { border-radius: 20px; }
+  .modal-header h2 { font-size: 1.2rem; }
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .add-product-page {

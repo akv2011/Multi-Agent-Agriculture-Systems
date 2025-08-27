@@ -1,17 +1,35 @@
 import { createBrowserRouter } from "react-router-dom";
-import AgentsPage from "./components/AgentsPage";
-import EnhancedAgentsPage from "./components/EnhancedAgentsPage";
-import Layout from "./components/Layout";
-import DashboardPage from "./components/DashboardPage";
-import WorkflowsPage from "./components/WorkflowsPage";
-import ReportsPage from "./components/ReportsPage";
-import StatisticsPage from "./components/StatisticsPage";
-import MarketplacePage from "./components/MarketplacePage";
-import BusinessIntelligencePage from "./components/BusinessIntelligencePage";
-import AddProductPage from "./components/AddProductPage";
-import FarmerProfilePage from "./components/FarmerProfilePage";
-import DemoPage from "./pages/DemoPage";
+import React, { Suspense, lazy } from 'react';
 import App from "./App";
+import ErrorBoundary from "./components/ErrorBoundary";
+
+// Replace direct imports with lazy for code-splitting
+const AgentsPage = lazy(() => import('./components/AgentsPage'));
+const EnhancedAgentsPage = lazy(() => import('./components/EnhancedAgentsPage'));
+const Layout = lazy(() => import('./components/Layout'));
+const DashboardPage = lazy(() => import('./components/DashboardPage'));
+const WorkflowsPage = lazy(() => import('./components/WorkflowsPage'));
+const ReportsPage = lazy(() => import('./components/ReportsPage'));
+const StatisticsPage = lazy(() => import('./components/StatisticsPage'));
+const MarketplacePage = lazy(() => import('./components/MarketplacePage'));
+const BusinessIntelligencePage = lazy(() => import('./components/BusinessIntelligencePage'));
+const AddProductPage = lazy(() => import('./components/AddProductPage'));
+const FarmerProfilePage = lazy(() => import('./components/FarmerProfilePage'));
+const DemoPage = lazy(() => import('./pages/DemoPage'));
+
+// Helper wrapper to avoid repeating Suspense fallback
+const withFallback = (element: React.ReactNode) => (
+  <ErrorBoundary>
+    <Suspense fallback={
+      <div className="route-fallback">
+        <div className="loading-spinner"></div>
+        <p>Loading page...</p>
+      </div>
+    }>
+      {element}
+    </Suspense>
+  </ErrorBoundary>
+);
 
 const router = createBrowserRouter([
   {
@@ -20,52 +38,19 @@ const router = createBrowserRouter([
     children: [
       {
         path: "",
-        element: <Layout />,
+        element: withFallback(<Layout />),
         children: [
-          {
-            index: true,
-            element: <DashboardPage />,
-          },
-          {
-            path: "agents",
-            element: <EnhancedAgentsPage />,
-          },
-          {
-            path: "agents-old",
-            element: <AgentsPage />,
-          },
-          {
-            path: "workflows",
-            element: <WorkflowsPage />,
-          },
-          {
-            path: "reports",
-            element: <ReportsPage />,
-          },
-          {
-            path: "statistics",
-            element: <StatisticsPage />,
-          },
-          {
-            path: "marketplace",
-            element: <MarketplacePage />,
-          },
-          {
-            path: "marketplace/add-product",
-            element: <AddProductPage />,
-          },
-          {
-            path: "farmer-profiles",
-            element: <FarmerProfilePage />,
-          },
-          {
-            path: "business-intelligence",
-            element: <BusinessIntelligencePage />,
-          },
-          {
-            path: "demo",
-            element: <DemoPage />,
-          },
+          { index: true, element: withFallback(<DashboardPage />) },
+          { path: "agents", element: withFallback(<EnhancedAgentsPage />) },
+          { path: "agents-old", element: withFallback(<AgentsPage />) },
+          { path: "workflows", element: withFallback(<WorkflowsPage />) },
+          { path: "reports", element: withFallback(<ReportsPage />) },
+          { path: "statistics", element: withFallback(<StatisticsPage />) },
+          { path: "marketplace", element: withFallback(<MarketplacePage />) },
+          { path: "marketplace/add-product", element: withFallback(<AddProductPage />) },
+          { path: "farmer-profiles", element: withFallback(<FarmerProfilePage />) },
+          { path: "business-intelligence", element: withFallback(<BusinessIntelligencePage />) },
+          { path: "demo", element: withFallback(<DemoPage />) },
         ],
       }
     ]

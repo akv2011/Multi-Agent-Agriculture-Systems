@@ -25,32 +25,32 @@ const AgentList: React.FC<AgentListProps> = ({ agents, onAgentClick }) => {
   const getStatusIcon = (status: Agent['status']) => {
     switch (status) {
       case 'idle':
-        return '🟡';
+        return '●';
       case 'running':
-        return '🟢';
+        return '●';
       case 'busy':
-        return '🔵';
+        return '●';
       case 'error':
-        return '🔴';
+        return '●';
       case 'offline':
-        return '⚫';
+        return '●';
       default:
-        return '❓';
+        return '●';
     }
   };
 
   const getStatusColor = (status: Agent['status']) => {
     switch (status) {
       case 'idle':
-        return '#ffd60a';
+        return '#fbbf24';
       case 'running':
-        return '#06ffa5';
+        return '#10b981';
       case 'busy':
-        return '#0066ff';
+        return '#3b82f6';
       case 'error':
-        return '#ff4757';
+        return '#ef4444';
       case 'offline':
-        return '#747d8c';
+        return '#6b7280';
       default:
         return '#cccccc';
     }
