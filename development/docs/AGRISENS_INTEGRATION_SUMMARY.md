@@ -1,7 +1,14 @@
+<<<<<<< HEAD
+# AgriMitr Integration into Multi-Agent Agriculture Systems
+
+## Overview
+This document summarizes the complete integration of AgriMitr AI models into the Multi-Agent Agriculture Systems framework. AgriMitr provides advanced machine learning models for crop recommendation, disease identification, irrigation scheduling, fertilizer recommendation, weather forecasting, and smart farming guidance, all of which have been successfully integrated into the existing agent framework.
+=======
 # AgriSens Integration into Multi-Agent Agriculture Systems
 
 ## Overview
 This document summarizes the complete integration of AgriSens AI models into the Multi-Agent Agriculture Systems framework. AgriSens provides advanced machine learning models for crop recommendation, disease identification, irrigation scheduling, fertilizer recommendation, weather forecasting, and smart farming guidance, all of which have been successfully integrated into the existing agent framework.
+>>>>>>> upstream/main
 
 ## Integrated Models
 
@@ -9,26 +16,42 @@ This document summarizes the complete integration of AgriSens AI models into the
 - **Algorithm**: Random Forest (99.55% accuracy)
 - **Input**: NPK analysis, soil data, climate factors
 - **Output**: Optimal crop recommendations
+<<<<<<< HEAD
+- **File**: `src/models/AgriMitr_crop_recommendation.py`
+=======
 - **File**: `src/models/agrisens_crop_recommendation.py`
+>>>>>>> upstream/main
 
 ### 2. Disease Identification Model
 - **Algorithm**: Convolutional Neural Networks (CNN)
 - **Coverage**: 38 diseases across 14 crops
 - **Input**: Plant images or symptom descriptions
 - **Output**: Disease identification with treatment recommendations
+<<<<<<< HEAD
+- **File**: `src/models/AgriMitr_disease_identification.py`
+=======
 - **File**: `src/models/agrisens_disease_identification.py`
+>>>>>>> upstream/main
 
 ### 3. Irrigation Scheduling Model
 - **Algorithm**: Machine learning model with hydrological calculations
 - **Input**: Soil moisture, weather forecasts, crop type, growth stage
 - **Output**: Optimized irrigation schedules
+<<<<<<< HEAD
+- **File**: `src/models/AgriMitr_irrigation_scheduling.py`
+=======
 - **File**: `src/models/agrisens_irrigation_scheduling.py`
+>>>>>>> upstream/main
 
 ### 4. Fertilizer Recommendation Model
 - **Algorithm**: Machine learning model with soil science heuristics
 - **Input**: NPK values, soil type, crop requirements
 - **Output**: Optimal fertilizer recommendations with application guidance
+<<<<<<< HEAD
+- **File**: `src/models/AgriMitr_fertilizer_recommendation.py`
+=======
 - **File**: `src/models/agrisens_fertilizer_recommendation.py`
+>>>>>>> upstream/main
 
 ### 5. Weather Forecast Integration
 - **Integration**: External weather APIs with agricultural context
@@ -40,22 +63,38 @@ This document summarizes the complete integration of AgriSens AI models into the
 
 ### 1. Enhanced Irrigation Agent
 - **Functionality**: Creates precision irrigation schedules
+<<<<<<< HEAD
+- **Integration**: Uses AgriMitr irrigation model with satellite data
+=======
 - **Integration**: Uses AgriSens irrigation model with satellite data
+>>>>>>> upstream/main
 - **File**: `src/agents/irrigation_agent.py`
 
 ### 2. Enhanced Crop Selection Agent
 - **Functionality**: Recommends optimal crops based on soil and climate
+<<<<<<< HEAD
+- **Integration**: Uses AgriMitr crop recommendation model
+=======
 - **Integration**: Uses AgriSens crop recommendation model
+>>>>>>> upstream/main
 - **File**: `src/agents/crop_selection_agent.py`
 
 ### 3. Disease Identification Agent
 - **Functionality**: Identifies plant diseases from images and provides treatment recommendations
+<<<<<<< HEAD
+- **Integration**: Uses AgriMitr CNN model with support for both image and text-based identification
+=======
 - **Integration**: Uses AgriSens CNN model with support for both image and text-based identification
+>>>>>>> upstream/main
 - **File**: `src/agents/disease_identification_agent.py`
 
 ### 4. Fertilizer Recommendation Agent
 - **Functionality**: Recommends optimal fertilizers based on soil analysis
+<<<<<<< HEAD
+- **Integration**: Uses AgriMitr fertilizer model with NPK analysis
+=======
 - **Integration**: Uses AgriSens fertilizer model with NPK analysis
+>>>>>>> upstream/main
 - **File**: `src/agents/fertilizer_recommendation_agent.py`
 
 ### 5. Weather Forecast Agent
@@ -95,6 +134,16 @@ This document summarizes the complete integration of AgriSens AI models into the
 
 ## Demo and Documentation
 
+<<<<<<< HEAD
+1. **End-to-End Demo**: `AgriMitr_demo_updated.py`
+   - Showcases all integrated AgriMitr features
+   - Includes examples for each agent type
+
+2. **Documentation**:
+   - `AgriMitr_INTEGRATION_README_UPDATED.md`: Complete integration documentation
+   - `tasks/AgriMitr_integration_tasks_final_status.md`: Task completion status
+   - `docs/AgriMitr_INTEGRATION_SUMMARY.md`: This summary document
+=======
 1. **End-to-End Demo**: `agrisens_demo_updated.py`
    - Showcases all integrated AgriSens features
    - Includes examples for each agent type
@@ -103,6 +152,7 @@ This document summarizes the complete integration of AgriSens AI models into the
    - `AGRISENS_INTEGRATION_README_UPDATED.md`: Complete integration documentation
    - `tasks/agrisens_integration_tasks_final_status.md`: Task completion status
    - `docs/AGRISENS_INTEGRATION_SUMMARY.md`: This summary document
+>>>>>>> upstream/main
 
 ## Integration Status and Next Steps
 
@@ -129,12 +179,21 @@ This document summarizes the complete integration of AgriSens AI models into the
    - Create Docker configurations for all components
    - Implement CI/CD pipeline and monitoring
 
+<<<<<<< HEAD
+The integration of AgriMitr AI models has significantly enhanced the Multi-Agent Agriculture Systems platform, providing farmers with comprehensive AI-powered agricultural advisory services through a unified interface. All core functionalities have been successfully implemented and tested, with a clear roadmap for future enhancements.
+
+## Demo
+
+An AgriMitr demo script has been created to showcase the integrated models in action:
+- **File**: `AgriMitr_demo.py`
+=======
 The integration of AgriSens AI models has significantly enhanced the Multi-Agent Agriculture Systems platform, providing farmers with comprehensive AI-powered agricultural advisory services through a unified interface. All core functionalities have been successfully implemented and tested, with a clear roadmap for future enhancements.
 
 ## Demo
 
 An AgriSens demo script has been created to showcase the integrated models in action:
 - **File**: `agrisens_demo.py`
+>>>>>>> upstream/main
 - **Features**: 
   - Crop recommendation for different locations
   - Irrigation scheduling for different crops
@@ -142,15 +201,26 @@ An AgriSens demo script has been created to showcase the integrated models in ac
 
 ## Running the Demo
 
+<<<<<<< HEAD
+To run the AgriMitr integration demo:
+
+```bash
+./AgriMitr_demo.py
+=======
 To run the AgriSens integration demo:
 
 ```bash
 ./agrisens_demo.py
+>>>>>>> upstream/main
 ```
 
 ## Next Steps
 
 1. Further enhance models with local data calibration
 2. Add fertilizer recommendation model
+<<<<<<< HEAD
+3. Create a unified dashboard for all AgriMitr model outputs
+=======
 3. Create a unified dashboard for all AgriSens model outputs
+>>>>>>> upstream/main
 4. Integrate weather forecasting for improved predictions

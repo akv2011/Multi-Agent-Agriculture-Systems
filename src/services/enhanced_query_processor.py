@@ -10,7 +10,12 @@ from datetime import datetime
 from typing import Dict, Any, List, Optional, Tuple
 import logging
 
+<<<<<<< HEAD
+from src.models.agriculture import AgricultureQuery
+from src.core.agriculture_models import AgentResponse
+=======
 from src.core.agriculture_models import AgricultureQuery, AgentResponse
+>>>>>>> upstream/main
 from src.services.agriculture_integration import AgricultureIntegrationService
 from src.services.websocket_integration import integration_service
 from src.services.response_formatter import response_formatter
@@ -406,19 +411,31 @@ class EnhancedQueryProcessor:
             if primary_agent_response:
                 formatted_response = response_formatter.format_structured_ai_response(
                     primary_agent_response, 
+<<<<<<< HEAD
+                    query_analysis
+=======
                     response.agent_analysis.get("query_analysis", {})
+>>>>>>> upstream/main
                 )
             else:
                 # Fallback to regular formatting
                 formatted_response = response_formatter.format_comprehensive_response(
                     raw_response_text, 
+<<<<<<< HEAD
+                    query_analysis
+=======
                     response.agent_analysis.get("query_analysis", {})
+>>>>>>> upstream/main
                 )
         else:
             # Use regular formatting for specialist agents
             formatted_response = response_formatter.format_comprehensive_response(
                 raw_response_text, 
+<<<<<<< HEAD
+                query_analysis
+=======
                 response.agent_analysis.get("query_analysis", {})
+>>>>>>> upstream/main
             )
         
         # Generate comprehensive recommendations

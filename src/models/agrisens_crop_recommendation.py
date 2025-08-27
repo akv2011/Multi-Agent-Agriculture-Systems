@@ -1,5 +1,9 @@
 """
+<<<<<<< HEAD
+AgriMitr Crop Recommendation Integration
+=======
 AgriSens Crop Recommendation Integration
+>>>>>>> upstream/main
 High-accuracy Random Forest model with NPK analysis (99.55% accuracy)
 """
 
@@ -27,8 +31,13 @@ class NPKAnalysis:
     soil_health_score: float
 
 @dataclass
+<<<<<<< HEAD
+class AgriMitrRecommendation:
+    """AgriMitr ML crop recommendation"""
+=======
 class AgriSensRecommendation:
     """AgriSens ML crop recommendation"""
+>>>>>>> upstream/main
     crop: str
     confidence: float
     npk_analysis: NPKAnalysis
@@ -36,8 +45,13 @@ class AgriSensRecommendation:
     accuracy: float
     satellite_enhancement: Optional[Dict[str, Any]] = None
 
+<<<<<<< HEAD
+class AgriMitrCropModel:
+    """AgriMitr crop recommendation model wrapper"""
+=======
 class AgriSensCropModel:
     """AgriSens crop recommendation model wrapper"""
+>>>>>>> upstream/main
     
     def __init__(self):
         self.models = {}
@@ -67,8 +81,13 @@ class AgriSensCropModel:
         self._load_models()
     
     def _load_models(self):
+<<<<<<< HEAD
+        """Load pre-trained AgriMitr ML models"""
+        model_path = "/home/hari/Music/Multi-Agent-Agriculture-Systems/models/AgriMitr/CROP-RECOMMENDATION"
+=======
         """Load pre-trained AgriSens ML models"""
         model_path = "/home/hari/Music/Multi-Agent-Agriculture-Systems/models/agrisens/CROP-RECOMMENDATION"
+>>>>>>> upstream/main
         
         model_files = {
             'RandomForest': 'RF.pkl',
@@ -86,16 +105,26 @@ class AgriSensCropModel:
             except Exception as e:
                 logger.warning(f"Could not load {model_name}: {e}")
     
+<<<<<<< HEAD
+    def predict_crop(self, npk_data: Dict[str, float], use_ensemble: bool = True) -> AgriMitrRecommendation:
+        """
+        Predict optimal crop using AgriMitr ML models
+=======
     def predict_crop(self, npk_data: Dict[str, float], use_ensemble: bool = True) -> AgriSensRecommendation:
         """
         Predict optimal crop using AgriSens ML models
+>>>>>>> upstream/main
         
         Args:
             npk_data: Dict with keys: N, P, K, temperature, humidity, ph, rainfall
             use_ensemble: Whether to use ensemble of models or just RandomForest
         
         Returns:
+<<<<<<< HEAD
+            AgriMitrRecommendation with crop prediction and analysis
+=======
             AgriSensRecommendation with crop prediction and analysis
+>>>>>>> upstream/main
         """
         # Prepare input data
         features = np.array([[
@@ -113,7 +142,11 @@ class AgriSensCropModel:
         else:
             return self._single_model_prediction(features, npk_data, 'RandomForest')
     
+<<<<<<< HEAD
+    def _ensemble_prediction(self, features: np.ndarray, npk_data: Dict[str, float]) -> AgriMitrRecommendation:
+=======
     def _ensemble_prediction(self, features: np.ndarray, npk_data: Dict[str, float]) -> AgriSensRecommendation:
+>>>>>>> upstream/main
         """Use ensemble of models for prediction"""
         predictions = {}
         
@@ -156,7 +189,11 @@ class AgriSensCropModel:
         # Perform NPK analysis
         npk_analysis = self._analyze_npk(npk_data, final_crop)
         
+<<<<<<< HEAD
+        return AgriMitrRecommendation(
+=======
         return AgriSensRecommendation(
+>>>>>>> upstream/main
             crop=self.crop_mapping.get(final_crop, final_crop.title()),
             confidence=final_confidence,
             npk_analysis=npk_analysis,
@@ -164,7 +201,11 @@ class AgriSensCropModel:
             accuracy=max(self.model_accuracies.values())
         )
     
+<<<<<<< HEAD
+    def _single_model_prediction(self, features: np.ndarray, npk_data: Dict[str, float], model_name: str) -> AgriMitrRecommendation:
+=======
     def _single_model_prediction(self, features: np.ndarray, npk_data: Dict[str, float], model_name: str) -> AgriSensRecommendation:
+>>>>>>> upstream/main
         """Use single model for prediction"""
         model = self.models[model_name]
         prediction = model.predict(features)[0]
@@ -179,7 +220,11 @@ class AgriSensCropModel:
         # Perform NPK analysis
         npk_analysis = self._analyze_npk(npk_data, prediction)
         
+<<<<<<< HEAD
+        return AgriMitrRecommendation(
+=======
         return AgriSensRecommendation(
+>>>>>>> upstream/main
             crop=self.crop_mapping.get(prediction, prediction.title()),
             confidence=confidence,
             npk_analysis=npk_analysis,
@@ -271,6 +316,18 @@ class AgriSensCropModel:
             return max(0.0, 1.0 - (ph - 7.5) / 2.5)
 
 # Global instance
+<<<<<<< HEAD
+_AgriMitr_crop_model = None
+
+def get_AgriMitr_crop_model() -> AgriMitrCropModel:
+    """Get singleton instance of AgriMitr crop model"""
+    global _AgriMitr_crop_model
+    if _AgriMitr_crop_model is None:
+        _AgriMitr_crop_model = AgriMitrCropModel()
+    return _AgriMitr_crop_model
+
+def enhance_crop_selection_with_AgriMitr(
+=======
 _agrisens_crop_model = None
 
 def get_agrisens_crop_model() -> AgriSensCropModel:
@@ -281,13 +338,20 @@ def get_agrisens_crop_model() -> AgriSensCropModel:
     return _agrisens_crop_model
 
 def enhance_crop_selection_with_agrisens(
+>>>>>>> upstream/main
     location_data: Dict[str, Any],
     soil_data: Dict[str, Any],
     weather_data: Dict[str, Any],
     satellite_data: Optional[Dict[str, Any]] = None
+<<<<<<< HEAD
+) -> AgriMitrRecommendation:
+    """
+    Enhance crop selection using AgriMitr ML models
+=======
 ) -> AgriSensRecommendation:
     """
     Enhance crop selection using AgriSens ML models
+>>>>>>> upstream/main
     
     Args:
         location_data: Location information (lat, lon, etc.)
@@ -296,9 +360,15 @@ def enhance_crop_selection_with_agrisens(
         satellite_data: Optional satellite data for enhancement
     
     Returns:
+<<<<<<< HEAD
+        AgriMitrRecommendation with ML-based crop recommendation
+    """
+    model = get_AgriMitr_crop_model()
+=======
         AgriSensRecommendation with ML-based crop recommendation
     """
     model = get_agrisens_crop_model()
+>>>>>>> upstream/main
     
     # Prepare NPK data for prediction
     npk_data = {
@@ -329,6 +399,10 @@ def enhance_crop_selection_with_agrisens(
         elif satellite_data.get('vegetation_health', 0) < 0.4:
             recommendation.confidence *= 0.9  # Reduce confidence for poor areas
     
+<<<<<<< HEAD
+    logger.info(f"AgriMitr prediction: {recommendation.crop} (confidence: {recommendation.confidence:.2%})")
+=======
     logger.info(f"AgriSens prediction: {recommendation.crop} (confidence: {recommendation.confidence:.2%})")
+>>>>>>> upstream/main
     
     return recommendation

@@ -1,6 +1,10 @@
 """
 Google Search Service for the Multi-Agent Agriculture System
+<<<<<<< HEAD
+Provides fallback search capabilities for queries that can't be answered by the AgriMitr models
+=======
 Provides fallback search capabilities for queries that can't be answered by the AgriSens models
+>>>>>>> upstream/main
 """
 
 import logging
