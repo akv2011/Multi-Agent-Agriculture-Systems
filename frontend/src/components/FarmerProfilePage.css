@@ -748,8 +748,9 @@
 
 .leaderboard-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
-  gap: 25px;
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+  gap: 30px;
+  padding: 20px 0;
 }
 
 .leaderboard-item {
@@ -758,11 +759,12 @@
   border-radius: 20px;
   padding: 30px;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 25px;
   transition: all 0.3s ease;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
+  min-height: 180px;
 }
 
 .leaderboard-item::before {
@@ -856,10 +858,34 @@
 .verification-badge {
   background: rgba(16, 185, 129, 0.1);
   color: #10b981;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 0.8rem;
+  padding: 8px 15px;
+  border-radius: 25px;
+  font-size: 0.85rem;
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  margin-top: 10px;
+}
+
+.verification-badge.pending {
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+  border-color: rgba(245, 158, 11, 0.2);
+}
+
+.verification-badge.rejected {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.verification-badge.not_submitted {
+  background: rgba(107, 114, 128, 0.1);
+  color: #6b7280;
+  border-color: rgba(107, 114, 128, 0.2);
 }
 
 .rank-badge {
@@ -871,23 +897,33 @@
 
 .farmer-info-leaderboard {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .farmer-info-leaderboard h4 {
-  margin: 0 0 10px 0;
+  margin: 0;
   color: #2c3e50;
   font-size: 1.3rem;
   font-weight: 600;
+  line-height: 1.2;
 }
 
 .farmer-info-leaderboard p {
-  margin: 3px 0;
+  margin: 0;
   font-size: 0.9rem;
   color: #666;
+  line-height: 1.3;
 }
 
 .score-display-leaderboard {
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 120px;
 }
 
 .score-large {
@@ -895,19 +931,101 @@
   font-size: 2.5rem;
   font-weight: 700;
   line-height: 1;
-  margin-bottom: 5px;
+  margin-bottom: 4px;
 }
 
 .category-badge {
   font-size: 0.8rem;
   font-weight: 600;
   color: #5d73dd;
+  background: rgba(93, 115, 221, 0.1);
+  padding: 4px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(93, 115, 221, 0.2);
 }
 
-.verification-badge {
-  font-size: 0.8rem;
-  color: #666;
-  text-align: center;
+.score-grade {
+  display: block;
+  font-size: 0.9rem;
+  opacity: 0.8;
+  margin-top: 4px;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.leaderboard-verification-badge {
+  font-size: 0.9rem;
+  text-align: left;
+  margin: 12px 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-start;
+  flex-wrap: nowrap;
+  max-width: fit-content;
+  padding: 8px 16px;
+  border-radius: 25px;
+  font-weight: 600;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1.5px solid rgba(16, 185, 129, 0.25);
+  color: #059669;
+  box-shadow: 0 3px 10px rgba(16, 185, 129, 0.1);
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.verification-text {
+  text-transform: capitalize;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.leaderboard-verification-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+}
+
+.leaderboard-verification-badge.pending:hover {
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+}
+
+.leaderboard-verification-badge.rejected:hover {
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+}
+
+.leaderboard-verification-badge.not_submitted:hover {
+  box-shadow: 0 4px 12px rgba(107, 114, 128, 0.2);
+}
+
+/* Make sure the farmer info section has proper spacing */
+.farmer-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.leaderboard-verification-badge.verified {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: #059669;
+}
+
+.leaderboard-verification-badge.pending {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.3);
+  color: #d97706;
+}
+
+.leaderboard-verification-badge.rejected {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #dc2626;
+}
+
+.leaderboard-verification-badge.not_submitted {
+  background: rgba(107, 114, 128, 0.15);
+  border-color: rgba(107, 114, 128, 0.3);
+  color: #6b7280;
 }
 
 .analytics-section {
@@ -1142,6 +1260,30 @@
     grid-template-columns: 1fr;
   }
 
+  .leaderboard-item {
+    flex-direction: column;
+    text-align: center;
+    gap: 15px;
+    padding: 20px;
+  }
+
+  .farmer-info-leaderboard {
+    order: 2;
+  }
+
+  .score-display-leaderboard {
+    order: 1;
+  }
+
+  .leaderboard-verification-badge {
+    order: 3;
+    align-self: center;
+  }
+
+  .farmer-extra-info {
+    justify-content: center;
+  }
+
   .analytics-grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -1151,4 +1293,410 @@
     gap: 5px;
     text-align: center;
   }
+
+  .position-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .insights-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Enhanced Farmer Position Widget */
+.farmer-position-widget {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 15px;
+  padding: 25px;
+  margin-bottom: 25px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.farmer-position-widget h3 {
+  color: #2c3e50;
+  margin-bottom: 20px;
+  font-size: 1.4rem;
+  text-align: center;
+}
+
+.position-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 15px;
+}
+
+.position-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 15px;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.position-card.improvement {
+  background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+}
+
+.position-rank {
+  display: block;
+  font-size: 1.8rem;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.position-text {
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+/* Enhanced Farmer Insights Section */
+.farmer-insights-section {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 15px;
+  padding: 25px;
+  margin-bottom: 25px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.farmer-insights-section h3 {
+  color: #2c3e50;
+  margin-bottom: 20px;
+  font-size: 1.4rem;
+  text-align: center;
+}
+
+.insights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.insights-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  border-left: 4px solid #667eea;
+}
+
+.insights-card h4 {
+  color: #2c3e50;
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+}
+
+.comparison-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.comparison-item {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  background: rgba(102, 126, 234, 0.1);
+  border-radius: 8px;
+}
+
+.comparison-label {
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.comparison-value {
+  font-weight: bold;
+  color: #667eea;
+  font-size: 1.1rem;
+}
+
+.comparison-indicator.positive {
+  color: #27ae60;
+  font-size: 1.2rem;
+}
+
+.comparison-indicator.negative {
+  color: #e74c3c;
+  font-size: 1.2rem;
+}
+
+.insights-card ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.insights-card li {
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(102, 126, 234, 0.1);
+  color: #34495e;
+}
+
+.insights-card li:last-child {
+  border-bottom: none;
+}
+
+/* Enhanced Leaderboard */
+.leaderboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  color: white;
+}
+
+.leaderboard-controls {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+
+.state-filter {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  font-size: 0.9rem;
+}
+
+.state-filter option {
+  background: #2c3e50;
+  color: white;
+}
+
+.leaderboard-item.current-farmer {
+  border: 3px solid #f39c12;
+  background: linear-gradient(135deg, rgba(243, 156, 18, 0.1) 0%, rgba(230, 126, 34, 0.1) 100%);
+}
+
+.farmer-extra-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.farmer-extra-info span {
+  background: rgba(102, 126, 234, 0.1);
+  color: #667eea;
+  padding: 6px 12px;
+  border-radius: 15px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  white-space: nowrap;
+}
+
+.score-grade {
+  display: block;
+  font-size: 0.9rem;
+  opacity: 0.8;
+  margin-top: 4px;
+}
+
+.no-data-message {
+  text-align: center;
+  color: white;
+  padding: 60px 20px;
+}
+
+.no-data-message h3 {
+  font-size: 1.5rem;
+  margin-bottom: 10px;
+}
+
+/* Enhanced Analytics */
+.analytics-section h3 {
+  color: white;
+  text-align: center;
+  margin-bottom: 30px;
+  font-size: 1.6rem;
+}
+
+.analytics-percentage {
+  display: block;
+  font-size: 0.8rem;
+  opacity: 0.7;
+  margin-top: 4px;
+}
+
+/* Percentiles Section */
+.percentiles-section {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 15px;
+  padding: 25px;
+  margin-bottom: 25px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.percentiles-section h4 {
+  color: #2c3e50;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.percentiles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+}
+
+.percentile-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 15px;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.percentile-label {
+  display: block;
+  font-size: 0.9rem;
+  opacity: 0.9;
+  margin-bottom: 8px;
+}
+
+.percentile-value {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+/* State Distribution */
+.state-distribution {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 15px;
+  padding: 25px;
+  margin-bottom: 25px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.state-distribution h4 {
+  color: #2c3e50;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.state-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 15px;
+}
+
+.state-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  border-left: 4px solid #667eea;
+}
+
+.state-card h5 {
+  color: #2c3e50;
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+  text-align: center;
+}
+
+.state-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.state-stat {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(102, 126, 234, 0.1);
+  color: #34495e;
+}
+
+.state-stat:last-child {
+  border-bottom: none;
+}
+
+/* Technology Stats */
+.technology-stats {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 15px;
+  padding: 25px;
+  margin-bottom: 25px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.technology-stats h4 {
+  color: #2c3e50;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.tech-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+}
+
+.tech-stat-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(102, 126, 234, 0.2);
+}
+
+.tech-stat-icon {
+  display: block;
+  font-size: 2rem;
+  margin-bottom: 10px;
+}
+
+.tech-stat-label {
+  display: block;
+  font-weight: 500;
+  color: #2c3e50;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+}
+
+.tech-stat-value {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #667eea;
+  margin-bottom: 4px;
+}
+
+.tech-stat-percentage {
+  display: block;
+  font-size: 0.8rem;
+  color: #7f8c8d;
+}
+
+/* Experience Distribution */
+.experience-distribution {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 15px;
+  padding: 25px;
+  margin-bottom: 25px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.experience-distribution h4 {
+  color: #2c3e50;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.experience-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 }

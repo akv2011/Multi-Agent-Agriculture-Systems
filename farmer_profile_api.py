@@ -762,16 +762,48 @@ async def add_crop_performance(farmer_id: str, performance: CropPerformanceHisto
 
 @app.get("/credit-score-analytics")
 async def get_credit_score_analytics():
-    """Get analytics about credit scores across all farmers"""
+    """Get comprehensive analytics about credit scores across all farmers"""
     if not farmers_db:
         return {"message": "No farmer data available"}
     
     scores = [farmer.agriculture_credit_score for farmer in farmers_db.values()]
     categories = [farmer.score_category for farmer in farmers_db.values()]
     
+    # Calculate percentiles
+    sorted_scores = sorted(scores)
+    percentiles = {
+        "25th": sorted_scores[len(sorted_scores) // 4] if sorted_scores else 0,
+        "50th": sorted_scores[len(sorted_scores) // 2] if sorted_scores else 0,
+        "75th": sorted_scores[3 * len(sorted_scores) // 4] if sorted_scores else 0,
+        "90th": sorted_scores[9 * len(sorted_scores) // 10] if sorted_scores else 0
+    }
+    
+    # State-wise distribution
+    state_distribution = {}
+    for farmer in farmers_db.values():
+        state = farmer.location.get('state', 'Unknown')
+        if state not in state_distribution:
+            state_distribution[state] = {
+                "count": 0,
+                "avg_score": 0,
+                "top_score": 0,
+                "verified_count": 0
+            }
+        state_distribution[state]["count"] += 1
+        state_distribution[state]["top_score"] = max(state_distribution[state]["top_score"], farmer.agriculture_credit_score)
+        if farmer.verification_status == VerificationStatus.VERIFIED:
+            state_distribution[state]["verified_count"] += 1
+    
+    # Calculate average scores for each state
+    for state in state_distribution:
+        state_farmers = [f for f in farmers_db.values() if f.location.get('state') == state]
+        if state_farmers:
+            state_distribution[state]["avg_score"] = sum(f.agriculture_credit_score for f in state_farmers) / len(state_farmers)
+    
     analytics = {
         "total_farmers": len(farmers_db),
         "average_score": sum(scores) / len(scores),
+        "median_score": percentiles["50th"],
         "score_distribution": {
             "excellent": len([s for s in scores if s >= 800]),
             "very_good": len([s for s in scores if 700 <= s < 800]),
@@ -779,16 +811,98 @@ async def get_credit_score_analytics():
             "fair": len([s for s in scores if 500 <= s < 600]),
             "poor": len([s for s in scores if s < 500])
         },
+        "percentiles": percentiles,
         "highest_score": max(scores),
         "lowest_score": min(scores),
-        "verified_farmers": len([f for f in farmers_db.values() if f.verification_status == VerificationStatus.VERIFIED])
+        "verified_farmers": len([f for f in farmers_db.values() if f.verification_status == VerificationStatus.VERIFIED]),
+        "state_wise_distribution": state_distribution,
+        "technology_adoption_stats": {
+            "satellite_monitoring": len([f for f in farmers_db.values() if f.technology_adoption.uses_satellite_monitoring]),
+            "ai_recommendations": len([f for f in farmers_db.values() if f.technology_adoption.uses_ai_recommendations]),
+            "precision_agriculture": len([f for f in farmers_db.values() if f.technology_adoption.uses_precision_agriculture]),
+            "digital_marketplace": len([f for f in farmers_db.values() if f.technology_adoption.uses_digital_marketplace])
+        },
+        "farming_experience_distribution": {
+            "beginner": len([f for f in farmers_db.values() if f.farming_experience == FarmingExperience.BEGINNER]),
+            "intermediate": len([f for f in farmers_db.values() if f.farming_experience == FarmingExperience.INTERMEDIATE]),
+            "experienced": len([f for f in farmers_db.values() if f.farming_experience == FarmingExperience.EXPERIENCED]),
+            "veteran": len([f for f in farmers_db.values() if f.farming_experience == FarmingExperience.VETERAN])
+        }
     }
     
     return analytics
 
+@app.get("/farmer-profile/{farmer_id}/insights")
+async def get_farmer_insights(farmer_id: str):
+    """Get detailed insights and recommendations for a specific farmer"""
+    if farmer_id not in farmers_db:
+        raise HTTPException(status_code=404, detail="Farmer not found")
+    
+    farmer = farmers_db[farmer_id]
+    all_scores = [f.agriculture_credit_score for f in farmers_db.values()]
+    farmer_rank = sorted(all_scores, reverse=True).index(farmer.agriculture_credit_score) + 1
+    percentile = round((len(all_scores) - farmer_rank + 1) / len(all_scores) * 100, 1)
+    
+    insights = {
+        "farmer_id": farmer_id,
+        "current_score": farmer.agriculture_credit_score,
+        "rank": farmer_rank,
+        "total_farmers": len(farmers_db),
+        "percentile": percentile,
+        "score_category": farmer.score_category,
+        "points_to_next_category": calculate_points_to_next_category(farmer.agriculture_credit_score),
+        "strengths": [],
+        "improvement_areas": [],
+        "recommendations": [],
+        "comparison": {
+            "state_average": 0,
+            "national_average": sum(all_scores) / len(all_scores),
+            "top_10_percent_threshold": sorted(all_scores, reverse=True)[len(all_scores) // 10] if len(all_scores) >= 10 else max(all_scores)
+        }
+    }
+    
+    # Calculate state average
+    state_farmers = [f for f in farmers_db.values() if f.location.get('state') == farmer.location.get('state')]
+    if state_farmers:
+        insights["comparison"]["state_average"] = sum(f.agriculture_credit_score for f in state_farmers) / len(state_farmers)
+    
+    # Generate insights based on farmer data
+    if farmer.satellite_metrics.ndvi_score > 0.7:
+        insights["strengths"].append("Excellent vegetation health (NDVI > 0.7)")
+    elif farmer.satellite_metrics.ndvi_score < 0.4:
+        insights["improvement_areas"].append("Poor vegetation health - consider crop rotation or soil treatment")
+    
+    if farmer.technology_adoption.technology_adoption_score > 70:
+        insights["strengths"].append("High technology adoption rate")
+    else:
+        insights["recommendations"].append("Consider adopting more agricultural technologies for better efficiency")
+    
+    if farmer.financial_history.repayment_success_rate > 90:
+        insights["strengths"].append("Excellent loan repayment history")
+    elif farmer.financial_history.repayment_success_rate < 70:
+        insights["improvement_areas"].append("Improve loan repayment consistency")
+    
+    if farmer.profile_completeness < 70:
+        insights["recommendations"].append("Complete your farmer profile to unlock better credit opportunities")
+    
+    return insights
+
+def calculate_points_to_next_category(current_score: int) -> int:
+    """Calculate points needed to reach the next credit score category"""
+    if current_score >= 800:
+        return 0  # Already at highest category
+    elif current_score >= 700:
+        return 800 - current_score  # Points to excellent
+    elif current_score >= 600:
+        return 700 - current_score  # Points to very good
+    elif current_score >= 500:
+        return 600 - current_score  # Points to good
+    else:
+        return 500 - current_score  # Points to fair
+
 @app.get("/farmer-leaderboard")
-async def get_farmer_leaderboard(limit: int = 10):
-    """Get top farmers by credit score"""
+async def get_farmer_leaderboard(limit: int = 20):
+    """Get top farmers by credit score with enhanced details"""
     sorted_farmers = sorted(farmers_db.values(), key=lambda f: f.agriculture_credit_score, reverse=True)
     
     leaderboard = []
@@ -802,10 +916,70 @@ async def get_farmer_leaderboard(limit: int = 10):
             "score_category": farmer.score_category,
             "farming_experience": farmer.farming_experience,
             "primary_crops": farmer.primary_crops,
-            "verification_status": farmer.verification_status
+            "verification_status": farmer.verification_status,
+            "farm_size_hectares": farmer.farm_size_hectares,
+            "profile_completeness": farmer.profile_completeness,
+            "ndvi_score": farmer.satellite_metrics.ndvi_score,
+            "last_active": farmer.last_active.isoformat()
         })
     
     return leaderboard
+
+@app.get("/farmer-leaderboard/{farmer_id}/position")
+async def get_farmer_leaderboard_position(farmer_id: str):
+    """Get specific farmer's position in the leaderboard"""
+    if farmer_id not in farmers_db:
+        raise HTTPException(status_code=404, detail="Farmer not found")
+    
+    sorted_farmers = sorted(farmers_db.values(), key=lambda f: f.agriculture_credit_score, reverse=True)
+    
+    for i, farmer in enumerate(sorted_farmers):
+        if farmer.farmer_id == farmer_id:
+            return {
+                "farmer_id": farmer_id,
+                "rank": i + 1,
+                "total_farmers": len(sorted_farmers),
+                "percentile": round((len(sorted_farmers) - i) / len(sorted_farmers) * 100, 1),
+                "agriculture_credit_score": farmer.agriculture_credit_score,
+                "score_category": farmer.score_category,
+                "improvement_needed": {
+                    "points_to_next_category": calculate_points_to_next_category(farmer.agriculture_credit_score),
+                    "farmers_ahead": i,
+                    "closest_farmer_score": sorted_farmers[i-1].agriculture_credit_score if i > 0 else farmer.agriculture_credit_score
+                }
+            }
+    
+    return {"error": "Farmer not found in leaderboard"}
+
+@app.get("/farmer-leaderboard/regional/{state}")
+async def get_regional_leaderboard(state: str, limit: int = 10):
+    """Get leaderboard for farmers in a specific state"""
+    regional_farmers = [f for f in farmers_db.values() if f.location.get('state', '').lower() == state.lower()]
+    
+    if not regional_farmers:
+        return {"message": f"No farmers found in {state}", "leaderboard": []}
+    
+    sorted_farmers = sorted(regional_farmers, key=lambda f: f.agriculture_credit_score, reverse=True)
+    
+    leaderboard = []
+    for i, farmer in enumerate(sorted_farmers[:limit]):
+        leaderboard.append({
+            "rank": i + 1,
+            "farmer_id": farmer.farmer_id,
+            "name": farmer.name,
+            "location": f"{farmer.location.get('district', '')}, {farmer.location.get('village', '')}",
+            "agriculture_credit_score": farmer.agriculture_credit_score,
+            "score_category": farmer.score_category,
+            "farming_experience": farmer.farming_experience,
+            "primary_crops": farmer.primary_crops,
+            "verification_status": farmer.verification_status
+        })
+    
+    return {
+        "state": state,
+        "total_farmers": len(regional_farmers),
+        "leaderboard": leaderboard
+    }
 
 if __name__ == "__main__":
     import uvicorn

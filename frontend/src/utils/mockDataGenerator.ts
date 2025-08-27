@@ -23,9 +23,58 @@ const AGENT_NAMES = [
   'Farmer Communication Agent'
 ];
 
-// Agent Status Types
+// Agent Status Types - Added recovery tracking
 type AgentStatus = 'running' | 'idle' | 'busy' | 'error' | 'offline';
 const AGENT_STATUSES: AgentStatus[] = ['running', 'idle', 'busy', 'error', 'offline'];
+
+// Track agents in error state for automated recovery
+const agentErrorStates = new Map<string, { errorStart: number; hasHighErrorRate: boolean }>();
+
+/**
+ * Get weighted agent status with reduced error probability and automated recovery
+ */
+const getAgentStatus = (agentId: string): AgentStatus => {
+  const now = Date.now();
+  
+  // Check if this agent is in error recovery mode
+  if (agentErrorStates.has(agentId)) {
+    const errorState = agentErrorStates.get(agentId)!;
+    const errorDuration = now - errorState.errorStart;
+    
+    // Auto-recover after 30-60 seconds for most agents
+    const recoveryTime = errorState.hasHighErrorRate ? 60000 : 30000; // 1 minute for high error rate agent, 30s for others
+    
+    if (errorDuration > recoveryTime) {
+      agentErrorStates.delete(agentId);
+      console.log(`Agent ${agentId} recovered from error state`);
+      return 'running'; // Recovered agent goes to running state
+    } else {
+      return 'error'; // Still in error state
+    }
+  }
+  
+  // Weighted status distribution (much lower error probability)
+  const random = Math.random();
+  
+  // Special case for agent-002 - higher error rate (10% instead of 1%)
+  if (agentId === 'agent-002') {
+    if (random < 0.1) { // 10% error rate for agent-002
+      agentErrorStates.set(agentId, { errorStart: now, hasHighErrorRate: true });
+      return 'error';
+    }
+  } else {
+    if (random < 0.01) { // 1% error rate for other agents
+      agentErrorStates.set(agentId, { errorStart: now, hasHighErrorRate: false });
+      return 'error';
+    }
+  }
+  
+  // Normal status distribution
+  if (random < 0.4) return 'running';
+  if (random < 0.7) return 'idle';
+  if (random < 0.9) return 'busy';
+  return 'offline';
+};
 
 // Task Descriptions Pool
 const TASK_DESCRIPTIONS = [
@@ -98,7 +147,7 @@ const randomPastDate = (maxMinutesAgo: number): Date => {
  */
 export const generateRandomAgent = (id?: string): Agent => {
   const agentId = id || `agent-${String(randomInt(1, 999)).padStart(3, '0')}`;
-  const status = randomElement(AGENT_STATUSES);
+  const status = getAgentStatus(agentId); // Use new status function with recovery logic
   const lastActivityMinutes = randomInt(1, 30);
   const lastActivity = new Date(Date.now() - lastActivityMinutes * 60 * 1000).toISOString();
   
@@ -114,7 +163,7 @@ export const generateRandomAgent = (id?: string): Agent => {
     metrics: {
       tasksCompleted: randomInt(0, 100),
       averageExecutionTime: randomFloat(0.5, 10),
-      successRate: randomFloat(0.7, 1.0)
+      successRate: status === 'error' ? randomFloat(0.6, 0.9) : randomFloat(0.85, 1.0)
     }
   };
 };
@@ -182,7 +231,6 @@ export const generateRandomWorkflow = (agents: Agent[]): Workflow => {
   const workflowId = `workflow-${String(randomInt(1, 999)).padStart(3, '0')}`;
   const numSteps = randomInt(3, 7);
   const startTime = randomPastDate(60); // Started within last hour
-  const progress = randomFloat(0, 1);
   const totalDuration = randomInt(5, 30) * 60 * 1000; // 5-30 minutes
   
   // Generate steps for this workflow

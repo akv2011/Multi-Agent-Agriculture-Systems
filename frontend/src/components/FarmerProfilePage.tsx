@@ -46,6 +46,42 @@ interface FarmerLeaderboard {
   farming_experience: string;
   primary_crops: string[];
   verification_status: string;
+  farm_size_hectares: number;
+  profile_completeness: number;
+  ndvi_score: number;
+  last_active: string;
+}
+
+interface FarmerPosition {
+  farmer_id: string;
+  rank: number;
+  total_farmers: number;
+  percentile: number;
+  agriculture_credit_score: number;
+  score_category: string;
+  improvement_needed: {
+    points_to_next_category: number;
+    farmers_ahead: number;
+    closest_farmer_score: number;
+  };
+}
+
+interface FarmerInsights {
+  farmer_id: string;
+  current_score: number;
+  rank: number;
+  total_farmers: number;
+  percentile: number;
+  score_category: string;
+  points_to_next_category: number;
+  strengths: string[];
+  improvement_areas: string[];
+  recommendations: string[];
+  comparison: {
+    state_average: number;
+    national_average: number;
+    top_10_percent_threshold: number;
+  };
 }
 
 const FarmerProfilePage: React.FC = () => {
@@ -55,14 +91,19 @@ const FarmerProfilePage: React.FC = () => {
   const [currentFarmer, setCurrentFarmer] = useState<FarmerProfile | null>(null);
   const [creditBreakdown, setCreditBreakdown] = useState<CreditScoreBreakdown | null>(null);
   const [leaderboard, setLeaderboard] = useState<FarmerLeaderboard[]>([]);
+  const [farmerPosition, setFarmerPosition] = useState<FarmerPosition | null>(null);
+  const [farmerInsights, setFarmerInsights] = useState<FarmerInsights | null>(null);
   const [activeTab, setActiveTab] = useState<'profiles' | 'leaderboard' | 'analytics'>('profiles');
   const [loading, setLoading] = useState(true);
   const [analytics, setAnalytics] = useState<any>(null);
+  const [selectedState, setSelectedState] = useState<string>('');
 
   useEffect(() => {
     fetchCurrentFarmer();
     fetchLeaderboard();
     fetchAnalytics();
+    fetchFarmerPosition();
+    fetchFarmerInsights();
   }, []);
 
   const fetchCurrentFarmer = async () => {
@@ -87,7 +128,7 @@ const FarmerProfilePage: React.FC = () => {
 
   const fetchLeaderboard = async () => {
     try {
-      const response = await fetch('http://localhost:8000/farmer-leaderboard');
+      const response = await fetch('http://localhost:8000/farmer-leaderboard?limit=20');
       if (!response.ok) {
         console.error(`Leaderboard API Error: ${response.status} - ${response.statusText}`);
         return;
@@ -115,6 +156,36 @@ const FarmerProfilePage: React.FC = () => {
     }
   };
 
+  const fetchFarmerPosition = async () => {
+    try {
+      const response = await fetch(`http://localhost:8000/farmer-leaderboard/${currentFarmerId}/position`);
+      if (!response.ok) {
+        console.error(`Position API Error: ${response.status} - ${response.statusText}`);
+        return;
+      }
+      const data = await response.json();
+      console.log('Position data received:', data);
+      setFarmerPosition(data);
+    } catch (error) {
+      console.error('Error fetching farmer position:', error);
+    }
+  };
+
+  const fetchFarmerInsights = async () => {
+    try {
+      const response = await fetch(`http://localhost:8000/farmer-profile/${currentFarmerId}/insights`);
+      if (!response.ok) {
+        console.error(`Insights API Error: ${response.status} - ${response.statusText}`);
+        return;
+      }
+      const data = await response.json();
+      console.log('Insights data received:', data);
+      setFarmerInsights(data);
+    } catch (error) {
+      console.error('Error fetching farmer insights:', error);
+    }
+  };
+
   const fetchCreditBreakdown = async (farmerId: string) => {
     try {
       const response = await fetch(`http://localhost:8000/farmer-profile/${farmerId}/credit-score`);
@@ -122,6 +193,21 @@ const FarmerProfilePage: React.FC = () => {
       setCreditBreakdown(data);
     } catch (error) {
       console.error('Error fetching credit breakdown:', error);
+    }
+  };
+
+  const fetchRegionalLeaderboard = async (state: string) => {
+    try {
+      const response = await fetch(`http://localhost:8000/farmer-leaderboard/regional/${state}`);
+      if (!response.ok) {
+        console.error(`Regional Leaderboard API Error: ${response.status} - ${response.statusText}`);
+        return;
+      }
+      const data = await response.json();
+      console.log('Regional leaderboard data received:', data);
+      setLeaderboard(data.leaderboard || []);
+    } catch (error) {
+      console.error('Error fetching regional leaderboard:', error);
     }
   };
 
@@ -157,6 +243,7 @@ const FarmerProfilePage: React.FC = () => {
       case 'verified': return '✅';
       case 'pending': return '⏳';
       case 'rejected': return '❌';
+      case 'not_submitted': return '⚪';
       default: return '⚪';
     }
   };
@@ -231,6 +318,104 @@ const FarmerProfilePage: React.FC = () => {
                     </div>
                   </div>
                 </div>
+
+                {/* Farmer Position Widget */}
+                {farmerPosition && (
+                  <div className="farmer-position-widget">
+                    <h3>🏆 Your Leaderboard Position</h3>
+                    <div className="position-stats">
+                      <div className="position-card">
+                        <span className="position-rank">#{farmerPosition.rank}</span>
+                        <span className="position-text">out of {farmerPosition.total_farmers} farmers</span>
+                      </div>
+                      <div className="position-card">
+                        <span className="position-rank">{farmerPosition.percentile}%</span>
+                        <span className="position-text">percentile</span>
+                      </div>
+                      {farmerPosition.improvement_needed.points_to_next_category > 0 && (
+                        <div className="position-card improvement">
+                          <span className="position-rank">+{farmerPosition.improvement_needed.points_to_next_category}</span>
+                          <span className="position-text">points to next category</span>
+                        </div>
+                      )}
+                      {farmerPosition.improvement_needed.farmers_ahead > 0 && (
+                        <div className="position-card">
+                          <span className="position-rank">{farmerPosition.improvement_needed.farmers_ahead}</span>
+                          <span className="position-text">farmers ahead</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Farmer Insights Section */}
+                {farmerInsights && (
+                  <div className="farmer-insights-section">
+                    <h3>💡 Personalized Insights</h3>
+                    
+                    <div className="insights-grid">
+                      <div className="insights-card comparison-card">
+                        <h4>📊 Score Comparison</h4>
+                        <div className="comparison-stats">
+                          <div className="comparison-item">
+                            <span className="comparison-label">National Average:</span>
+                            <span className="comparison-value">{farmerInsights.comparison.national_average.toFixed(0)}</span>
+                            <span className={`comparison-indicator ${currentFarmer.agriculture_credit_score > farmerInsights.comparison.national_average ? 'positive' : 'negative'}`}>
+                              {currentFarmer.agriculture_credit_score > farmerInsights.comparison.national_average ? '↗️' : '↘️'}
+                            </span>
+                          </div>
+                          <div className="comparison-item">
+                            <span className="comparison-label">State Average:</span>
+                            <span className="comparison-value">{farmerInsights.comparison.state_average.toFixed(0)}</span>
+                            <span className={`comparison-indicator ${currentFarmer.agriculture_credit_score > farmerInsights.comparison.state_average ? 'positive' : 'negative'}`}>
+                              {currentFarmer.agriculture_credit_score > farmerInsights.comparison.state_average ? '↗️' : '↘️'}
+                            </span>
+                          </div>
+                          <div className="comparison-item">
+                            <span className="comparison-label">Top 10% Threshold:</span>
+                            <span className="comparison-value">{farmerInsights.comparison.top_10_percent_threshold.toFixed(0)}</span>
+                            <span className={`comparison-indicator ${currentFarmer.agriculture_credit_score >= farmerInsights.comparison.top_10_percent_threshold ? 'positive' : 'negative'}`}>
+                              {currentFarmer.agriculture_credit_score >= farmerInsights.comparison.top_10_percent_threshold ? '🏆' : '🎯'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {farmerInsights.strengths.length > 0 && (
+                        <div className="insights-card strengths-card">
+                          <h4>💪 Your Strengths</h4>
+                          <ul>
+                            {farmerInsights.strengths.map((strength, index) => (
+                              <li key={index}>✅ {strength}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {farmerInsights.improvement_areas.length > 0 && (
+                        <div className="insights-card improvement-card">
+                          <h4>🎯 Improvement Areas</h4>
+                          <ul>
+                            {farmerInsights.improvement_areas.map((area, index) => (
+                              <li key={index}>🔸 {area}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {farmerInsights.recommendations.length > 0 && (
+                        <div className="insights-card recommendations-card">
+                          <h4>💡 Recommendations</h4>
+                          <ul>
+                            {farmerInsights.recommendations.map((rec, index) => (
+                              <li key={index}>💡 {rec}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 <div className="farmer-stats-grid">
                   <div className="stat-card">
@@ -323,10 +508,34 @@ const FarmerProfilePage: React.FC = () => {
 
         {activeTab === 'leaderboard' && (
           <div className="leaderboard-section">
-            <h3>🏆 Top Farmers by Credit Score</h3>
+            <div className="leaderboard-header">
+              <h3>🏆 Top Farmers by Credit Score</h3>
+              <div className="leaderboard-controls">
+                <select 
+                  value={selectedState} 
+                  onChange={(e) => {
+                    setSelectedState(e.target.value);
+                    if (e.target.value) {
+                      fetchRegionalLeaderboard(e.target.value);
+                    } else {
+                      fetchLeaderboard();
+                    }
+                  }}
+                  className="state-filter"
+                >
+                  <option value="">All States</option>
+                  <option value="Punjab">Punjab</option>
+                  <option value="Uttar Pradesh">Uttar Pradesh</option>
+                  <option value="Maharashtra">Maharashtra</option>
+                  <option value="Haryana">Haryana</option>
+                  <option value="Madhya Pradesh">Madhya Pradesh</option>
+                </select>
+              </div>
+            </div>
+            
             <div className="leaderboard-grid">
               {leaderboard.map((farmer, index) => (
-                <div key={farmer.farmer_id} className={`leaderboard-item rank-${index + 1}`}>
+                <div key={farmer.farmer_id} className={`leaderboard-item rank-${index + 1} ${farmer.farmer_id === currentFarmerId ? 'current-farmer' : ''}`}>
                   <div className="rank-badge">
                     {index === 0 && '🥇'}
                     {index === 1 && '🥈'}
@@ -335,10 +544,21 @@ const FarmerProfilePage: React.FC = () => {
                   </div>
                   
                   <div className="farmer-info-leaderboard">
-                    <h4>{farmer.name}</h4>
+                    <h4>{farmer.name} {farmer.farmer_id === currentFarmerId && '(You)'}</h4>
                     <p>📍 {farmer.location}</p>
-                    <p>🌾 {farmer.farming_experience}</p>
+                    
+                    <div className={`leaderboard-verification-badge ${farmer.verification_status.toLowerCase()}`}>
+                      {getVerificationIcon(farmer.verification_status)} 
+                      <span className="verification-text">{farmer.verification_status.replace('_', ' ')}</span>
+                    </div>
+                    
+                    <p>🚜 {farmer.farming_experience}</p>
                     <p>🌱 {farmer.primary_crops.join(', ')}</p>
+                    <div className="farmer-extra-info">
+                      <span className="farm-size">🏡 {farmer.farm_size_hectares?.toFixed(1)} ha</span>
+                      <span className="ndvi-score">🌿 NDVI: {farmer.ndvi_score?.toFixed(2)}</span>
+                      <span className="profile-completeness">📊 {farmer.profile_completeness?.toFixed(0)}% complete</span>
+                    </div>
                   </div>
 
                   <div className="score-display-leaderboard">
@@ -351,20 +571,24 @@ const FarmerProfilePage: React.FC = () => {
                     <span className="category-badge">
                       {getCategoryEmoji(farmer.score_category)} {farmer.score_category.replace('_', ' ')}
                     </span>
-                  </div>
-
-                  <div className="verification-badge">
-                    {getVerificationIcon(farmer.verification_status)} {farmer.verification_status}
+                    <span className="score-grade">{getScoreGrade(farmer.agriculture_credit_score)}</span>
                   </div>
                 </div>
               ))}
             </div>
+            
+            {leaderboard.length === 0 && (
+              <div className="no-data-message">
+                <h3>📭 No farmers found</h3>
+                <p>Try selecting a different state or check back later.</p>
+              </div>
+            )}
           </div>
         )}
 
         {activeTab === 'analytics' && analytics && (
           <div className="analytics-section">
-            <h3>📊 Credit Score Analytics</h3>
+            <h3>📊 Comprehensive Credit Score Analytics</h3>
             
             <div className="analytics-grid">
               <div className="analytics-card">
@@ -378,6 +602,11 @@ const FarmerProfilePage: React.FC = () => {
               </div>
 
               <div className="analytics-card">
+                <h4>📊 Median Score</h4>
+                <span className="analytics-number">{analytics.median_score}</span>
+              </div>
+
+              <div className="analytics-card">
                 <h4>🏆 Highest Score</h4>
                 <span className="analytics-number">{analytics.highest_score}</span>
               </div>
@@ -385,11 +614,41 @@ const FarmerProfilePage: React.FC = () => {
               <div className="analytics-card">
                 <h4>✅ Verified Farmers</h4>
                 <span className="analytics-number">{analytics.verified_farmers}</span>
+                <span className="analytics-percentage">({((analytics.verified_farmers / analytics.total_farmers) * 100).toFixed(1)}%)</span>
+              </div>
+
+              <div className="analytics-card">
+                <h4>📉 Lowest Score</h4>
+                <span className="analytics-number">{analytics.lowest_score}</span>
               </div>
             </div>
 
+            {/* Score Percentiles */}
+            <div className="percentiles-section">
+              <h4>📊 Score Percentiles</h4>
+              <div className="percentiles-grid">
+                <div className="percentile-card">
+                  <span className="percentile-label">25th Percentile</span>
+                  <span className="percentile-value">{analytics.percentiles['25th']}</span>
+                </div>
+                <div className="percentile-card">
+                  <span className="percentile-label">50th Percentile (Median)</span>
+                  <span className="percentile-value">{analytics.percentiles['50th']}</span>
+                </div>
+                <div className="percentile-card">
+                  <span className="percentile-label">75th Percentile</span>
+                  <span className="percentile-value">{analytics.percentiles['75th']}</span>
+                </div>
+                <div className="percentile-card">
+                  <span className="percentile-label">90th Percentile</span>
+                  <span className="percentile-value">{analytics.percentiles['90th']}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Score Distribution */}
             <div className="score-distribution">
-              <h4>Score Distribution</h4>
+              <h4>Score Distribution by Category</h4>
               <div className="distribution-bars">
                 {Object.entries(analytics.score_distribution).map(([category, count]) => (
                   <div key={category} className="distribution-item">
@@ -405,11 +664,98 @@ const FarmerProfilePage: React.FC = () => {
                         }}
                       ></div>
                     </div>
-                    <span className="distribution-count">{count as number}</span>
+                    <span className="distribution-count">{count as number} ({((count as number / analytics.total_farmers) * 100).toFixed(1)}%)</span>
                   </div>
                 ))}
               </div>
             </div>
+
+            {/* State-wise Distribution */}
+            {analytics.state_wise_distribution && (
+              <div className="state-distribution">
+                <h4>State-wise Distribution</h4>
+                <div className="state-grid">
+                  {Object.entries(analytics.state_wise_distribution).map(([state, data]: [string, any]) => (
+                    <div key={state} className="state-card">
+                      <h5>{state}</h5>
+                      <div className="state-stats">
+                        <span className="state-stat">
+                          <strong>Farmers:</strong> {data.count}
+                        </span>
+                        <span className="state-stat">
+                          <strong>Avg Score:</strong> {data.avg_score.toFixed(0)}
+                        </span>
+                        <span className="state-stat">
+                          <strong>Top Score:</strong> {data.top_score}
+                        </span>
+                        <span className="state-stat">
+                          <strong>Verified:</strong> {data.verified_count} ({((data.verified_count / data.count) * 100).toFixed(1)}%)
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Technology Adoption Stats */}
+            {analytics.technology_adoption_stats && (
+              <div className="technology-stats">
+                <h4>🔬 Technology Adoption Statistics</h4>
+                <div className="tech-stats-grid">
+                  <div className="tech-stat-card">
+                    <span className="tech-stat-icon">🛰️</span>
+                    <span className="tech-stat-label">Satellite Monitoring</span>
+                    <span className="tech-stat-value">{analytics.technology_adoption_stats.satellite_monitoring}</span>
+                    <span className="tech-stat-percentage">({((analytics.technology_adoption_stats.satellite_monitoring / analytics.total_farmers) * 100).toFixed(1)}%)</span>
+                  </div>
+                  <div className="tech-stat-card">
+                    <span className="tech-stat-icon">🤖</span>
+                    <span className="tech-stat-label">AI Recommendations</span>
+                    <span className="tech-stat-value">{analytics.technology_adoption_stats.ai_recommendations}</span>
+                    <span className="tech-stat-percentage">({((analytics.technology_adoption_stats.ai_recommendations / analytics.total_farmers) * 100).toFixed(1)}%)</span>
+                  </div>
+                  <div className="tech-stat-card">
+                    <span className="tech-stat-icon">🎯</span>
+                    <span className="tech-stat-label">Precision Agriculture</span>
+                    <span className="tech-stat-value">{analytics.technology_adoption_stats.precision_agriculture}</span>
+                    <span className="tech-stat-percentage">({((analytics.technology_adoption_stats.precision_agriculture / analytics.total_farmers) * 100).toFixed(1)}%)</span>
+                  </div>
+                  <div className="tech-stat-card">
+                    <span className="tech-stat-icon">🏪</span>
+                    <span className="tech-stat-label">Digital Marketplace</span>
+                    <span className="tech-stat-value">{analytics.technology_adoption_stats.digital_marketplace}</span>
+                    <span className="tech-stat-percentage">({((analytics.technology_adoption_stats.digital_marketplace / analytics.total_farmers) * 100).toFixed(1)}%)</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Farming Experience Distribution */}
+            {analytics.farming_experience_distribution && (
+              <div className="experience-distribution">
+                <h4>👨‍🌾 Farming Experience Distribution</h4>
+                <div className="experience-bars">
+                  {Object.entries(analytics.farming_experience_distribution).map(([experience, count]) => (
+                    <div key={experience} className="distribution-item">
+                      <span className="category-name">
+                        {experience.charAt(0).toUpperCase() + experience.slice(1)}
+                      </span>
+                      <div className="distribution-bar">
+                        <div 
+                          className="distribution-fill"
+                          style={{ 
+                            width: `${(count as number / analytics.total_farmers) * 100}%`,
+                            backgroundColor: experience === 'veteran' ? '#27ae60' : experience === 'experienced' ? '#2ecc71' : experience === 'intermediate' ? '#f39c12' : '#e67e22'
+                          }}
+                        ></div>
+                      </div>
+                      <span className="distribution-count">{count as number} ({((count as number / analytics.total_farmers) * 100).toFixed(1)}%)</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -106,7 +106,7 @@ const MarketplacePage: React.FC = () => {
         rating: 4.8,
         verified: true
       },
-      images: [],
+      images: ['/images/basmati-rice.jpg', '/images/rice-field.jpg'],
       stock: 500,
       isOrganic: false,
       harvestDate: '2024-11-15',
@@ -134,7 +134,7 @@ const MarketplacePage: React.FC = () => {
         rating: 4.9,
         verified: true
       },
-      images: [],
+      images: ['/images/wheat-field.jpg', '/images/wheat-flour.jpg'],
       stock: 200,
       isOrganic: true,
       harvestDate: '2024-12-01',
@@ -162,7 +162,7 @@ const MarketplacePage: React.FC = () => {
         rating: 4.6,
         verified: true
       },
-      images: [],
+      images: ['/images/tomatoes.jpg', '/images/tomato-farm.jpg'],
       stock: 150,
       isOrganic: false,
       harvestDate: '2024-12-20',
@@ -188,7 +188,7 @@ const MarketplacePage: React.FC = () => {
         rating: 4.7,
         verified: true
       },
-      images: [],
+      images: ['/images/cotton-bulk.jpg', '/images/cotton-field.jpg'],
       stock: 50,
       isOrganic: false,
       harvestDate: '2024-11-30',

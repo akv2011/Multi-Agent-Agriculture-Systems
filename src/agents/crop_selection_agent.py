@@ -20,8 +20,8 @@ from ..models.agrisens_crop_recommendation import (
     get_crop_recommendation_model, analyze_npk_data, enhance_crop_selection_with_agrisens
 )
 from ..core.agriculture_models import (
-    AgricultureQuery, AgentResponse, CropType, SoilType, SeasonType, 
-    WeatherData, Location, FarmProfile, QueryDomain
+    AgricultureQuery, AgentResponse, CropType, SoilType, SeasonType, Location, Language,
+    WeatherData, FarmProfile, QueryDomain
 )
 
 logger = logging.getLogger(__name__)
@@ -286,25 +286,20 @@ class CropSelectionAgent(BaseWorkerAgent):
                 "rainfall_average": 650,  # mm
                 "temperature_range": (5, 45),
                 "irrigation_availability": "high",
-                "market_access": "excellent"
+                "market_access": "excellent",
+                "capital": "Chandigarh",
+                "major_districts": ["Ludhiana", "Amritsar", "Jalandhar", "Patiala", "Bathinda"]
             },
-            "Rajasthan": {
-                "major_crops": [CropType.WHEAT, CropType.MUSTARD, CropType.COTTON],
-                "soil_types": [SoilType.SANDY, SoilType.SANDY],
-                "climate": "arid",
-                "rainfall_average": 300,
-                "temperature_range": (0, 50),
-                "irrigation_availability": "limited",
-                "market_access": "good"
-            },
-            "Maharashtra": {
-                "major_crops": [CropType.COTTON, CropType.SUGARCANE, CropType.RICE],
-                "soil_types": [SoilType.CLAY, SoilType.LOAMY, SoilType.SANDY],
-                "climate": "tropical",
-                "rainfall_average": 1200,
-                "temperature_range": (10, 42),
-                "irrigation_availability": "medium",
-                "market_access": "excellent"
+            "Haryana": {
+                "major_crops": [CropType.WHEAT, CropType.RICE, CropType.COTTON, CropType.SUGARCANE],
+                "soil_types": [SoilType.LOAMY, SoilType.SANDY],
+                "climate": "semi_arid",
+                "rainfall_average": 560,
+                "temperature_range": (3, 47),
+                "irrigation_availability": "high",
+                "market_access": "excellent",
+                "capital": "Chandigarh",
+                "major_districts": ["Faridabad", "Gurgaon", "Hisar", "Karnal", "Rohtak"]
             },
             "Uttar Pradesh": {
                 "major_crops": [CropType.WHEAT, CropType.RICE, CropType.SUGARCANE],
@@ -313,7 +308,141 @@ class CropSelectionAgent(BaseWorkerAgent):
                 "rainfall_average": 800,
                 "temperature_range": (2, 46),
                 "irrigation_availability": "good",
-                "market_access": "good"
+                "market_access": "good",
+                "capital": "Lucknow",
+                "major_districts": ["Meerut", "Agra", "Kanpur", "Varanasi", "Allahabad"]
+            },
+            "Rajasthan": {
+                "major_crops": [CropType.WHEAT, CropType.MUSTARD, CropType.COTTON],
+                "soil_types": [SoilType.SANDY, SoilType.SANDY],
+                "climate": "arid",
+                "rainfall_average": 300,
+                "temperature_range": (0, 50),
+                "irrigation_availability": "limited",
+                "market_access": "good",
+                "capital": "Jaipur",
+                "major_districts": ["Jodhpur", "Udaipur", "Kota", "Bikaner", "Ajmer"]
+            },
+            "Maharashtra": {
+                "major_crops": [CropType.COTTON, CropType.SUGARCANE, CropType.RICE],
+                "soil_types": [SoilType.CLAY, SoilType.LOAMY, SoilType.SANDY],
+                "climate": "tropical",
+                "rainfall_average": 1200,
+                "temperature_range": (10, 42),
+                "irrigation_availability": "medium",
+                "market_access": "excellent",
+                "capital": "Mumbai",
+                "major_districts": ["Pune", "Nashik", "Aurangabad", "Nagpur", "Kolhapur"]
+            },
+            "Tamil Nadu": {
+                "major_crops": [CropType.RICE, CropType.COTTON, CropType.SUGARCANE, CropType.GROUNDNUT, CropType.TURMERIC],
+                "soil_types": [SoilType.LOAMY, SoilType.CLAY, SoilType.SANDY],
+                "climate": "tropical",
+                "rainfall_average": 950,
+                "temperature_range": (20, 37),
+                "irrigation_availability": "medium",
+                "market_access": "excellent",
+                "capital": "Chennai",
+                "major_districts": ["Coimbatore", "Madurai", "Salem", "Tiruchirappalli", "Thanjavur"]
+            },
+            "Karnataka": {
+                "major_crops": [CropType.RICE, CropType.COTTON, CropType.SUGARCANE, CropType.COFFEE, CropType.SPICES],
+                "soil_types": [SoilType.LOAMY, SoilType.CLAY, SoilType.SANDY],
+                "climate": "tropical",
+                "rainfall_average": 1050,
+                "temperature_range": (15, 35),
+                "irrigation_availability": "good",
+                "market_access": "excellent",
+                "capital": "Bengaluru",
+                "major_districts": ["Mysuru", "Hubli", "Belgaum", "Mangaluru", "Gulbarga"]
+            },
+            "Andhra Pradesh": {
+                "major_crops": [CropType.RICE, CropType.COTTON, CropType.SUGARCANE, CropType.CHILI, CropType.TURMERIC],
+                "soil_types": [SoilType.CLAY, SoilType.LOAMY, SoilType.SANDY],
+                "climate": "tropical",
+                "rainfall_average": 940,
+                "temperature_range": (18, 40),
+                "irrigation_availability": "good",
+                "market_access": "good",
+                "capital": "Amaravati",
+                "major_districts": ["Guntur", "Krishna", "West Godavari", "Visakhapatnam", "Chittoor"]
+            },
+            "Telangana": {
+                "major_crops": [CropType.RICE, CropType.COTTON, CropType.MAIZE, CropType.TURMERIC, CropType.CHILI],
+                "soil_types": [SoilType.CLAY, SoilType.LOAMY],
+                "climate": "tropical",
+                "rainfall_average": 900,
+                "temperature_range": (16, 42),
+                "irrigation_availability": "medium",
+                "market_access": "excellent",
+                "capital": "Hyderabad",
+                "major_districts": ["Warangal", "Karimnagar", "Nizamabad", "Medak", "Khammam"]
+            },
+            "West Bengal": {
+                "major_crops": [CropType.RICE, CropType.WHEAT, CropType.MAIZE, CropType.JUTE, CropType.TEA],
+                "soil_types": [SoilType.LOAMY, SoilType.CLAY],
+                "climate": "tropical_humid",
+                "rainfall_average": 1500,
+                "temperature_range": (15, 35),
+                "irrigation_availability": "good",
+                "market_access": "good",
+                "capital": "Kolkata",
+                "major_districts": ["North 24 Parganas", "South 24 Parganas", "Bardhaman", "Murshidabad"]
+            },
+            "Bihar": {
+                "major_crops": [CropType.RICE, CropType.WHEAT, CropType.MAIZE, CropType.POTATO, CropType.PULSES],
+                "soil_types": [SoilType.LOAMY, SoilType.CLAY],
+                "climate": "subtropical_humid",
+                "rainfall_average": 1200,
+                "temperature_range": (8, 45),
+                "irrigation_availability": "medium",
+                "market_access": "medium",
+                "capital": "Patna",
+                "major_districts": ["Gaya", "Muzaffarpur", "Darbhanga", "Bhagalpur", "Purnea"]
+            },
+            "Odisha": {
+                "major_crops": [CropType.RICE, CropType.WHEAT, CropType.SUGARCANE, CropType.COTTON, CropType.JUTE],
+                "soil_types": [SoilType.LOAMY, SoilType.CLAY, SoilType.SANDY],
+                "climate": "tropical",
+                "rainfall_average": 1450,
+                "temperature_range": (18, 42),
+                "irrigation_availability": "medium",
+                "market_access": "medium",
+                "capital": "Bhubaneswar",
+                "major_districts": ["Cuttack", "Ganjam", "Balasore", "Mayurbhanj", "Koraput"]
+            },
+            "Madhya Pradesh": {
+                "major_crops": [CropType.WHEAT, CropType.RICE, CropType.COTTON, CropType.SOYBEAN, CropType.PULSES],
+                "soil_types": [SoilType.CLAY, SoilType.LOAMY, SoilType.SANDY],
+                "climate": "subtropical",
+                "rainfall_average": 1000,
+                "temperature_range": (5, 45),
+                "irrigation_availability": "medium",
+                "market_access": "good",
+                "capital": "Bhopal",
+                "major_districts": ["Indore", "Jabalpur", "Gwalior", "Ujjain", "Sagar"]
+            },
+            "Gujarat": {
+                "major_crops": [CropType.COTTON, CropType.WHEAT, CropType.RICE, CropType.GROUNDNUT, CropType.TOBACCO],
+                "soil_types": [SoilType.CLAY, SoilType.LOAMY, SoilType.SANDY],
+                "climate": "semi_arid",
+                "rainfall_average": 800,
+                "temperature_range": (12, 42),
+                "irrigation_availability": "good",
+                "market_access": "excellent",
+                "capital": "Gandhinagar",
+                "major_districts": ["Ahmedabad", "Surat", "Vadodara", "Rajkot", "Bhavnagar"]
+            },
+            "Kerala": {
+                "major_crops": [CropType.RICE, CropType.RUBBER, CropType.COCONUT, CropType.TEA, CropType.COFFEE, CropType.SPICES],
+                "soil_types": [SoilType.LOAMY, SoilType.CLAY, SoilType.SANDY],
+                "climate": "tropical_humid",
+                "rainfall_average": 2800,
+                "temperature_range": (23, 32),
+                "irrigation_availability": "high",
+                "market_access": "good",
+                "capital": "Thiruvananthapuram",
+                "major_districts": ["Ernakulam", "Thrissur", "Kozhikode", "Kannur", "Kollam"]
             }
         }
     
@@ -372,11 +501,14 @@ class CropSelectionAgent(BaseWorkerAgent):
             if satellite_data:
                 sources.append("satellite_data")
             
+            # Generate language-appropriate response text
+            response_text = self._create_language_appropriate_response(query.query_language, context, recommendations)
+            
             return AgentResponse(
                 agent_id=self.agent_id,
                 agent_name=self.name,
                 query_id=query.query_id,
-                response_text=f"Crop recommendations for {context.get('location', 'your area')}",
+                response_text=response_text,
                 confidence_score=confidence,
                 reasoning=f"Analysis based on {len(sources)} data sources including satellite data",
                 sources=sources,
@@ -483,6 +615,11 @@ class CropSelectionAgent(BaseWorkerAgent):
             elif current_month in [4, 5, 6, 7, 8, 9]:
                 context["season"] = SeasonType.KHARIF
         
+        # **LOCATION-SPECIFIC ENHANCEMENT**: Get region-specific recommendations
+        location_context = self._get_location_specific_context(context)
+        if location_context:
+            context.update(location_context)
+        
         # **AGRISENS INTEGRATION**: Get ML-based crop recommendation first
         agrisens_recommendation = None
         try:
@@ -508,11 +645,22 @@ class CropSelectionAgent(BaseWorkerAgent):
             )
             recommendations.extend(crop_recommendations)
         else:
-            # General recommendations based on season and location
-            for crop_type, crop_data in self.crop_database.items():
-                if context["season"] in crop_data["seasons"]:
-                    crop_recommendations = self._analyze_specific_crop(crop_type, context, satellite_data, agrisens_recommendation)
-                    recommendations.extend(crop_recommendations)
+            # **ENHANCED**: Prioritize region-appropriate crops
+            suitable_crops = context.get("region_suitable_crops", [])
+            if suitable_crops:
+                # First analyze region-suitable crops
+                for crop_type in suitable_crops:
+                    if crop_type in self.crop_database:
+                        crop_data = self.crop_database[crop_type]
+                        if context["season"] in crop_data["seasons"]:
+                            crop_recommendations = self._analyze_specific_crop(crop_type, context, satellite_data, agrisens_recommendation)
+                            recommendations.extend(crop_recommendations)
+            else:
+                # General recommendations based on season and location
+                for crop_type, crop_data in self.crop_database.items():
+                    if context["season"] in crop_data["seasons"]:
+                        crop_recommendations = self._analyze_specific_crop(crop_type, context, satellite_data, agrisens_recommendation)
+                        recommendations.extend(crop_recommendations)
         
         # If AgriSens provided a recommendation, boost its priority
         if agrisens_recommendation:
@@ -523,6 +671,117 @@ class CropSelectionAgent(BaseWorkerAgent):
         
         # Return top 5 recommendations
         return recommendations[:5]
+    
+    def _get_location_specific_context(self, context: Dict[str, Any]) -> Dict[str, Any]:
+        """Get location-specific agricultural context and recommendations"""
+        location_context = {}
+        
+        # Extract location information
+        location = context.get("location")
+        location_name = context.get("location_name", "").lower()
+        
+        # Try to match location with regional data
+        matched_region = None
+        if location_name:
+            # Direct state/region matching
+            for region, data in self.regional_data.items():
+                if (region.lower() in location_name or 
+                    location_name in region.lower() or
+                    data["capital"].lower() in location_name or
+                    any(district.lower() in location_name for district in data["major_districts"])):
+                    matched_region = region
+                    break
+        
+        # If location coordinates available, try geographic matching
+        if not matched_region and location and hasattr(location, 'latitude') and hasattr(location, 'longitude'):
+            lat, lon = location.latitude, location.longitude
+            # Tamil Nadu approximate bounds: 8.0-13.5°N, 76.0-80.3°E
+            if 8.0 <= lat <= 13.5 and 76.0 <= lon <= 80.3:
+                matched_region = "Tamil Nadu"
+            # Karnataka bounds: 11.5-18.5°N, 74.0-78.5°E  
+            elif 11.5 <= lat <= 18.5 and 74.0 <= lon <= 78.5:
+                matched_region = "Karnataka"
+            # Maharashtra bounds: 15.6-22.0°N, 72.6-80.9°E
+            elif 15.6 <= lat <= 22.0 and 72.6 <= lon <= 80.9:
+                matched_region = "Maharashtra"
+            # Add more geographic bounds as needed
+        
+        if matched_region and matched_region in self.regional_data:
+            region_data = self.regional_data[matched_region]
+            location_context.update({
+                "region_name": matched_region,
+                "region_climate": region_data["climate"],
+                "region_rainfall": region_data["rainfall_average"],
+                "region_temperature_range": region_data["temperature_range"],
+                "region_irrigation": region_data["irrigation_availability"],
+                "region_market_access": region_data["market_access"],
+                "region_suitable_crops": region_data["major_crops"],
+                "region_soil_types": region_data["soil_types"],
+                "region_capital": region_data["capital"],
+                "region_districts": region_data["major_districts"],
+                "location_specific_advice": self._generate_location_specific_advice(matched_region, context)
+            })
+            
+            logger.info(f"Matched location to region: {matched_region}")
+        
+        return location_context
+    
+    def _generate_location_specific_advice(self, region: str, context: Dict[str, Any]) -> Dict[str, Any]:
+        """Generate specific advice based on the region"""
+        current_month = datetime.now().month
+        season_name = "Kharif" if current_month in [4, 5, 6, 7, 8, 9] else "Rabi"
+        
+        # Region-specific advice database
+        region_advice = {
+            "Tamil Nadu": {
+                "climate_note": "Tamil Nadu has a tropical climate with distinct monsoon seasons. Temperature ranges from 20-37°C.",
+                "soil_preference": "Red soil and black soil are predominant. Good for rice, cotton, and groundnut cultivation.",
+                "water_management": "Tank irrigation and well irrigation are common. Drip irrigation recommended for water efficiency.",
+                "seasonal_crops": {
+                    "Kharif": ["rice", "cotton", "groundnut", "sugarcane", "maize"],
+                    "Rabi": ["rice", "wheat", "gram", "sunflower", "millets"]
+                },
+                "market_insights": "Strong market for rice and cotton. Excellent export facilities through Chennai port.",
+                "government_schemes": ["PM-KISAN", "Tamil Nadu Farmers Welfare Scheme", "Zero Interest Loan Scheme"],
+                "research_centers": ["Tamil Nadu Agricultural University (TNAU)", "Rice Research Station", "Cotton Research Station"],
+                "specific_varieties": {
+                    "rice": ["ADT-43", "CO-47", "ASD-16", "IR-20"],
+                    "cotton": ["Suraj", "MCU-5", "LRA-5166"],
+                    "groundnut": ["TMV-7", "VRI-2", "CO-4"]
+                }
+            },
+            "Karnataka": {
+                "climate_note": "Tropical climate with good rainfall. Suitable for diverse crops including coffee and spices.",
+                "soil_preference": "Red soil, black soil, and laterite soil. Good for rice, cotton, and coffee.",
+                "water_management": "Canal irrigation and borewells common. Sprinkler irrigation effective.",
+                "seasonal_crops": {
+                    "Kharif": ["rice", "cotton", "sugarcane", "maize", "ragi"],
+                    "Rabi": ["wheat", "gram", "sunflower", "safflower"]
+                },
+                "market_insights": "Strong IT sector provides good market for high-value crops. Bangalore market access.",
+                "government_schemes": ["Raitha Siri", "Krishi Bhagya", "Bhoochetana"],
+                "research_centers": ["University of Agricultural Sciences", "Coffee Research Station"],
+                "specific_varieties": {
+                    "rice": ["Rasi", "Intan", "Jyothi"],
+                    "cotton": ["Sahana", "Suvin"],
+                    "coffee": ["Arabica", "Robusta"]
+                }
+            }
+            # Add more regions as needed
+        }
+        
+        advice = region_advice.get(region, {
+            "climate_note": f"Regional climate data available for {region}.",
+            "seasonal_crops": {"Kharif": ["rice", "cotton"], "Rabi": ["wheat", "gram"]},
+            "market_insights": "Standard market access available.",
+            "government_schemes": ["PM-KISAN", "State farmer welfare schemes"]
+        })
+        
+        # Add current season specific advice
+        advice["current_season"] = season_name
+        advice["recommended_for_season"] = advice.get("seasonal_crops", {}).get(season_name, [])
+        
+        return advice
     
     def _analyze_specific_crop(self, crop_type: CropType, context: Dict[str, Any], satellite_data: Optional[Dict] = None, agrisens_recommendation: Optional[Any] = None) -> List[CropRecommendation]:
         """Analyze suitability of a specific crop type with satellite data and AgriSens ML"""
@@ -812,14 +1071,57 @@ class CropSelectionAgent(BaseWorkerAgent):
         return min(base_confidence, 1.0)
     
     def _generate_additional_advice(self, context: Dict, recommendations: List, satellite_data: Optional[Dict] = None) -> List[str]:
-        """Generate additional advice including satellite insights"""
+        """Generate additional advice including satellite insights and location-specific recommendations"""
         advice = []
         
-        # Base advice
+        # Location-specific advice
+        if context.get("location_specific_advice"):
+            location_advice = context["location_specific_advice"]
+            region_name = context.get("region_name", "your region")
+            
+            # Climate advice
+            if location_advice.get("climate_note"):
+                advice.append(f"🌡️ {location_advice['climate_note']}")
+            
+            # Soil advice
+            if location_advice.get("soil_preference"):
+                advice.append(f"🌱 {location_advice['soil_preference']}")
+            
+            # Water management
+            if location_advice.get("water_management"):
+                advice.append(f"💧 {location_advice['water_management']}")
+            
+            # Seasonal recommendations
+            current_season = location_advice.get("current_season", "current season")
+            seasonal_crops = location_advice.get("recommended_for_season", [])
+            if seasonal_crops:
+                advice.append(f"🌾 For {current_season} season in {region_name}, consider: {', '.join(seasonal_crops)}")
+            
+            # Market insights
+            if location_advice.get("market_insights"):
+                advice.append(f"💰 {location_advice['market_insights']}")
+            
+            # Government schemes
+            schemes = location_advice.get("government_schemes", [])
+            if schemes:
+                advice.append(f"🏛️ Available government schemes: {', '.join(schemes[:3])}")
+            
+            # Research centers
+            research_centers = location_advice.get("research_centers", [])
+            if research_centers:
+                advice.append(f"🔬 Consult local research centers: {', '.join(research_centers[:2])}")
+        
+        # Base seasonal advice
         if context.get("season") == SeasonType.KHARIF:
-            advice.append("Consider monsoon timing for planting")
+            advice.append("🌧️ Kharif season: Monitor monsoon timing for optimal planting")
+        elif context.get("season") == SeasonType.RABI:
+            advice.append("❄️ Rabi season: Ensure adequate winter irrigation arrangements")
+        
+        # Soil-specific advice
         if context.get("soil_type") == "clay":
-            advice.append("Ensure proper drainage for clay soil")
+            advice.append("🏔️ Clay soil: Ensure proper drainage and avoid waterlogging")
+        elif context.get("soil_type") == "sandy":
+            advice.append("🏜️ Sandy soil: Focus on organic matter and frequent irrigation")
         
         # Satellite-based advice
         if satellite_data:
@@ -827,11 +1129,22 @@ class CropSelectionAgent(BaseWorkerAgent):
             soil_moisture = satellite_data.get("soil_moisture", 0.0)
             
             if ndvi < 0.3:
-                advice.append("[SATELLITE] Satellite data shows low vegetation health - consider soil improvement")
+                advice.append("🛰️ [SATELLITE] Low vegetation health detected - consider soil improvement measures")
+            elif ndvi > 0.7:
+                advice.append("🛰️ [SATELLITE] Excellent vegetation conditions - optimal time for planting")
+            
             if soil_moisture < 0.3:
-                advice.append("[SATELLITE] Low soil moisture detected - irrigation planning recommended")
-            if ndvi > 0.7:
-                advice.append("[SATELLITE] Excellent vegetation conditions detected - optimal for planting")
+                advice.append("🛰️ [SATELLITE] Low soil moisture detected - irrigation planning recommended")
+            elif soil_moisture > 0.7:
+                advice.append("🛰️ [SATELLITE] Good soil moisture levels - favorable for crop establishment")
+        
+        # Regional crop variety recommendations
+        if context.get("location_specific_advice", {}).get("specific_varieties"):
+            varieties = context["location_specific_advice"]["specific_varieties"]
+            crop_requested = context.get("specific_crop")
+            if crop_requested and crop_requested.value in varieties:
+                specific_vars = varieties[crop_requested.value]
+                advice.append(f"🌱 Recommended {crop_requested.value} varieties for your region: {', '.join(specific_vars[:3])}")
         
         return advice
     
@@ -846,6 +1159,16 @@ class CropSelectionAgent(BaseWorkerAgent):
             summary.append(rec_text)
         
         return summary
+    
+    def _create_language_appropriate_response(self, language: Language, context: Dict[str, Any], recommendations: List) -> str:
+        """Create response text in appropriate language"""
+        location = context.get('location', 'your area')
+        num_recommendations = len(recommendations)
+        
+        if language in [Language.HINDI, Language.MIXED]:
+            return f"{location} के लिए {num_recommendations} फसल सुझाव। उपग्रह डेटा सहित विश्लेषण।"
+        else:
+            return f"{num_recommendations} crop recommendations for {location}. Analysis includes satellite data."
     
     def _boost_agrisens_recommendation(self, recommendations: List[CropRecommendation], agrisens_recommendation: Any):
         """Boost the priority of AgriSens ML recommended crops"""

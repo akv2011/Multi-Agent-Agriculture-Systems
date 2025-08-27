@@ -464,7 +464,7 @@ const SimpleDemoInterface: React.FC = () => {
   // Sample queries from the demo script
   const sampleQueries = [
     {
-      query: "What is the best variety of wheat to grow?",
+      query: "गेहूं उगाने के लिए सबसे अच्छी किस्म कौन सी है?",
       type: "Crop selection",
       agent: "crop_selection"
     },
@@ -479,7 +479,7 @@ const SimpleDemoInterface: React.FC = () => {
       agent: "market_timing"
     },
     {
-      query: "Which rice variety is better for the kharif season?",
+      query: "ಖರೀಫ್ ಋತುವಿಗೆ ಯಾವ ಅಕ್ಕಿ ಪ್ರಭೇದವು ಉತ್ತಮ?",
       type: "Crop selection",
       agent: "crop_selection"
     },
@@ -1100,9 +1100,18 @@ To get more specific recommendations, please:
                       borderRadius: '8px',
                       fontSize: '0.9rem',
                       outline: 'none',
-                      transition: 'border-color 0.3s'
+                      transition: 'border-color 0.3s',
+                      backgroundColor: '#ffffff',
+                      color: '#333333',
+                      colorScheme: 'light'
                     }}
-                    onFocus={() => searchQuery && setShowSearchResults(true)}
+                    onFocus={(e) => {
+                      if (searchQuery) setShowSearchResults(true);
+                      e.target.style.borderColor = '#DFBA47';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#ddd';
+                    }}
                   />
                   {isSearching && (
                     <div style={{

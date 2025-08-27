@@ -8,17 +8,6 @@ interface ProcessingStep {
   details?: Record<string, unknown>;
 }
 
-interface AgentResponse {
-  agent_id: string;
-  response_text: string;
-  confidence_score: number;
-}
-
-interface FailedAgent {
-  agent_id: string;
-  error: string;
-}
-
 interface RealTimeUpdate {
   id: string;
   query: string;
@@ -59,6 +48,35 @@ interface ComprehensiveAnswer {
   }>;
   synthesis_method: string;
   response_quality: string;
+  executive_summary?: {
+    query_type: string;
+    confidence_level: string;
+    urgency: string;
+    key_insight: string;
+    primary_recommendation?: string;
+  };
+  detailed_analysis?: Array<{
+    title: string;
+    content: string;
+    importance: string;
+    data_points?: Array<{
+      text: string;
+      values: string[];
+    }>;
+  }>;
+  actionable_recommendations?: Array<{
+    priority: string;
+    timeline: string;
+    impact?: string;
+    difficulty?: string;
+    action: string;
+  }>;
+  next_steps?: Array<{
+    step: string;
+    action: string;
+    timeframe: string;
+    resources_needed?: string[];
+  }>;
 }
 
 interface EnhancedQueryResponse {
@@ -151,6 +169,25 @@ const EnhancedAgricultureInterface: React.FC = () => {
   const [realTimeUpdates, setRealTimeUpdates] = useState<RealTimeUpdate[]>([]);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
+  const updateDashboardMetrics = useCallback(async () => {
+    try {
+      const response = await fetch('http://localhost:8001/demo/dashboard');
+      if (response.ok) {
+        const data = await response.json();
+        setDashboardMetrics({
+          totalQueries: data.total_queries_processed,
+          successfulQueries: Math.floor(data.total_queries_processed * data.success_rate),
+          avgProcessingTime: data.average_response_time * 1000, // Convert to ms
+          systemHealth: data.success_rate > 0.8 ? 'healthy' : 'warning',
+          activeAgents: Object.keys(data.agent_utilization || {}).length || 5,
+          runningWorkflows: data.current_active_workflows
+        });
+      }
+    } catch (error) {
+      console.warn('Could not update dashboard metrics:', error);
+    }
+  }, []);
+
   const availableAgents = [
     { id: 'crop_selection', name: 'Crop Selection', description: 'Crop recommendations and planning' },
     { id: 'pest_management', name: 'Pest Management', description: 'Disease identification and treatment' },
@@ -159,7 +196,7 @@ const EnhancedAgricultureInterface: React.FC = () => {
     { id: 'input_materials', name: 'Input Materials', description: 'Fertilizer and input recommendations' },
     { id: 'weather_forecast', name: 'Weather Forecast', description: 'Weather predictions and alerts' },
     { id: 'finance_policy', name: 'Finance & Policy', description: 'Loans, subsidies, and policies' },
-    { id: 'gemini_agriculture', name: 'General AI Assistant', description: 'Multi-purpose agricultural guidance' }
+    { id: 'agent_agriculture', name: 'General AI Assistant', description: 'Multi-purpose agricultural guidance' }
   ];
 
   const sampleQueries = {
@@ -193,25 +230,6 @@ const EnhancedAgricultureInterface: React.FC = () => {
 
     return () => clearInterval(interval);
   }, [updateDashboardMetrics]);
-
-  const updateDashboardMetrics = useCallback(async () => {
-    try {
-      const response = await fetch('http://localhost:8001/demo/dashboard');
-      if (response.ok) {
-        const data = await response.json();
-        setDashboardMetrics({
-          totalQueries: data.total_queries_processed,
-          successfulQueries: Math.floor(data.total_queries_processed * data.success_rate),
-          avgProcessingTime: data.average_response_time * 1000, // Convert to ms
-          systemHealth: data.success_rate > 0.8 ? 'healthy' : 'warning',
-          activeAgents: Object.keys(data.agent_utilization || {}).length || 5,
-          runningWorkflows: data.current_active_workflows
-        });
-      }
-    } catch (error) {
-      console.warn('Could not update dashboard metrics:', error);
-    }
-  }, []);
 
   const submitEnhancedQuery = async () => {
     if (!query.trim()) return;

@@ -116,8 +116,11 @@ const ReportsPage: React.FC = () => {
       description: 'Analysis of weather patterns and their impact on crop yields',
       createdAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
       category: 'crop',
-      status: 'pending',
+      status: 'generated',
+      fileSize: '3.1 MB',
       generatedBy: 'Climate Analysis Agent',
+      lastViewed: new Date(Date.now() - 2 * 60 * 1000).toISOString(),
+      downloadUrl: '#',
       thumbnail: '☁️'
     },
     {
@@ -126,8 +129,11 @@ const ReportsPage: React.FC = () => {
       description: 'Status report on agricultural equipment maintenance and repair needs',
       createdAt: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
       category: 'harvest',
-      status: 'failed',
+      status: 'generated',
+      fileSize: '2.3 MB',
       generatedBy: 'Equipment Monitoring Agent',
+      lastViewed: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+      downloadUrl: '#',
       thumbnail: '🔧'
     }
   ];

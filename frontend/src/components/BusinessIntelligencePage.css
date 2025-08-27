@@ -65,10 +65,25 @@
   overflow-x: auto;
   width: 100%;
   box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e0 transparent;
+}
+
+.tab-navigation::-webkit-scrollbar {
+  height: 4px;
+}
+
+.tab-navigation::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tab-navigation::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 2px;
 }
 
 .tab-btn {
-  padding: 10px 16px;
+  padding: 12px 20px;
   border: none;
   background: transparent;
   border-radius: 10px;
@@ -78,8 +93,13 @@
   transition: all 0.3s ease;
   white-space: nowrap;
   flex-shrink: 0;
-  font-size: 0.9rem;
-  min-width: auto;
+  font-size: 0.95rem;
+  min-width: fit-content;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  line-height: 1.2;
 }
 
 .tab-btn:hover {

@@ -120,19 +120,47 @@ AGRICULTURAL EXPERTISE:
 - Focus on yield optimization and sustainable practices
 
 LANGUAGE RULES:
-- Respond in the same language as the farmer's question
+- Respond in the EXACT SAME language as the farmer's question
 - If Hindi/Hinglish: Use appropriate agricultural terminology in Hindi
 - If English: Use clear, farmer-friendly English
 - Always maintain the structured format regardless of language
 
-RESPONSE QUALITY:
-- Be specific with quantities, timing, and methods
-- Include cost estimates when relevant (in Indian Rupees)
+RESPONSE QUALITY REQUIREMENTS:
+- NEVER give vague answers - always provide specific, concrete information
+- Include specific quantities, timing, and methods with exact numbers
+- Provide cost estimates with actual amounts in Indian Rupees (₹) - NO DOLLARS
 - Mention specific varieties, brands, or techniques when applicable
-- Consider local availability of resources and inputs
-- Provide weather-dependent advice when relevant
+- Give precise measurements in INDIAN UNITS: kg/hectare, kg/acre, quintals, litres
+- Include market prices in ₹ per quintal/kg (Indian market rates)
+- Provide concrete timelines (not "soon" but "in 7-10 days")
+- Use real numbers for yields, costs, areas, timing
+- If exact data unavailable, generate realistic mock data based on Indian agricultural standards
+- Consider local availability of resources and inputs with specific sources
+- Provide weather-dependent advice with specific parameters
 
-Remember: Always follow the exact format above. Do not add conversational elements or chat-like responses."""
+SPECIFIC NUMBER REQUIREMENTS - INDIAN CONTEXT:
+- Yield estimates: Always in kg/hectare, quintals/acre, or tonnes/hectare
+- Costs: Always in ₹ (Rupees) per unit area or total investment - NO DOLLARS
+- Application rates: Exact amounts (grams/litre, kg/hectare, kg/acre)
+- Timing: Specific days, weeks, or calendar dates (not vague terms)
+- Percentages: Soil moisture, humidity, success rates with exact figures
+- Areas: Exact hectares, acres, or bighas
+- Market prices: Current rates per quintal/kg in Indian markets (₹2000-3000/quintal range)
+- Fertilizer quantities: Specific NPK amounts in kg
+- Water requirements: Litres per day/week or mm per season
+- Seed rates: kg per hectare/acre
+- Pesticide dosages: ml per litre or grams per litre
+- Farm machinery costs: ₹ per hour/day rental rates
+- Labor costs: ₹ per day/person in rural Indian context
+
+MOCK DATA GUIDELINES:
+- Use realistic Indian agricultural prices and yields
+- Base estimates on current Indian market conditions
+- Include seasonal variations in pricing
+- Reference common Indian crop varieties and brands
+- Use typical Indian farming practices and input costs
+
+Remember: Always follow the exact format above. Do not add conversational elements or chat-like responses. Provide concrete, actionable advice with specific numbers."""
 
     async def process_query(self, query: AgricultureQuery) -> AgentResponse:
         """
@@ -216,14 +244,31 @@ Farmer's Question: {query.query_text}
 
 {region_context}
 
-Please respond in the same language as the question. If the farmer asks in Hindi, respond in Hindi. If they ask in English, respond in English. If they mix languages (Hinglish), you can respond accordingly.
+CRITICAL INSTRUCTIONS:
+- Respond in the EXACT SAME language as the question above
+- If the farmer asks in Hindi, respond in Hindi
+- If they ask in English, respond in English  
+- If they mix languages (Hinglish), you can respond accordingly
+- NEVER give vague answers - always provide specific numbers and concrete details
 
 Focus on:
-- Practical, implementable solutions
+- Practical, implementable solutions with exact quantities and costs
 - Region-specific crops and varieties suitable for the local climate and soil
-- Cost-effective methods
+- Cost-effective methods with specific investment amounts in ₹
 - Seasonal considerations (current month: {datetime.now().strftime('%B')})
-- Local agricultural practices and market conditions"""
+- Local agricultural practices and market conditions with current prices
+- Specific timing, measurements, and application rates
+- Concrete action plans with precise timelines
+
+ALWAYS INCLUDE SPECIFIC NUMBERS:
+- Exact yields (kg/hectare, quintals/acre)
+- Precise costs (₹ amounts)
+- Application rates (grams/liter, kg/hectare)
+- Timeline details (specific days/weeks)
+- Market prices (₹ per quintal/kg)
+- Percentages and measurements
+
+If exact data is not available, provide realistic estimates based on agricultural standards."""
 
         # Add farm context if available
         if query.farm_profile:

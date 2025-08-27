@@ -451,7 +451,7 @@ sample_products = [
         unit="kg",
         stock=500,
         seller=sample_sellers[0],
-        images=["/uploads/product_images/basmati-rice.jpg"],
+        images=["/images/basmati-rice.jpg"],
         is_organic=False,
         harvest_date="2024-11-15",
         marketplace_type=MarketplaceType.B2C,
@@ -471,7 +471,7 @@ sample_products = [
         unit="kg",
         stock=200,
         seller=sample_sellers[1],
-        images=["/uploads/product_images/wheat-flour.jpg"],
+        images=["/images/wheat-field.jpg"],
         is_organic=True,
         harvest_date="2024-12-01",
         marketplace_type=MarketplaceType.B2C,
@@ -484,19 +484,97 @@ sample_products = [
     )
 ]
 
-# Create sample farmers
-sample_farmers = [
-    create_sample_farmer("Rajesh Kumar Singh", FarmingExperience.EXPERIENCED, 
-                        {"state": "Punjab", "district": "Ludhiana", "village": "Doraha"}),
-    create_sample_farmer("Sunita Devi", FarmingExperience.INTERMEDIATE,
-                        {"state": "Uttar Pradesh", "district": "Meerut", "village": "Kharkhauda"}),
-    create_sample_farmer("Manoj Patil", FarmingExperience.VETERAN,
-                        {"state": "Maharashtra", "district": "Nashik", "village": "Sinnar"}),
-    create_sample_farmer("Kavita Sharma", FarmingExperience.BEGINNER,
-                        {"state": "Haryana", "district": "Karnal", "village": "Assandh"}),
-    create_sample_farmer("Ramesh Yadav", FarmingExperience.EXPERIENCED,
-                        {"state": "Madhya Pradesh", "district": "Indore", "village": "Sanwer"})
-]
+# Create sample farmers with diverse credit scores and verification statuses
+sample_farmers = []
+
+# Excellent farmer (850+ score, verified)
+farmer1 = create_sample_farmer("Manoj Patil", FarmingExperience.VETERAN,
+                              {"state": "Maharashtra", "district": "Nashik", "village": "Sinnar"})
+farmer1.agriculture_credit_score = 893  # Excellent score
+farmer1.score_category = CreditScoreCategory.EXCELLENT
+farmer1.verification_status = VerificationStatus.VERIFIED
+farmer1.satellite_metrics.ndvi_score = 0.82
+farmer1.financial_history.repayment_success_rate = 98.5
+farmer1.market_activity.customer_satisfaction_score = 4.9
+sample_farmers.append(farmer1)
+
+# Very good farmer (750+ score, verified)
+farmer2 = create_sample_farmer("Sunita Devi", FarmingExperience.EXPERIENCED,
+                              {"state": "Uttar Pradesh", "district": "Meerut", "village": "Kharkhauda"})
+farmer2.agriculture_credit_score = 782  # Very good score
+farmer2.score_category = CreditScoreCategory.VERY_GOOD
+farmer2.verification_status = VerificationStatus.VERIFIED
+farmer2.satellite_metrics.ndvi_score = 0.75
+farmer2.financial_history.repayment_success_rate = 95.2
+farmer2.market_activity.customer_satisfaction_score = 4.7
+sample_farmers.append(farmer2)
+
+# Good farmer (650+ score, verified)
+farmer3 = create_sample_farmer("Ramesh Yadav", FarmingExperience.EXPERIENCED,
+                              {"state": "Madhya Pradesh", "district": "Indore", "village": "Sanwer"})
+farmer3.agriculture_credit_score = 668  # Good score
+farmer3.score_category = CreditScoreCategory.GOOD
+farmer3.verification_status = VerificationStatus.VERIFIED
+farmer3.satellite_metrics.ndvi_score = 0.69
+farmer3.financial_history.repayment_success_rate = 88.5
+farmer3.market_activity.customer_satisfaction_score = 4.3
+sample_farmers.append(farmer3)
+
+# Good farmer (current user, pending verification)
+farmer4 = create_sample_farmer("Rajesh Kumar Singh", FarmingExperience.INTERMEDIATE,
+                              {"state": "Punjab", "district": "Ludhiana", "village": "Doraha"})
+farmer4.agriculture_credit_score = 662  # Good score
+farmer4.score_category = CreditScoreCategory.GOOD
+farmer4.verification_status = VerificationStatus.PENDING
+farmer4.satellite_metrics.ndvi_score = 0.65
+farmer4.financial_history.repayment_success_rate = 85.0
+farmer4.market_activity.customer_satisfaction_score = 4.1
+farmer4.farmer_id = "FARMER_45690318"  # Set as current user
+sample_farmers.append(farmer4)
+
+# Fair farmer (550+ score, pending)
+farmer5 = create_sample_farmer("Kavita Sharma", FarmingExperience.BEGINNER,
+                              {"state": "Haryana", "district": "Karnal", "village": "Assandh"})
+farmer5.agriculture_credit_score = 589  # Fair score
+farmer5.score_category = CreditScoreCategory.FAIR
+farmer5.verification_status = VerificationStatus.PENDING
+farmer5.satellite_metrics.ndvi_score = 0.58
+farmer5.financial_history.repayment_success_rate = 78.5
+farmer5.market_activity.customer_satisfaction_score = 3.8
+sample_farmers.append(farmer5)
+
+# Poor farmer (under 550, not verified)
+farmer6 = create_sample_farmer("Amit Sharma", FarmingExperience.BEGINNER,
+                              {"state": "Rajasthan", "district": "Jaipur", "village": "Chomu"})
+farmer6.agriculture_credit_score = 485  # Poor score
+farmer6.score_category = CreditScoreCategory.POOR
+farmer6.verification_status = VerificationStatus.REJECTED
+farmer6.satellite_metrics.ndvi_score = 0.45
+farmer6.financial_history.repayment_success_rate = 65.0
+farmer6.market_activity.customer_satisfaction_score = 3.2
+sample_farmers.append(farmer6)
+
+# Another excellent farmer for variety
+farmer7 = create_sample_farmer("Priya Kumari", FarmingExperience.VETERAN,
+                              {"state": "Karnataka", "district": "Mysore", "village": "Mandya"})
+farmer7.agriculture_credit_score = 845  # Excellent score
+farmer7.score_category = CreditScoreCategory.EXCELLENT
+farmer7.verification_status = VerificationStatus.VERIFIED
+farmer7.satellite_metrics.ndvi_score = 0.79
+farmer7.financial_history.repayment_success_rate = 96.8
+farmer7.market_activity.customer_satisfaction_score = 4.8
+sample_farmers.append(farmer7)
+
+# Another good farmer
+farmer8 = create_sample_farmer("Suresh Reddy", FarmingExperience.EXPERIENCED,
+                              {"state": "Telangana", "district": "Hyderabad", "village": "Rangareddy"})
+farmer8.agriculture_credit_score = 695  # Good score
+farmer8.score_category = CreditScoreCategory.GOOD
+farmer8.verification_status = VerificationStatus.VERIFIED
+farmer8.satellite_metrics.ndvi_score = 0.71
+farmer8.financial_history.repayment_success_rate = 90.2
+farmer8.market_activity.customer_satisfaction_score = 4.4
+sample_farmers.append(farmer8)
 
 # Add specific farmer for frontend compatibility
 rajesh_farmer = sample_farmers[0]  # Rajesh Kumar Singh
@@ -818,9 +896,22 @@ async def get_farmer_credit_score_breakdown(farmer_id: str):
         "next_review_date": datetime.now() + timedelta(days=90)
     }
 
+def calculate_points_to_next_category(current_score: int) -> int:
+    """Calculate points needed to reach the next credit score category"""
+    if current_score >= 800:
+        return 0  # Already at highest category
+    elif current_score >= 700:
+        return 800 - current_score  # Points to excellent
+    elif current_score >= 600:
+        return 700 - current_score  # Points to very good
+    elif current_score >= 500:
+        return 600 - current_score  # Points to good
+    else:
+        return 500 - current_score  # Points to fair
+
 @app.get("/farmer-leaderboard")
-async def get_farmer_leaderboard(limit: int = 10):
-    """Get top farmers by credit score"""
+async def get_farmer_leaderboard(limit: int = 20):
+    """Get top farmers by credit score with enhanced details"""
     sorted_farmers = sorted(farmers_db.values(), key=lambda f: f.agriculture_credit_score, reverse=True)
     
     leaderboard = []
@@ -834,22 +925,170 @@ async def get_farmer_leaderboard(limit: int = 10):
             "score_category": farmer.score_category,
             "farming_experience": farmer.farming_experience,
             "primary_crops": farmer.primary_crops,
-            "verification_status": farmer.verification_status
+            "verification_status": farmer.verification_status,
+            "farm_size_hectares": farmer.farm_size_hectares,
+            "profile_completeness": farmer.profile_completeness,
+            "ndvi_score": farmer.satellite_metrics.ndvi_score,
+            "last_active": farmer.last_active.isoformat()
         })
     
     return leaderboard
 
+@app.get("/farmer-leaderboard/{farmer_id}/position")
+async def get_farmer_leaderboard_position(farmer_id: str):
+    """Get specific farmer's position in the leaderboard"""
+    if farmer_id not in farmers_db:
+        raise HTTPException(status_code=404, detail="Farmer not found")
+    
+    sorted_farmers = sorted(farmers_db.values(), key=lambda f: f.agriculture_credit_score, reverse=True)
+    
+    for i, farmer in enumerate(sorted_farmers):
+        if farmer.farmer_id == farmer_id:
+            return {
+                "farmer_id": farmer_id,
+                "rank": i + 1,
+                "total_farmers": len(sorted_farmers),
+                "percentile": round((len(sorted_farmers) - i) / len(sorted_farmers) * 100, 1),
+                "agriculture_credit_score": farmer.agriculture_credit_score,
+                "score_category": farmer.score_category,
+                "improvement_needed": {
+                    "points_to_next_category": calculate_points_to_next_category(farmer.agriculture_credit_score),
+                    "farmers_ahead": i,
+                    "closest_farmer_score": sorted_farmers[i-1].agriculture_credit_score if i > 0 else farmer.agriculture_credit_score
+                }
+            }
+    
+    return {"error": "Farmer not found in leaderboard"}
+
+@app.get("/farmer-leaderboard/regional/{state}")
+async def get_regional_leaderboard(state: str, limit: int = 10):
+    """Get leaderboard for farmers in a specific state"""
+    regional_farmers = [f for f in farmers_db.values() if f.location.get('state', '').lower() == state.lower()]
+    
+    if not regional_farmers:
+        return {"message": f"No farmers found in {state}", "leaderboard": []}
+    
+    sorted_farmers = sorted(regional_farmers, key=lambda f: f.agriculture_credit_score, reverse=True)
+    
+    leaderboard = []
+    for i, farmer in enumerate(sorted_farmers[:limit]):
+        leaderboard.append({
+            "rank": i + 1,
+            "farmer_id": farmer.farmer_id,
+            "name": farmer.name,
+            "location": f"{farmer.location.get('district', '')}, {farmer.location.get('village', '')}",
+            "agriculture_credit_score": farmer.agriculture_credit_score,
+            "score_category": farmer.score_category,
+            "farming_experience": farmer.farming_experience,
+            "primary_crops": farmer.primary_crops,
+            "verification_status": farmer.verification_status
+        })
+    
+    return {
+        "state": state,
+        "total_farmers": len(regional_farmers),
+        "leaderboard": leaderboard
+    }
+
+@app.get("/farmer-profile/{farmer_id}/insights")
+async def get_farmer_insights(farmer_id: str):
+    """Get detailed insights and recommendations for a specific farmer"""
+    if farmer_id not in farmers_db:
+        raise HTTPException(status_code=404, detail="Farmer not found")
+    
+    farmer = farmers_db[farmer_id]
+    all_scores = [f.agriculture_credit_score for f in farmers_db.values()]
+    farmer_rank = sorted(all_scores, reverse=True).index(farmer.agriculture_credit_score) + 1
+    percentile = round((len(all_scores) - farmer_rank + 1) / len(all_scores) * 100, 1)
+    
+    insights = {
+        "farmer_id": farmer_id,
+        "current_score": farmer.agriculture_credit_score,
+        "rank": farmer_rank,
+        "total_farmers": len(farmers_db),
+        "percentile": percentile,
+        "score_category": farmer.score_category,
+        "points_to_next_category": calculate_points_to_next_category(farmer.agriculture_credit_score),
+        "strengths": [],
+        "improvement_areas": [],
+        "recommendations": [],
+        "comparison": {
+            "state_average": 0,
+            "national_average": sum(all_scores) / len(all_scores),
+            "top_10_percent_threshold": sorted(all_scores, reverse=True)[len(all_scores) // 10] if len(all_scores) >= 10 else max(all_scores)
+        }
+    }
+    
+    # Calculate state average
+    state_farmers = [f for f in farmers_db.values() if f.location.get('state') == farmer.location.get('state')]
+    if state_farmers:
+        insights["comparison"]["state_average"] = sum(f.agriculture_credit_score for f in state_farmers) / len(state_farmers)
+    
+    # Generate insights based on farmer data
+    if farmer.satellite_metrics.ndvi_score > 0.7:
+        insights["strengths"].append("Excellent vegetation health (NDVI > 0.7)")
+    elif farmer.satellite_metrics.ndvi_score < 0.4:
+        insights["improvement_areas"].append("Poor vegetation health - consider crop rotation or soil treatment")
+    
+    if farmer.technology_adoption.technology_adoption_score > 70:
+        insights["strengths"].append("High technology adoption rate")
+    else:
+        insights["recommendations"].append("Consider adopting more agricultural technologies for better efficiency")
+    
+    if farmer.financial_history.repayment_success_rate > 90:
+        insights["strengths"].append("Excellent loan repayment history")
+    elif farmer.financial_history.repayment_success_rate < 70:
+        insights["improvement_areas"].append("Improve loan repayment consistency")
+    
+    if farmer.profile_completeness < 70:
+        insights["recommendations"].append("Complete your farmer profile to unlock better credit opportunities")
+    
+    return insights
+
 @app.get("/credit-score-analytics")
 async def get_credit_score_analytics():
-    """Get analytics about credit scores across all farmers"""
+    """Get comprehensive analytics about credit scores across all farmers"""
     if not farmers_db:
         return {"message": "No farmer data available"}
     
     scores = [farmer.agriculture_credit_score for farmer in farmers_db.values()]
+    categories = [farmer.score_category for farmer in farmers_db.values()]
+    
+    # Calculate percentiles
+    sorted_scores = sorted(scores)
+    percentiles = {
+        "25th": sorted_scores[len(sorted_scores) // 4] if sorted_scores else 0,
+        "50th": sorted_scores[len(sorted_scores) // 2] if sorted_scores else 0,
+        "75th": sorted_scores[3 * len(sorted_scores) // 4] if sorted_scores else 0,
+        "90th": sorted_scores[9 * len(sorted_scores) // 10] if sorted_scores else 0
+    }
+    
+    # State-wise distribution
+    state_distribution = {}
+    for farmer in farmers_db.values():
+        state = farmer.location.get('state', 'Unknown')
+        if state not in state_distribution:
+            state_distribution[state] = {
+                "count": 0,
+                "avg_score": 0,
+                "top_score": 0,
+                "verified_count": 0
+            }
+        state_distribution[state]["count"] += 1
+        state_distribution[state]["top_score"] = max(state_distribution[state]["top_score"], farmer.agriculture_credit_score)
+        if farmer.verification_status == VerificationStatus.VERIFIED:
+            state_distribution[state]["verified_count"] += 1
+    
+    # Calculate average scores for each state
+    for state in state_distribution:
+        state_farmers = [f for f in farmers_db.values() if f.location.get('state') == state]
+        if state_farmers:
+            state_distribution[state]["avg_score"] = sum(f.agriculture_credit_score for f in state_farmers) / len(state_farmers)
     
     analytics = {
         "total_farmers": len(farmers_db),
         "average_score": sum(scores) / len(scores),
+        "median_score": percentiles["50th"],
         "score_distribution": {
             "excellent": len([s for s in scores if s >= 800]),
             "very_good": len([s for s in scores if 700 <= s < 800]),
@@ -857,9 +1096,23 @@ async def get_credit_score_analytics():
             "fair": len([s for s in scores if 500 <= s < 600]),
             "poor": len([s for s in scores if s < 500])
         },
+        "percentiles": percentiles,
         "highest_score": max(scores),
         "lowest_score": min(scores),
-        "verified_farmers": len([f for f in farmers_db.values() if f.verification_status == VerificationStatus.VERIFIED])
+        "verified_farmers": len([f for f in farmers_db.values() if f.verification_status == VerificationStatus.VERIFIED]),
+        "state_wise_distribution": state_distribution,
+        "technology_adoption_stats": {
+            "satellite_monitoring": len([f for f in farmers_db.values() if f.technology_adoption.uses_satellite_monitoring]),
+            "ai_recommendations": len([f for f in farmers_db.values() if f.technology_adoption.uses_ai_recommendations]),
+            "precision_agriculture": len([f for f in farmers_db.values() if f.technology_adoption.uses_precision_agriculture]),
+            "digital_marketplace": len([f for f in farmers_db.values() if f.technology_adoption.uses_digital_marketplace])
+        },
+        "farming_experience_distribution": {
+            "beginner": len([f for f in farmers_db.values() if f.farming_experience == FarmingExperience.BEGINNER]),
+            "intermediate": len([f for f in farmers_db.values() if f.farming_experience == FarmingExperience.INTERMEDIATE]),
+            "experienced": len([f for f in farmers_db.values() if f.farming_experience == FarmingExperience.EXPERIENCED]),
+            "veteran": len([f for f in farmers_db.values() if f.farming_experience == FarmingExperience.VETERAN])
+        }
     }
     
     return analytics

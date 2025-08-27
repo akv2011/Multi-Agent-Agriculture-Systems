@@ -44,6 +44,17 @@ class CropType(str, Enum):
     VEGETABLES = "vegetables"
     FRUITS = "fruits"
     SPICES = "spices"
+    COCONUT = "coconut"
+    RUBBER = "rubber"
+    TEA = "tea"
+    COFFEE = "coffee"
+    GROUNDNUT = "groundnut"
+    TURMERIC = "turmeric"
+    CHILI = "chili"
+    ONION = "onion"
+    POTATO = "potato"
+    TOBACCO = "tobacco"
+    JUTE = "jute"
     OTHER = "other"
 
 

@@ -65,6 +65,54 @@ def crop_recommendation_examples():
     """Examples for crop recommendation queries"""
     print_header("Crop Recommendation Examples")
     
+    # Hindi query example with specific numbers
+    print_query_example(
+        "Crop Selection Agent (Hindi)",
+        "मेरे खेत में कौन सी फसल उगाऊं? मिट्टी दोमट है, 5 एकड़ जमीन है, बजट ₹50,000 है।",
+        {
+            "recommendations": [
+                {
+                    "crop_type": "गेहूं",
+                    "variety": "HD-3086",
+                    "suitability_score": 0.95,
+                    "expected_yield": "5200 किलो/हेक्टेयर",
+                    "investment_cost": "₹23,000/हेक्टेयर",
+                    "profit_potential": "₹85,000/हेक्टेयर",
+                    "reason": "दोमट मिट्टी के लिए उत्तम, रबी सीजन के लिए सबसे अच्छी"
+                },
+                {
+                    "crop_type": "सरसों",
+                    "variety": "NRCHB-101",
+                    "suitability_score": 0.87,
+                    "expected_yield": "1800 किलो/हेक्टेयर",
+                    "investment_cost": "₹18,000/हेक्टेयर",
+                    "profit_potential": "₹45,000/हेक्टेयर",
+                    "reason": "कम लागत, अच्छी बाजार मांग"
+                }
+            ],
+            "npk_analysis": {
+                "nitrogen": "मध्यम (45 किलो/हेक्टेयर)",
+                "phosphorus": "पर्याप्त (32 किलो/हेक्टेयर)",
+                "potassium": "उच्च (72 किलो/हेक्टेयर)"
+            },
+            "AgriMitr_confidence": 99.55,
+            "satellite_data": {
+                "vegetation_index": "स्वस्थ",
+                "soil_moisture": "पर्याप्त (35%)"
+            },
+            "market_prices": {
+                "wheat": "₹2,150/क्विंटल",
+                "mustard": "₹4,200/क्विंटल"
+            },
+            "specific_advice": [
+                "5 एकड़ में 3 एकड़ गेहूं, 2 एकड़ सरसों उगाएं",
+                "कुल लागत: ₹45,000 (बजट के अंदर)",
+                "अपेक्षित कुल आय: ₹2,85,000",
+                "शुद्ध लाभ: ₹2,40,000"
+            ]
+        }
+    )
+    
     # Basic recommendation
     print_query_example(
         "Crop Selection Agent",
@@ -131,6 +179,59 @@ def crop_recommendation_examples():
 def fertilizer_recommendation_examples():
     """Examples for fertilizer recommendation queries"""
     print_header("Fertilizer Recommendation Examples")
+    
+    # Hindi fertilizer query with specific numbers in Indian units
+    print_query_example(
+        "Fertilizer Recommendation Agent (Hindi)",
+        "मेरी गेहूं की फसल के लिए कौन सा उर्वरक अच्छा होगा? 2 एकड़ में बोया है।",
+        {
+            "recommendation": {
+                "fertilizer_name": "NPK 12-32-16",
+                "npk_ratio": "12:32:16",
+                "application_rate_kg_per_hectare": 125,
+                "application_rate_kg_per_acre": 50,
+                "total_quantity_needed": "100 किलो (2 एकड़ के लिए)",
+                "application_method": "बुआई के समय पंक्तियों में डालें, बीज से 5 सेमी नीचे और 5 सेमी बगल में",
+                "application_timing": "दो चरणों में: 50% बुआई के समय, 50% कल्ले निकलने पर",
+                "cost_estimate_rupees": 6250,
+                "cost_per_kg": "₹62.50",
+                "environmental_impact": "मध्यम - जैविक खाद मिलाना बेहतर होगा",
+                "alternatives": [
+                    "DAP 100 किलो + MOP 25 किलो (₹7,500)",
+                    "वर्मी कंपोस्ट 500 किलो + रॉक फास्फेट 50 किलो (₹4,200)"
+                ],
+                "expected_yield_increase": "8-12 क्विंटल प्रति एकड़ अतिरिक्त",
+                "market_price_guidance": "गेहूं का वर्तमान भाव: ₹2,180 प्रति क्विंटल",
+                "profit_calculation": {
+                    "additional_yield": "20 क्विंटल (2 एकड़)",
+                    "additional_income": "₹43,600",
+                    "fertilizer_cost": "₹6,250",
+                    "net_additional_profit": "₹37,350"
+                }
+            },
+            "soil_analysis": {
+                "nitrogen": 65,
+                "phosphorus": 28,
+                "potassium": 45,
+                "ph": 7.1,
+                "organic_matter": "1.8%"
+            },
+            "detailed_schedule": [
+                {
+                    "timing": "बुआई के दिन",
+                    "fertilizer": "NPK 12-32-16",
+                    "quantity": "50 किलो",
+                    "method": "ड्रिल से पंक्तियों में"
+                },
+                {
+                    "timing": "25-30 दिन बाद (कल्ले निकलने पर)",
+                    "fertilizer": "NPK 12-32-16",
+                    "quantity": "50 किलो",
+                    "method": "टॉप ड्रेसिंग के रूप में + सिंचाई"
+                }
+            ]
+        }
+    )
     
     print_query_example(
         "Fertilizer Recommendation Agent",
