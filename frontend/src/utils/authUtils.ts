@@ -11,11 +11,7 @@ const USER_ROLES: { [key: string]: UserRole } = {
   admin: { role: 'Administrator' },
   user: { role: 'User' },
   farmer: { role: 'Farmer' },
-<<<<<<< HEAD
-  AgriMitr: { role: 'AgriMitr Expert' }
-=======
   agrisens: { role: 'AgriSens Expert' }
->>>>>>> upstream/main
 };
 
 /**
@@ -51,11 +47,7 @@ export const getDemoCredentials = (): DemoCredentials => {
     admin: import.meta.env.VITE_DEMO_ADMIN_HASH,
     user: import.meta.env.VITE_DEMO_USER_HASH,
     farmer: import.meta.env.VITE_DEMO_FARMER_HASH,
-<<<<<<< HEAD
-    AgriMitr: import.meta.env.VITE_DEMO_AgriMitr_HASH
-=======
     agrisens: import.meta.env.VITE_DEMO_AGRISENS_HASH
->>>>>>> upstream/main
   };
 
   let validCredentialsCount = 0;
