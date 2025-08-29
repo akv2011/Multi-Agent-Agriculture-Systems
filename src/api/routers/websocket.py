@@ -183,6 +183,37 @@ async def handle_client_message(websocket: WebSocket, message: Dict[str, Any], m
 
 @router.get("/test", response_class=HTMLResponse)
 async def websocket_test_page():
+    html_content = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>WebSocket Test</title>
+    </head>
+    <body>
+        <h1>WebSocket Test Page</h1>
+        <p>Use this page to test WebSocket connections.</p>
+        <div id="messages"></div>
+        <input type="text" id="messageInput" placeholder="Type your message...">
+        <button onclick="sendMessage()">Send</button>
+        
+        <script>
+            const ws = new WebSocket('ws://localhost:8001/ws/chat');
+            const messages = document.getElementById('messages');
+            
+            ws.onmessage = function(event) {
+                const message = JSON.parse(event.data);
+                messages.innerHTML += '<div>' + message.content + '</div>';
+            };
+            
+            function sendMessage() {
+                const input = document.getElementById('messageInput');
+                ws.send(JSON.stringify({content: input.value}));
+                input.value = '';
+            }
+        </script>
+    </body>
+    </html>
+    """
     return HTMLResponse(content=html_content)
 
 
@@ -235,3 +266,65 @@ async def broadcast_system_notification(notification_type: str, message: str, le
         logger.debug(f"Broadcasted system notification: {notification_type}")
     except Exception as e:
         logger.error(f"Error broadcasting system notification: {e}")
+
+
+@router.websocket("/chat")
+async def chat_endpoint(websocket: WebSocket):
+    """WebSocket endpoint for chat functionality"""
+    manager = get_websocket_manager()
+    
+    await websocket.accept()
+    connection_id = f"chat_{id(websocket)}"
+    
+    # Add to active connections
+    if not hasattr(manager, 'chat_connections'):
+        manager.chat_connections = {}
+    manager.chat_connections[connection_id] = websocket
+    
+    logger.info(f"Chat WebSocket connected: {connection_id}")
+    
+    # Send welcome message
+    await websocket.send_json({
+        "type": "chat_message",
+        "message_id": f"welcome_{connection_id}",
+        "content": "Hello! I'm your AgriHelper assistant. How can I help you today?",
+        "timestamp": datetime.now().isoformat(),
+        "sender": "assistant"
+    })
+    
+    try:
+        while True:
+            # Wait for messages from client
+            data = await websocket.receive_text()
+            
+            try:
+                message = json.loads(data)
+                logger.info(f"Received chat message: {message}")
+                
+                # Echo back for now (can be enhanced with actual chat processing)
+                response = {
+                    "type": "chat_message",
+                    "message_id": f"response_{datetime.now().timestamp()}",
+                    "content": f"I received your message: {message.get('content', 'No content')}",
+                    "timestamp": datetime.now().isoformat(),
+                    "sender": "assistant"
+                }
+                
+                await websocket.send_json(response)
+                
+            except json.JSONDecodeError:
+                logger.warning(f"Received invalid JSON from chat client: {data}")
+                await websocket.send_json({
+                    "type": "error",
+                    "content": "Invalid message format",
+                    "timestamp": datetime.now().isoformat()
+                })
+                
+    except WebSocketDisconnect:
+        logger.info(f"Chat WebSocket disconnected: {connection_id}")
+        if hasattr(manager, 'chat_connections') and connection_id in manager.chat_connections:
+            del manager.chat_connections[connection_id]
+    except Exception as e:
+        logger.error(f"Error in chat WebSocket: {e}")
+        if hasattr(manager, 'chat_connections') and connection_id in manager.chat_connections:
+            del manager.chat_connections[connection_id]

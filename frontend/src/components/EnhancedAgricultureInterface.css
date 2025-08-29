@@ -1,4 +1,4 @@
-/* Enhanced Agriculture Interface Styles */
+                                                                                                                  /* Enhanced Agriculture Interface Styles */
 .enhanced-agriculture-interface {
   min-height: 100vh;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
@@ -147,6 +147,41 @@
 .form-select:focus {
   outline: none;
   border-color: #667eea;
+}
+
+/* Voice Integration within Query Section */
+.voice-integration {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem 0;
+  border-top: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+  margin: 1rem 0;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 8px;
+}
+
+.voice-integration::before {
+  content: "🎤 Or ask with your voice:";
+  font-weight: 500;
+  color: #4a5568;
+  margin-right: 1rem;
+  font-size: 0.9rem;
+}
+
+/* Responsive voice integration */
+@media (max-width: 768px) {
+  .voice-integration {
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: center;
+  }
+  
+  .voice-integration::before {
+    margin-right: 0;
+    margin-bottom: 0.5rem;
+  }
 }
 
 /* Advanced Options */

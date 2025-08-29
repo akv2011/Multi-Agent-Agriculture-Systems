@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './DemoInterface.css';
 import apiClient from '../services/apiClient';
+// import VoiceAgent from './VoiceAgent'; // Removed - using SimpleDemoInterface for Query tab
 
 interface DemoQuery {
   query: string;
@@ -69,7 +70,7 @@ const DemoInterface: React.FC = () => {
 
   const fetchCapabilities = async () => {
     try {
-      const data = await apiClient.get('/demo/capabilities');
+      const data = await apiClient.get<Capabilities>('/demo/capabilities');
       setCapabilities(data);
     } catch (err) {
       setError('Failed to fetch capabilities');
@@ -79,8 +80,8 @@ const DemoInterface: React.FC = () => {
 
   const fetchSampleQueries = async () => {
     try {
-      const data = await apiClient.get('/demo/session');
-      setSampleQueries(data.sample_queries || []);
+      const data = await apiClient.get<{ sample_queries: DemoQuery[] }>('/demo/session');
+      setSampleQueries(data?.sample_queries || []);
     } catch (err) {
       setError('Failed to fetch sample queries');
       console.error(err);
@@ -112,6 +113,8 @@ const DemoInterface: React.FC = () => {
       setIsLoading(false);
     }
   };
+
+  // Voice functionality moved to SimpleDemoInterface for the Query tab
 
   const selectSampleQuery = (query: DemoQuery) => {
     setCurrentQuery(query.query);
@@ -215,6 +218,7 @@ const DemoInterface: React.FC = () => {
               rows={3}
               className="query-textarea"
             />
+            {/* Voice integration moved to SimpleDemoInterface */}
             <button 
               onClick={submitQuery} 
               disabled={isLoading}

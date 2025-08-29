@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import './ChatBot.css';
 import useChatBot from '../hooks/useChatBot';
 import { WebSocketConnectionStatus } from '../services/websocketService';
@@ -18,7 +18,6 @@ interface QuickOption {
 
 const ChatBot: React.FC = () => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [isMinimized, setIsMinimized] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [inputValue, setInputValue] = useState('');
   const messagesEndRef = useRef<null | HTMLDivElement>(null);
@@ -27,8 +26,7 @@ const ChatBot: React.FC = () => {
   const { 
     messages: wsMessages, 
     isTyping, 
-    connectionStatus, 
-    isConnected,
+  connectionStatus, 
     sendMessage: sendWsMessage
   } = useChatBot({
     initialMessages: [
@@ -49,10 +47,16 @@ const ChatBot: React.FC = () => {
   });
   
   // Convert WebSocket messages to the format expected by the component
-  const messages: Message[] = wsMessages.map(msg => ({
-    ...msg,
-    timestamp: new Date(msg.timestamp)
-  }));
+  // Memoize to avoid new array/object each render triggering effects
+  const messages: Message[] = useMemo(() => {
+    return wsMessages.map(msg => ({
+      ...msg,
+      timestamp: new Date(msg.timestamp)
+    }));
+  }, [wsMessages]);
+
+  // Track last processed bot message to avoid incrementing unread repeatedly
+  const lastBotMessageIdRef = useRef<string | null>(null);
 
   // Scroll to bottom whenever messages change
   useEffect(() => {
@@ -61,10 +65,14 @@ const ChatBot: React.FC = () => {
     }
   }, [messages]);
 
-  // Update unread count when new messages arrive and chat is not expanded
+  // Update unread count only when a new bot message arrives and chat is not expanded
   useEffect(() => {
-    if (!isExpanded && messages.length > 0 && messages[messages.length - 1].sender === 'bot') {
-      setUnreadCount(prev => prev + 1);
+    if (!isExpanded && messages.length > 0) {
+      const last = messages[messages.length - 1];
+      if (last.sender === 'bot' && last.id !== lastBotMessageIdRef.current) {
+        setUnreadCount(prev => prev + 1);
+        lastBotMessageIdRef.current = last.id;
+      }
     }
   }, [messages, isExpanded]);
 
@@ -76,7 +84,6 @@ const ChatBot: React.FC = () => {
   };
 
   const minimizeChat = () => {
-    setIsMinimized(true);
     setIsExpanded(false);
   };
 
@@ -94,96 +101,10 @@ const ChatBot: React.FC = () => {
     setInputValue('');
   };
   
-  // Local fallback when WebSocket is not connected
-  // We're no longer using this local processing as we've implemented the mock handler in the service
-  const processUserInput = (text: string) => {
-    // This is only a placeholder - all processing is now handled in ChatBotWebSocketService
-    console.log("Local processing not needed - handled by ChatBotWebSocketService");
-  };
-  
-  const getOptionsForResponse = (userInput: string): QuickOption[] | undefined => {
-    const input = userInput.toLowerCase();
-    
-    if (input.includes('weather')) {
-      return [
-        { text: '🗓️ Weekly Forecast', action: 'weekly forecast' },
-        { text: '☔ Rain Probability', action: 'rain chances' },
-        { text: '🌡️ Temperature Trends', action: 'temperature' }
-      ];
-    } else if (input.includes('pest') || input.includes('insect')) {
-      return [
-        { text: '🌿 Organic Solutions', action: 'organic pest control' },
-        { text: '🧪 Chemical Options', action: 'chemical pest control' },
-        { text: '🔍 Identify Pests', action: 'identify pests' }
-      ];
-    } else if (input.includes('crop') || input.includes('plant')) {
-      return [
-        { text: '🌾 Seasonal Crops', action: 'seasonal crops' },
-        { text: '💧 Water Requirements', action: 'crop water needs' },
-        { text: '🌿 Crop Rotation', action: 'crop rotation' }
-      ];
-    } else if (input.includes('market') || input.includes('price')) {
-      return [
-        { text: '📊 Price Trends', action: 'market trends' },
-        { text: '📈 Price Forecasts', action: 'price forecast' },
-        { text: '🚚 Distribution Channels', action: 'distribution' }
-      ];
-    }
-    return [
-      { text: '❓ Ask Different Question', action: 'help' },
-      { text: '👨‍🌾 Talk to Expert', action: 'expert' }
-    ];
-  };
-  
+  // Note: local fallback helpers were removed; WebSocket service provides responses now.
   const handleQuickOption = (action: string) => {
     // Send quick option via WebSocket - the service handles both real and mock responses
     sendWsMessage(action);
-  };
-  
-  const getBotResponse = (userInput: string): string => {
-    const input = userInput.toLowerCase();
-    
-    if (input.includes('weather')) {
-      return 'Based on your location, our weather forecast shows clear skies for the next 3 days with a high of 78°F and low of 62°F. Perfect for crop maintenance! There\'s a 20% chance of light rain on Friday.';
-    } else if (input.includes('weekly forecast')) {
-      return 'Here\'s your 7-day forecast:\nMonday: 78°F, Sunny\nTuesday: 75°F, Partly Cloudy\nWednesday: 76°F, Sunny\nThursday: 79°F, Sunny\nFriday: 74°F, 20% Rain\nSaturday: 72°F, 40% Rain\nSunday: 75°F, Partly Cloudy';
-    } else if (input.includes('rain')) {
-      return 'Rain probability for your area over the next 10 days is relatively low. We expect some light precipitation (20-40% chance) on Friday and Saturday. Total expected rainfall: 0.25 inches.';
-    } else if (input.includes('temperature')) {
-      return 'Temperature trends show a stable pattern around 75°F daytime highs with overnight lows in the low 60s. No extreme temperatures expected in the 10-day forecast.';
-    } else if (input.includes('pest') || input.includes('insect')) {
-      return 'I detect you\'re asking about pest control. Based on recent reports in your area, farmers are seeing increased aphid activity on crops. Would you like information about organic or chemical treatments?';
-    } else if (input.includes('organic pest')) {
-      return 'For organic aphid control, we recommend introducing ladybugs as natural predators. Additionally, neem oil spray (2 tbsp per gallon of water) applied in the evening has shown 85% effectiveness in local test plots.';
-    } else if (input.includes('chemical pest')) {
-      return 'For chemical aphid control, products containing imidacloprid have been most effective (92% control rate) in your area. Always follow label instructions and apply in early morning for best results.';
-    } else if (input.includes('identify pest')) {
-      return 'Common pests in your region this season include: aphids, cucumber beetles, and tomato hornworms. Would you like to upload an image of your pest for identification?';
-    } else if (input.includes('crop') || input.includes('plant')) {
-      return 'Based on your soil analysis (pH 6.8, loamy texture) and current season, we recommend planting wheat, barley, or pulse crops for maximum yield. Your location has received sufficient rainfall for germination.';
-    } else if (input.includes('seasonal crop')) {
-      return 'For this planting window (August), top performing crops in your region are: winter wheat (est. yield 65 bu/acre), fall barley (est. yield 58 bu/acre), and cool season vegetables like spinach and kale.';
-    } else if (input.includes('water')) {
-      return 'Current recommended irrigation for your registered crops: Corn: 1.2 inches/week, Soybeans: 1.0 inches/week. Soil moisture sensors indicate adequate levels in north fields, but south fields are 15% below optimal.';
-    } else if (input.includes('rotation')) {
-      return 'Based on your previous 3 years of crop data, we recommend rotating to legumes (soybeans, peas) in fields 3 and 4 to improve nitrogen fixation. Fields 1 and 2 would benefit from small grains after consecutive corn seasons.';
-    } else if (input.includes('market') || input.includes('price')) {
-      return 'Current market prices show: Corn: $4.85/bu (+2.1% weekly), Soybeans: $13.20/bu (+1.5% weekly), Wheat: $6.75/bu (-0.5% weekly). Organic produce is trading at a 15-25% premium over conventional.';
-    } else if (input.includes('trend')) {
-      return 'Market analysis indicates upward price trends for corn and soybeans through harvest season. Analysts predict a potential 5-7% increase by October due to lower than expected yield reports from southern regions.';
-    } else if (input.includes('forecast')) {
-      return 'Commodity price forecasts for Q4 2025: Corn expected to strengthen to $5.10-5.30/bu, Soybeans projected to reach $13.75-14.25/bu by December. Wheat markets expected to remain stable with slight downward pressure.';
-    } else if (input.includes('distribution')) {
-      return 'Local distribution options: Johnson County Co-op (3 miles) offering $4.78/bu corn, $13.05/bu soybeans. River Valley Processors (12 miles) offering $4.92/bu corn, $13.18/bu soybeans. Both have available storage capacity.';
-    } else if (input.includes('hello') || input.includes('hi')) {
-      return 'Hello! I\'m your AgriHelper assistant. I can provide information on weather forecasts, pest control, crop recommendations, and market prices tailored to your farm\'s location and conditions.';
-    } else if (input.includes('help')) {
-      return 'I can help with: weather forecasts, pest identification, crop recommendations, market prices, irrigation planning, and connecting you with agricultural experts. What would you like information about?';
-    } else if (input.includes('expert')) {
-      return 'I\'ve notified our agricultural specialist about your query. Someone will contact you via your registered phone number within 2 business hours. Is there anything else I can assist with while you wait?';
-    } else {
-      return 'I\'ll analyze your question and find the most relevant information. To provide better assistance, would you like me to consider your farm\'s specific soil type, location, and current crops in my response?';
-    }
   };
 
   return (

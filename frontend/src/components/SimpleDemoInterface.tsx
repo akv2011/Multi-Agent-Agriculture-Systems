@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+// VoiceAgent functionality now implemented inline with Gemini + ElevenLabs
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './SimpleDemoInterface.css';
@@ -8,6 +9,7 @@ import EnhancedResponseDisplay from './EnhancedResponseDisplay';
 import aiService from '../services/geminiService';
 
 // Fix for default markers in React
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
@@ -60,7 +62,7 @@ const SimpleDemoInterface: React.FC = () => {
   // Map-related state
   const mapRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<L.Map | null>(null);
-  const [currentMarker, setCurrentMarker] = useState<L.Marker | null>(null);
+  // const [currentMarker, setCurrentMarker] = useState<L.Marker | null>(null); // Keep for future marker management
   const [selectedPoint, setSelectedPoint] = useState<L.LatLng | null>(null);
   const [selectedCoords, setSelectedCoords] = useState<string>('');
   const [selectedAddress, setSelectedAddress] = useState<string>('');
@@ -80,8 +82,301 @@ const SimpleDemoInterface: React.FC = () => {
   // Image upload states
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [isImageUploading, setIsImageUploading] = useState<boolean>(false);
+  // const [isImageUploading, setIsImageUploading] = useState<boolean>(false); // Unused for now
   const [plantType, setPlantType] = useState<string>('corn');
+
+  // Voice recording states
+  const [isRecording, setIsRecording] = useState<boolean>(false);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [isProcessingVoice, setIsProcessingVoice] = useState<boolean>(false);
+  const [isPlayingTTS, setIsPlayingTTS] = useState<boolean>(false);
+
+  // Voice API keys
+  const viteEnv: Record<string, string> = (typeof import.meta !== 'undefined' && (import.meta as { env?: Record<string, string> }).env) ? (import.meta as { env: Record<string, string> }).env : {};
+  const geminiApiKey = viteEnv.VITE_GEMINI_API_KEY || viteEnv.REACT_APP_GEMINI_API_KEY || '';
+  const elevenlabsApiKey = viteEnv.VITE_ELEVENLABS_API_KEY || viteEnv.REACT_APP_ELEVENLABS_API_KEY || '';
+
+  // Transcribe audio using Gemini
+  const transcribeWithGemini = async (audioBlob: Blob): Promise<string> => {
+    if (!geminiApiKey) {
+      throw new Error('Gemini API key not configured');
+    }
+
+    try {
+      // Convert blob to base64
+      const base64Audio = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const result = reader.result as string;
+          resolve(result.split(',')[1]); // Remove data:audio/wav;base64, prefix
+        };
+        reader.readAsDataURL(audioBlob);
+      });
+
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              {
+                text: "Please transcribe this audio to text. The audio contains an agricultural question or statement. Respond only with the transcribed text, no additional commentary."
+              },
+              {
+                inline_data: {
+                  mime_type: "audio/wav",
+                  data: base64Audio
+                }
+              }
+            ]
+          }]
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Gemini API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const transcription = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      return transcription.trim();
+    } catch (error) {
+      console.error('Transcription error:', error);
+      throw new Error('Failed to transcribe audio');
+    }
+  };
+
+  // Speak text using ElevenLabs
+  const speakWithElevenLabs = async (text: string) => {
+    if (!elevenlabsApiKey || !text.trim()) {
+      console.log('🔇 TTS skipped: No API key or empty text');
+      return;
+    }
+
+    try {
+      setIsPlayingTTS(true);
+      console.log('🔊 Starting TTS request to ElevenLabs...');
+      
+      const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/JBFqnCBsd6RMkjVDRZzb`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'audio/mpeg',
+          'Content-Type': 'application/json',
+          'xi-api-key': elevenlabsApiKey
+        },
+        body: JSON.stringify({
+          text: text,
+          model_id: 'eleven_monolingual_v1',
+          voice_settings: {
+            stability: 0.5,
+            similarity_boost: 0.5
+          }
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`ElevenLabs API error: ${response.status}`);
+      }
+
+      console.log('✅ TTS audio received, starting playback...');
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+      
+      audio.onended = () => {
+        console.log('🔊 TTS playback completed');
+        URL.revokeObjectURL(audioUrl);
+        setIsPlayingTTS(false);
+      };
+      
+      audio.onerror = () => {
+        console.error('❌ TTS audio playback failed');
+        URL.revokeObjectURL(audioUrl);
+        setIsPlayingTTS(false);
+      };
+      
+      await audio.play();
+      console.log('🎵 TTS audio started playing...');
+    } catch (error) {
+      console.error('❌ TTS error:', error);
+      setIsPlayingTTS(false);
+    }
+  };
+
+  // Voice recording functionality
+  const startVoiceRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      const audioChunks: Blob[] = [];
+
+      recorder.ondataavailable = (event) => {
+        audioChunks.push(event.data);
+      };
+
+      recorder.onstop = async () => {
+        setIsProcessingVoice(true);
+        try {
+          const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+          
+          // Transcribe with Gemini
+          const transcription = await transcribeWithGemini(audioBlob);
+          
+          if (transcription) {
+            // Set the transcribed text in the textarea
+            setCurrentQuery(transcription);
+            
+            // Automatically submit the query using the same backend process
+            await submitVoiceQuery(transcription);
+          }
+        } catch (error) {
+          console.error('Voice processing error:', error);
+          setCurrentQuery('Voice processing failed. Please try again.');
+        } finally {
+          setIsProcessingVoice(false);
+        }
+        
+        // Stop all tracks to release microphone
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      recorder.start();
+      setMediaRecorder(recorder);
+      setIsRecording(true);
+
+      // Auto-stop after 10 seconds
+      setTimeout(() => {
+        if (recorder.state === 'recording') {
+          stopVoiceRecording();
+        }
+      }, 10000);
+      
+    } catch (error) {
+      console.error('Error accessing microphone:', error);
+      alert('Could not access microphone. Please check permissions.');
+    }
+  };
+
+  const stopVoiceRecording = () => {
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+      mediaRecorder.stop();
+      setIsRecording(false);
+      setMediaRecorder(null);
+    }
+  };
+
+  // Submit voice query using the same backend process as text
+  const submitVoiceQuery = async (voiceText: string) => {
+    if (!voiceText.trim()) return;
+
+    setIsLoading(true);
+    setError('');
+    setDemoResponse(null);
+
+    try {
+      const apiBaseUrl = import.meta.env.VITE_AGENTWEAVER_API_URL || 'http://localhost:8001';
+      
+      let requestBody;
+      const headers: HeadersInit = {};
+
+      if (selectedImage) {
+        // Use FormData for image upload
+        const formData = new FormData();
+        formData.append('query_text', voiceText.trim());
+        formData.append('image', selectedImage);
+        formData.append('plant_type', plantType);
+        
+        if (selectedPoint) {
+          formData.append('latitude', selectedPoint.lat.toString());
+          formData.append('longitude', selectedPoint.lng.toString());
+        }
+        
+        requestBody = formData;
+      } else {
+        // Use JSON for text-only queries
+        headers['Content-Type'] = 'application/json';
+        requestBody = JSON.stringify({
+          query_text: voiceText.trim(),
+          latitude: selectedPoint?.lat,
+          longitude: selectedPoint?.lng,
+          analysis_date: analysisDate || undefined,
+          satellite_source: satelliteSource,
+          cloud_coverage: parseInt(cloudCoverage)
+        });
+      }
+
+      const response = await fetch(`${apiBaseUrl}/demo/query`, {
+        method: 'POST',
+        headers,
+        body: requestBody,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('🔍 Raw backend response for voice query:', data);
+      
+      // Extract the actual response text from the comprehensive response
+      const responseText = data.comprehensive_response?.final_answer?.primary_answer || 
+                          data.response_text || 
+                          'No response available';
+      
+      // Convert backend response to our DemoResponse format
+      const formattedResponse: DemoResponse = {
+        routing_analysis: {
+          agent: data.agent_analysis?.recommended_agents?.[0] || data.routing_analysis?.agent || 'backend_agent',
+          confidence: data.comprehensive_response?.confidence || data.routing_analysis?.confidence || 0.85,
+          reasoning: data.routing_analysis?.reasoning || 'Response from AI-Powered Agriculture Backend'
+        },
+        satellite_data: {
+          ndvi: data.satellite_data?.ndvi || 0.72,
+          soil_moisture: data.satellite_data?.soil_moisture || 0.58,
+          temperature: data.satellite_data?.temperature || 31,
+          humidity: data.satellite_data?.humidity || 72,
+          environmental_score: data.satellite_data?.environmental_score || 85,
+          risk_level: data.satellite_data?.risk_level || 'low'
+        },
+        response_text: responseText,
+        technical_metrics: {
+          processing_time_ms: data.technical_metrics?.total_processing_time_ms || 1000,
+          confidence_level: data.technical_metrics?.confidence_score || 0.85,
+          satellite_data_integrated: data.technical_metrics?.satellite_integration || false,
+          risk_assessment: 'AI-Powered Agricultural Analysis',
+          agent: data.comprehensive_response?.source_agents?.[0] || 'ai_agriculture_agent'
+        }
+      };
+
+      console.log('✅ Voice query response received:', formattedResponse);
+      setDemoResponse(formattedResponse);
+      
+      // Speak the response using ElevenLabs
+      if (responseText) {
+        await speakWithElevenLabs(responseText);
+      }
+      
+    } catch (err) {
+      const errorMessage = 'Failed to process voice query: ' + (err as Error).message;
+      setError(errorMessage);
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVoiceButtonClick = () => {
+    if (isRecording) {
+      stopVoiceRecording();
+    } else if (isProcessingVoice) {
+      // Do nothing while processing
+      return;
+    } else {
+      startVoiceRecording();
+    }
+  };
 
   // Initialize map
   useEffect(() => {
@@ -173,7 +468,7 @@ const SimpleDemoInterface: React.FC = () => {
       <button onclick="window.analyzeCurrentPoint()" style="background: #27ae60; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">Analyze This Point</button>
     `).openPopup();
 
-    setCurrentMarker(newMarker);
+    // setCurrentMarker(newMarker); // TODO: Implement marker management
   };
 
   // Function to perform reverse geocoding using OpenStreetMap Nominatim
@@ -417,7 +712,10 @@ const SimpleDemoInterface: React.FC = () => {
   }, [map, selectedPoint]);
 
   // Function to convert markdown-like formatting to HTML
-  const formatResponseText = (text: string) => {
+  const formatResponseText = (text: string | undefined | null): string => {
+    // Add null check to prevent undefined errors
+    if (!text) return '';
+    
     return text
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Convert **text** to bold
       .replace(/\*(.*?)\*/g, '<em>$1</em>') // Convert *text* to italic
@@ -603,7 +901,7 @@ This is an AI-generated analysis. For severe infections, consult with a local ag
         const apiBaseUrl = import.meta.env.VITE_AGENTWEAVER_API_URL || 'http://localhost:8001';
         
         let requestBody;
-        let headers: HeadersInit = {};
+        const headers: HeadersInit = {};
 
         if (selectedImage) {
           // Use FormData for image upload
@@ -915,6 +1213,12 @@ To get more specific recommendations, please:
     };
 
     setDemoResponse(fallbackResponse);
+    
+    // Add TTS for fallback response
+    if (fallbackResponse.response_text && elevenlabsApiKey) {
+      console.log('🔊 Starting TTS for fallback response...');
+      speakWithElevenLabs(fallbackResponse.response_text);
+    }
   };
 
   const submitQuery = async () => {
@@ -946,6 +1250,12 @@ To get more specific recommendations, please:
         // The response is already enhanced by AI in fetchAIResponse
         // Set the enhanced response directly
         setEnhancedResponse(aiResponse.response_text);
+        
+        // Add TTS for text responses (trigger immediately after response is set)
+        if (aiResponse.response_text && elevenlabsApiKey) {
+          console.log('🔊 Starting TTS for response...');
+          speakWithElevenLabs(aiResponse.response_text);
+        }
       } else {
         // Fallback to mock data if API fails
         await generateFallbackResponse();
@@ -1296,13 +1606,27 @@ To get more specific recommendations, please:
         </div>
 
         <div className="query-input">
-          <textarea
-            value={currentQuery}
-            onChange={(e) => setCurrentQuery(e.target.value)}
-            placeholder="Type your agricultural question here..."
-            rows={3}
-            className="query-textarea"
-          />
+          <div className="textarea-container">
+            <textarea
+              value={currentQuery}
+              onChange={(e) => setCurrentQuery(e.target.value)}
+              placeholder="Type your agricultural question here..."
+              rows={3}
+              className="query-textarea"
+            />
+            <button 
+              className={`voice-button-inline ${isRecording ? 'recording' : ''} ${isProcessingVoice ? 'processing' : ''}`}
+              onClick={handleVoiceButtonClick}
+              disabled={isProcessingVoice}
+              title={
+                isProcessingVoice ? "Processing voice..." : 
+                isRecording ? "Stop recording" : 
+                "Start voice input"
+              }
+            >
+              {isProcessingVoice ? '⏳' : isRecording ? '⏹️' : '🎤'}
+            </button>
+          </div>
           
           {/* Image Upload Section */}
           <div style={{ marginTop: '16px' }}>
@@ -1494,23 +1818,41 @@ To get more specific recommendations, please:
         <div className="response-section">
           <h3>🤖 AI Response</h3>
           
+          {/* TTS Status Indicator */}
+          {isPlayingTTS && (
+            <div className="tts-status" style={{
+              background: 'linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%)',
+              color: 'white',
+              padding: '8px 16px',
+              borderRadius: '20px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              marginBottom: '15px',
+              fontSize: '14px',
+              animation: 'pulse 2s infinite'
+            }}>
+              🔊 Playing audio response...
+            </div>
+          )}
+          
           <div className="routing-analysis">
             <h4>🧠 AI Routing Analysis:</h4>
             <div className="analysis-info">
-              <div><strong>Agent Selected:</strong> {demoResponse.routing_analysis.agent}</div>
-              <div><strong>Confidence:</strong> {(demoResponse.routing_analysis.confidence * 100).toFixed(1)}%</div>
-              <div><strong>Reasoning:</strong> {demoResponse.routing_analysis.reasoning}</div>
+              <div><strong>Agent Selected:</strong> {demoResponse?.routing_analysis?.agent || 'N/A'}</div>
+              <div><strong>Confidence:</strong> {demoResponse?.routing_analysis?.confidence ? (demoResponse.routing_analysis.confidence * 100).toFixed(1) + '%' : 'N/A'}</div>
+              <div><strong>Reasoning:</strong> {demoResponse?.routing_analysis?.reasoning || 'N/A'}</div>
             </div>
           </div>
 
           <div className="satellite-data">
             <h4>🛰️ Satellite Data Analysis:</h4>
             <div className="satellite-info">
-              <div><strong>NDVI Score:</strong> {demoResponse.satellite_data.ndvi}</div>
-              <div><strong>Soil Moisture:</strong> {(demoResponse.satellite_data.soil_moisture * 100).toFixed(0)}%</div>
-              <div><strong>Temperature:</strong> {demoResponse.satellite_data.temperature}°C</div>
-              <div><strong>Environmental Score:</strong> {demoResponse.satellite_data.environmental_score}/100</div>
-              <div><strong>Risk Level:</strong> {demoResponse.satellite_data.risk_level.toUpperCase()}</div>
+              <div><strong>NDVI Score:</strong> {demoResponse?.satellite_data?.ndvi || 'N/A'}</div>
+              <div><strong>Soil Moisture:</strong> {demoResponse?.satellite_data?.soil_moisture ? (demoResponse.satellite_data.soil_moisture * 100).toFixed(0) + '%' : 'N/A'}</div>
+              <div><strong>Temperature:</strong> {demoResponse?.satellite_data?.temperature ? demoResponse.satellite_data.temperature + '°C' : 'N/A'}</div>
+              <div><strong>Environmental Score:</strong> {demoResponse?.satellite_data?.environmental_score ? demoResponse.satellite_data.environmental_score + '/100' : 'N/A'}</div>
+              <div><strong>Risk Level:</strong> {demoResponse?.satellite_data?.risk_level ? demoResponse.satellite_data.risk_level.toUpperCase() : 'N/A'}</div>
             </div>
           </div>
 
@@ -1527,7 +1869,7 @@ To get more specific recommendations, please:
               <div
                 className="response-text"
                 dangerouslySetInnerHTML={{
-                  __html: formatResponseText(demoResponse.response_text)
+                  __html: formatResponseText(demoResponse?.response_text)
                 }}
               />
               {(import.meta.env.VITE_AI_API_KEY || localStorage.getItem('ai_api_key')) && (

@@ -180,6 +180,24 @@
   gap: 15px;
 }
 
+/* Voice integration in Query tab */
+.voice-integration {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 12px;
+  border: 2px dashed #e9ecef;
+  border-radius: 10px;
+  background: #fafafa;
+}
+
+.voice-integration::before {
+  content: "🎤 Voice input:";
+  margin-right: 12px;
+  color: #555;
+  font-weight: 600;
+}
+
 .query-textarea {
   width: 100%;
   padding: 15px;

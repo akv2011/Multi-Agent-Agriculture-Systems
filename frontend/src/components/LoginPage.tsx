@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import './LoginPage.css';
-import { isDemoMode } from '../utils/authUtils';
+// import { isDemoMode } from '../utils/authUtils'; // Unused for now
 
 interface LoginPageProps {
   onLogin: (username: string, password: string) => boolean;

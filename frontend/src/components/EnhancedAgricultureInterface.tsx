@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import SimpleVoiceAgent from './SimpleVoiceAgent';
 import './EnhancedAgricultureInterface.css';
 
 interface ProcessingStep {
@@ -305,6 +306,79 @@ const EnhancedAgricultureInterface: React.FC = () => {
     );
   };
 
+  const handleVoiceQuery = useCallback((voiceQuery: string) => {
+    setQuery(voiceQuery);
+    // Auto-submit the voice query after setting it
+    setTimeout(() => {
+      if (voiceQuery.trim()) {
+        // Create a local scope to call submitEnhancedQuery
+        const processQuery = async () => {
+          if (!voiceQuery.trim()) return;
+
+          setLoading(true);
+          setError(null);
+          setResponse(null);
+          setProcessingSteps([]);
+          setRealTimeUpdates([]);
+
+          try {
+            const requestData = {
+              query_text: voiceQuery,
+              location: location,
+              language: language === 'auto' ? undefined : language,
+              include_satellite: includeSatellite,
+              agent_preferences: selectedAgents.length > 0 ? selectedAgents : undefined,
+              priority_level: priority,
+              context: {
+                interface: 'enhanced_ui_voice',
+                timestamp: new Date().toISOString()
+              }
+            };
+
+            const response = await fetch('http://localhost:8001/demo/query', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(requestData),
+            });
+
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            setResponse(data);
+            
+            // Update processing steps from timeline
+            if (data.processing_timeline) {
+              setProcessingSteps(data.processing_timeline.map((step: ProcessingStep) => step.step));
+            }
+
+            // Update dashboard metrics
+            await updateDashboardMetrics();
+
+            // Add real-time update
+            setRealTimeUpdates(prev => [{
+              id: data.query_id,
+              query: voiceQuery.substring(0, 50) + '...',
+              status: data.status,
+              confidence: data.confidence_metrics?.overall || 0,
+              timestamp: new Date().toISOString()
+            }, ...prev.slice(0, 4)]);
+
+          } catch (err) {
+            setError(err instanceof Error ? err.message : 'Unknown error occurred');
+          } finally {
+            setLoading(false);
+          }
+        };
+        
+        processQuery();
+      }
+    }, 100);
+  }, [location, language, includeSatellite, selectedAgents, priority, updateDashboardMetrics]);
+
   const getHealthColor = (health: string) => {
     switch (health) {
       case 'healthy': return '#10b981';
@@ -377,6 +451,30 @@ const EnhancedAgricultureInterface: React.FC = () => {
                 placeholder="Ask anything about farming, crops, diseases, market prices, or agricultural practices..."
                 rows={3}
                 className="query-input"
+              />
+            </div>
+
+            {/* Voice Agent Integration - Ask with Voice */}
+            <div className="voice-integration" style={{
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              padding: '20px',
+              borderRadius: '12px',
+              margin: '15px 0',
+              border: '2px solid #667eea',
+              boxShadow: '0 4px 15px rgba(102, 126, 234, 0.3)'
+            }}>
+              <div style={{ 
+                color: 'white', 
+                fontWeight: 'bold', 
+                marginBottom: '10px',
+                textAlign: 'center',
+                fontSize: '16px'
+              }}>
+                🎤 Voice Assistant - Click to Speak
+              </div>
+              <SimpleVoiceAgent 
+                onVoiceQuery={handleVoiceQuery}
+                isProcessing={loading}
               />
             </div>
 
